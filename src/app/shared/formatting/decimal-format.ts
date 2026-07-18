@@ -30,19 +30,22 @@ export type DecimalValueTone = 'positive' | 'negative' | 'neutral';
 
 export function decimalValueTone(value: string): DecimalValueTone {
   const normalized = value.trim();
-  const magnitude = normalized.replace(/^[+-]/, '').replace('.', '').replace(/0/g, '');
-  if (!magnitude) return 'neutral';
-  return normalized.startsWith('-') ? 'negative' : 'positive';
+  const match = /^([+-]?)(\d+(?:\.\d+)?)(?:[eE][+-]?\d+)?$/.exec(normalized);
+  if (!match) return 'neutral';
+
+  const [, sign, mantissa] = match;
+  if (!/[1-9]/.test(mantissa)) return 'neutral';
+  return sign === '-' ? 'negative' : 'positive';
 }
 
 export function formatSignedCurrency(value: string, currency = 'USDT'): string {
   const formatted = formatCurrency(value, currency);
-  if (decimalValueTone(value) === 'neutral') return `±${formatted}`;
+  if (decimalValueTone(value) === 'neutral') return `±${formatted.replace(/^[+-]/, '')}`;
   return decimalValueTone(value) === 'positive' ? `+${formatted}` : formatted;
 }
 
 export function formatSignedPercentage(value: string): string {
   const formatted = formatPercentage(value);
-  if (decimalValueTone(value) === 'neutral') return `±${formatted}`;
+  if (decimalValueTone(value) === 'neutral') return `±${formatted.replace(/^[+-]/, '')}`;
   return decimalValueTone(value) === 'positive' ? `+${formatted}` : formatted;
 }
