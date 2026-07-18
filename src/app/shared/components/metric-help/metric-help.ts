@@ -114,7 +114,11 @@ export class MetricHelp implements OnDestroy {
     const nextTarget = event.relatedTarget;
     if (!(nextTarget instanceof Node) || !this.element.nativeElement.contains(nextTarget)) {
       this.focusOpen = false;
-      this.scheduleClose();
+      if (!this.pinned && !this.triggerHovered && !this.tooltipHovered) {
+        this.closeNow();
+      } else {
+        this.scheduleClose();
+      }
     }
   }
 
