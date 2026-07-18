@@ -1,0 +1,74 @@
+<article class="history-card">
+  <div class="chart-summary">
+    <div>
+      <span>Latest persisted equity</span>
+      <strong>{{ formatMoney(lastPoint().equity) }}</strong>
+    </div>
+    <div>
+      <span>Change from start</span>
+      @if (performance(); as metrics) {
+        <strong [class]="'value-' + decimalValueTone(metrics.absolute_pnl)">
+          {{ formatSignedMoney(metrics.absolute_pnl) }}
+        </strong>
+      } @else {
+        <strong>No data</strong>
+      }
+    </div>
+    <div>
+      <span>Persisted return</span>
+      @if (performance()?.total_return; as persistedReturn) {
+        <strong [class]="'value-' + decimalValueTone(persistedReturn)">
+          {{ formatSignedPercentage(persistedReturn) }}
+        </strong>
+      } @else {
+        <strong>No data</strong>
+      }
+    </div>
+    <div>
+      <span>Snapshots</span>
+      <strong>{{ performance()?.snapshot_count ?? orderedSnapshots().length }}</strong>
+    </div>
+  </div>
+
+  <svg
+    viewBox="0 0 800 260"
+    preserveAspectRatio="xMidYMid meet"
+    role="img"
+    aria-labelledby="equity-chart-title equity-chart-description"
+  >
+    <title id="equity-chart-title">Persisted Paper Trading equity history</title>
+    <desc id="equity-chart-description">
+      Equity from the run start through persisted 30-minute boundaries. The dashed horizontal line
+      marks initial equity.
+    </desc>
+    <line class="baseline" x1="28" x2="772" [attr.y1]="baselineY()" [attr.y2]="baselineY()" />
+    <polyline class="equity-line" [attr.points]="polylinePoints()" />
+    <circle class="endpoint" [attr.cx]="firstPoint().x" [attr.cy]="firstPoint().y" r="4" />
+    @if (latestSnapshot()) {
+      @let last = lastPoint();
+      <circle class="endpoint" [attr.cx]="last.x" [attr.cy]="last.y" r="4" />
+    }
+  </svg>
+
+  <div class="point-summary">
+    <p>
+      <span>First point</span>
+      <strong>{{ formatMoney(firstPoint().equity) }}</strong>
+      <small>{{ firstPoint().timestamp | date: 'medium' : 'UTC' }} UTC</small>
+    </p>
+    <p>
+      <span>Last point</span>
+      <strong>{{ formatMoney(lastPoint().equity) }}</strong>
+      <small>{{ lastPoint().timestamp | date: 'medium' : 'UTC' }} UTC</small>
+    </p>
+  </div>
+
+  @if (latestSnapshot(); as latest) {
+    <p class="history-note">
+      Historical series through {{ latest.scheduled_boundary | date: 'medium' : 'UTC' }} UTC.
+      Current portfolio valuation may be newer.
+    </p>
+  } @else {
+    <p class="history-note">Waiting for the first persisted equity snapshot</p>
+  }
+</article>

@@ -118,6 +118,35 @@
       }
     </section>
 
+    <section aria-labelledby="equity-history-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Paper Trading</p>
+          <h2 id="equity-history-title">Equity history</h2>
+        </div>
+      </div>
+      @if (data.paper.run; as run) {
+        @if (historyLoading()) {
+          <div class="history-status" aria-live="polite">Loading equity history…</div>
+        }
+        @if (historyError(); as message) {
+          <div class="history-status warning" role="alert">
+            <span>{{ message }}</span>
+            <button type="button" (click)="retryHistory()">Retry history</button>
+          </div>
+        }
+        @if ((!historyLoading() && !historyError()) || equitySnapshots().length > 0) {
+          <app-equity-history-chart
+            [run]="run"
+            [snapshots]="equitySnapshots()"
+            [performance]="data.paper.performance"
+          />
+        }
+      } @else {
+        <div class="empty-state"><h3>No active run</h3></div>
+      }
+    </section>
+
     <section aria-labelledby="instruments-title">
       <div class="section-heading">
         <div>

@@ -203,3 +203,36 @@ export interface PaperPosition {
   gross_realized_pnl: DecimalString | null;
   net_realized_pnl: DecimalString | null;
 }
+
+export interface PaperPortfolioSnapshot {
+  id: string;
+  run_id: string;
+  scheduled_boundary: IsoUtcString;
+  recorded_at: IsoUtcString;
+  account_currency: string;
+  initial_cash: DecimalString;
+  current_cash: DecimalString;
+  positions_market_value: DecimalString;
+  equity: DecimalString;
+  total_pnl: DecimalString;
+  total_return: DecimalString | null;
+  configuration_version: number;
+  positions: PaperPositionSnapshot[];
+}
+
+export interface PaperPositionSnapshot {
+  id: string;
+  position_id: string;
+  asset: string;
+  provider: string;
+  market_type: string;
+  interval: string;
+  quantity: DecimalString;
+  average_entry_price: DecimalString;
+  cost_basis: DecimalString;
+  mark_price: DecimalString;
+  market_value: DecimalString;
+  unrealized_pnl: DecimalString;
+  unrealized_return: DecimalString | null;
+  mark_candle_open_time: IsoUtcString;
+}
