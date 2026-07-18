@@ -70,6 +70,12 @@ section {
 .interpretation.bullish {
   color: #76d8b1;
 }
+.interpretation.bearish {
+  color: #d79a91;
+}
+.interpretation.neutral {
+  color: #e8c77a;
+}
 .explanations,
 .position-grid {
   display: grid;

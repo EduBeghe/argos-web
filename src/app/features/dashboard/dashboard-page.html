@@ -1,90 +1,97 @@
 <main>
   <header class="page-header">
     <div>
-      <p class="eyebrow">Plataforma cuantitativa privada</p>
+      <p class="eyebrow">Private quantitative platform</p>
       <h1>Argos</h1>
-      <p>Investigación y soporte de decisiones · Paper Trading</p>
+      <p>Research and decision support · Paper Trading</p>
       @if (overview(); as data) {
-        <p class="generated">Actualizado: {{ data.generated_at | date: 'medium' : 'UTC' }} UTC</p>
+        <p class="generated">Updated: {{ data.generated_at | date: 'medium' : 'UTC' }} UTC</p>
       }
     </div>
     <button type="button" (click)="refresh()" [disabled]="loading()">
-      {{ loading() ? 'Actualizando…' : 'Actualizar' }}
+      {{ loading() ? 'Refreshing…' : 'Refresh' }}
     </button>
   </header>
 
   @if (loading() && !overview()) {
-    <section class="notice" aria-live="polite">Cargando overview de Argos…</section>
+    <section class="notice" aria-live="polite">Loading Argos overview…</section>
   }
 
   @if (error(); as message) {
     <section class="notice error" role="alert">
       <span>{{ message }}</span>
-      <button type="button" (click)="refresh()">Reintentar</button>
+      <button type="button" (click)="refresh()">Retry</button>
     </section>
   }
 
   @if (overview(); as data) {
     <section class="system-panel" aria-labelledby="system-title">
       <div>
-        <p class="eyebrow" id="system-title">Estado del sistema</p>
+        <p class="eyebrow" id="system-title">System status</p>
         <h2 [class.fresh]="data.system.market_data_fresh">
-          {{ data.system.market_data_fresh ? '✓ Datos actualizados' : '⚠ Datos desactualizados' }}
+          {{ data.system.market_data_fresh ? '✓ Market data up to date' : '⚠ Market data stale' }}
         </h2>
       </div>
       <p>
         <strong>{{ data.system.instruments_fresh }}</strong> /
-        {{ data.system.instruments_total }} instrumentos frescos
+        {{ data.system.instruments_total }} instruments fresh
       </p>
     </section>
 
     <section aria-labelledby="paper-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Simulación</p>
+          <p class="eyebrow">Simulation</p>
           <h2 id="paper-title">Paper Trading</h2>
         </div>
       </div>
       @if (data.paper.run; as run) {
         <div class="timeline-note">
           <p>
-            <strong>Run {{ run.status }}</strong> · Inicio:
+            <strong>{{ paperRunStatusLabel(run.status) }}</strong> · Started:
             {{ run.started_at | date: 'medium' : 'UTC' }} UTC
           </p>
         </div>
         @if (data.paper.portfolio; as portfolio) {
           <div class="paper-grid">
             <article class="summary-card hero-metric">
-              <span>Equity actual</span>
+              <span>Current equity</span>
               <strong>{{ formatMoney(portfolio.equity) }}</strong>
-              <small>Valuado: {{ portfolio.valued_at | date: 'medium' : 'UTC' }} UTC</small>
+              <small>Valued: {{ portfolio.valued_at | date: 'medium' : 'UTC' }} UTC</small>
             </article>
             <article class="summary-card">
-              <span>Efectivo</span><strong>{{ formatMoney(portfolio.current_cash) }}</strong>
+              <span>Available cash</span><strong>{{ formatMoney(portfolio.current_cash) }}</strong>
             </article>
             <article class="summary-card">
-              <span>Posiciones</span
+              <span>Position value</span
               ><strong>{{ formatMoney(portfolio.positions_market_value) }}</strong>
             </article>
             <article class="summary-card">
-              <span>P&amp;L total</span><strong>{{ formatMoney(portfolio.total_pnl) }}</strong>
+              <span>Total P&amp;L</span
+              ><strong [class]="'value-' + decimalValueTone(portfolio.total_pnl)">{{
+                formatSignedMoney(portfolio.total_pnl)
+              }}</strong>
             </article>
             <article class="summary-card">
-              <span>Retorno total</span
-              ><strong>{{ formatPercentage(portfolio.total_return) }}</strong>
+              <span>Total return</span
+              ><strong [class]="'value-' + decimalValueTone(portfolio.total_return ?? '0')">{{
+                portfolio.total_return === null
+                  ? 'No data'
+                  : formatSignedPercentage(portfolio.total_return)
+              }}</strong>
             </article>
           </div>
         } @else {
-          <div class="empty-state"><h3>Valuación actual no disponible</h3></div>
+          <div class="empty-state"><h3>Current valuation unavailable</h3></div>
         }
         @if (data.paper.performance; as performance) {
           <div class="paper-grid">
             <article class="summary-card">
-              <span>Drawdown actual</span
+              <span>Current drawdown</span
               ><strong>{{ formatPercentage(performance.current_drawdown) }}</strong>
             </article>
             <article class="summary-card">
-              <span>Drawdown máximo</span
+              <span>Maximum drawdown</span
               ><strong>{{ formatPercentage(performance.max_drawdown) }}</strong>
             </article>
             <article class="summary-card">
@@ -93,22 +100,20 @@
           </div>
           <div class="timeline-note">
             <p>
-              Performance evaluada hasta
+              Performance evaluated through
               {{ performance.evaluated_until | date: 'medium' : 'UTC' }} UTC.
               @if (data.paper.portfolio) {
-                Puede ser anterior a la valuación actual del portfolio.
+                It may precede the current portfolio valuation.
               }
             </p>
           </div>
         } @else {
-          <div class="empty-state"><h3>Métricas históricas todavía no disponibles</h3></div>
+          <div class="empty-state"><h3>Historical metrics are not available yet</h3></div>
         }
       } @else {
         <div class="empty-state">
-          <h3>Sin run activo</h3>
-          <p>
-            El mercado puede seguir disponible aunque todavía no exista una cuenta simulada activa.
-          </p>
+          <h3>No active run</h3>
+          <p>Market data may remain available before a simulated account is active.</p>
         </div>
       }
     </section>
@@ -116,8 +121,8 @@
     <section aria-labelledby="instruments-title">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Catálogo</p>
-          <h2 id="instruments-title">Instrumentos analizados</h2>
+          <p class="eyebrow">Catalog</p>
+          <h2 id="instruments-title">Analyzed instruments</h2>
         </div>
       </div>
       <div class="instrument-grid">

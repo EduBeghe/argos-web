@@ -4,7 +4,7 @@ export const instrumentCard: MarketInstrumentCard = {
   instrument: {
     asset: 'TEST/USDT',
     display_symbol: 'TEST/USDT',
-    display_name: 'Instrumento Test',
+    display_name: 'Test Instrument',
     asset_class: 'crypto',
     base_currency: 'TEST',
     quote_currency: 'USDT',

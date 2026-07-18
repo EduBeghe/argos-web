@@ -4,7 +4,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { finalize } from 'rxjs';
 
 import { InstrumentCard } from '../../shared/components/instrument-card/instrument-card';
-import { formatCurrency, formatPercentage } from '../../shared/formatting/decimal-format';
+import {
+  decimalValueTone,
+  formatCurrency,
+  formatPercentage,
+  formatSignedCurrency,
+  formatSignedPercentage,
+} from '../../shared/formatting/decimal-format';
+import { paperRunStatusLabel } from '../../shared/formatting/presentation-labels';
 import { DashboardApiService } from './dashboard-api.service';
 import { DashboardOverview, MarketInstrumentCard, ValuedPaperPosition } from './dashboard.models';
 
@@ -66,11 +73,21 @@ export class DashboardPage {
   }
 
   protected readonly formatPercentage = formatPercentage;
+  protected readonly formatSignedPercentage = formatSignedPercentage;
+  protected readonly decimalValueTone = decimalValueTone;
+  protected readonly paperRunStatusLabel = paperRunStatusLabel;
+
+  protected formatSignedMoney(value: string): string {
+    return formatSignedCurrency(
+      value,
+      this.overview()?.paper.portfolio?.account_currency ?? 'USDT',
+    );
+  }
 
   private errorMessage(error: HttpErrorResponse): string {
     if (error.status === 409) {
-      return 'No se pudo valorar el portfolio con la evidencia disponible.';
+      return 'The portfolio could not be valued with the available evidence.';
     }
-    return 'No se pudo cargar el dashboard. Revisá la conexión e intentá nuevamente.';
+    return 'The dashboard could not be loaded. Check the connection and try again.';
   }
 }

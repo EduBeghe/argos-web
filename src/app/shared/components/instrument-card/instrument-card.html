@@ -9,40 +9,42 @@
       class="status"
       [class.fresh]="card().market_status?.is_fresh"
       [attr.aria-label]="
-        card().market_status?.is_fresh ? 'Datos actualizados' : 'Datos desactualizados'
+        card().market_status?.is_fresh ? 'Market data up to date' : 'Market data stale'
       "
     >
-      {{ card().market_status?.is_fresh ? '● Actualizado' : '○ Desactualizado' }}
+      {{ card().market_status?.is_fresh ? '● Up to date' : '○ Stale' }}
     </span>
   </header>
 
   <p class="identity">{{ identity() }}</p>
   <p class="muted">
-    Última vela:
+    Latest candle:
     {{
       card().market_status?.latest_close_time
         ? (card().market_status?.latest_close_time | date: 'medium' : 'UTC') + ' UTC'
-        : 'Sin datos'
+        : 'No data'
     }}
   </p>
 
   <section>
-    <h4>Score técnico</h4>
+    <h4>Technical score</h4>
     @if (card().latest_score; as score) {
       <div class="metric-row">
         <strong>{{ formatDecimal(score.overall_score, 3) }}</strong>
         <span
           class="interpretation"
           [class.bullish]="score.interpretation.includes('bullish')"
-          [attr.aria-label]="'Interpretación: ' + interpretationLabel(score.interpretation)"
+          [class.bearish]="score.interpretation.includes('bearish')"
+          [class.neutral]="score.interpretation === 'neutral'"
+          [attr.aria-label]="'Interpretation: ' + interpretationLabel(score.interpretation)"
         >
           {{ interpretationLabel(score.interpretation) }}
         </span>
       </div>
-      <p>Fuerza de señal: {{ formatDecimal(score.signal_strength, 3) }}</p>
+      <p>Signal strength: {{ formatDecimal(score.signal_strength, 3) }}</p>
       <dl class="explanations">
         <div>
-          <dt>Tendencia</dt>
+          <dt>Trend</dt>
           <dd>{{ score.explanations.trend }}</dd>
         </div>
         <div>
@@ -50,54 +52,54 @@
           <dd>{{ score.explanations.momentum }}</dd>
         </div>
         <div>
-          <dt>Volumen</dt>
+          <dt>Volume</dt>
           <dd>{{ score.explanations.volume }}</dd>
         </div>
         <div>
-          <dt>Volatilidad</dt>
+          <dt>Volatility</dt>
           <dd>{{ score.explanations.volatility }}</dd>
         </div>
       </dl>
-      <p class="disclaimer">Señal analítica, no recomendación financiera.</p>
+      <p class="disclaimer">Analytical signal, not financial advice.</p>
     } @else {
-      <p class="empty">Sin datos de score</p>
+      <p class="empty">No score data</p>
     }
   </section>
 
   <section>
-    <h4>Última decisión</h4>
+    <h4>Latest decision</h4>
     @if (card().latest_decision; as decision) {
       <p class="action">{{ decisionActionLabel(decision.action) }}</p>
       <p>{{ decision.explanation }}</p>
       <p class="muted">{{ decision.decision_timestamp | date: 'medium' : 'UTC' }} UTC</p>
     } @else {
-      <p class="empty">Sin datos de decisión</p>
+      <p class="empty">No decision data</p>
     }
   </section>
 
   <section>
-    <h4>Posición abierta</h4>
+    <h4>Open position</h4>
     @if (card().open_position; as position) {
       <dl class="position-grid">
         <div>
-          <dt>Estado</dt>
+          <dt>Status</dt>
           <dd>{{ positionStatusLabel(position.status) }}</dd>
         </div>
         <div>
-          <dt>Cantidad</dt>
+          <dt>Quantity</dt>
           <dd>{{ formatQuantity(position.quantity) }}</dd>
         </div>
         <div>
-          <dt>Precio promedio</dt>
+          <dt>Average entry price</dt>
           <dd>{{ formatMoney(position.average_entry_price) }}</dd>
         </div>
         <div>
-          <dt>Exposición actual</dt>
+          <dt>Current exposure</dt>
           <dd>{{ formatMoney(valuedPosition()?.market_value ?? null) }}</dd>
         </div>
       </dl>
     } @else {
-      <p class="empty">Sin posición abierta</p>
+      <p class="empty">No open position</p>
     }
   </section>
 </article>
