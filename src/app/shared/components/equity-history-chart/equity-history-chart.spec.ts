@@ -27,8 +27,8 @@ describe('EquityHistoryChart', () => {
     );
     expect(fixture.nativeElement.querySelectorAll('circle')).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('10,000.00 USDT');
-    expect(normalizedText(fixture)).toContain('Change from start No data');
-    expect(normalizedText(fixture)).toContain('Persisted return No data');
+    expect(summaryText(fixture, 1)).toBe('Change from startNo data');
+    expect(summaryText(fixture, 2)).toBe('Persisted returnNo data');
   });
 
   it('renders one persisted snapshot without including current portfolio equity', async () => {
@@ -104,10 +104,10 @@ describe('EquityHistoryChart', () => {
     };
     const fixture = await render([latest, paperSnapshot]);
 
-    expect(normalizedText(fixture)).toContain('Latest persisted equity 10,400.00 USDT');
-    expect(normalizedText(fixture)).toContain('Change from start +400.00 USDT');
-    expect(normalizedText(fixture)).toContain('Persisted return +4.00%');
-    expect(normalizedText(fixture)).toContain('Snapshots shown 2');
+    expect(summaryText(fixture, 0)).toBe('Latest persisted equity10,400.00 USDT');
+    expect(summaryText(fixture, 1)).toBe('Change from start+400.00 USDT');
+    expect(summaryText(fixture, 2)).toBe('Persisted return+4.00%');
+    expect(summaryText(fixture, 3)).toBe('Snapshots shown2');
   });
 
   it('draws a complete short history from the run start', async () => {
@@ -118,7 +118,7 @@ describe('EquityHistoryChart', () => {
       .split(' ');
 
     expect(points).toHaveLength(2);
-    expect(normalizedText(fixture)).toContain('First point 10,000.00 USDT');
+    expect(pointSummaryText(fixture, 0)).toContain('First point10,000.00 USDT');
   });
 
   it('draws exactly the latest 500 snapshots without connecting omitted history', async () => {
@@ -140,9 +140,9 @@ describe('EquityHistoryChart', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Showing the latest 500 persisted snapshots.',
     );
-    expect(normalizedText(fixture)).toContain('Snapshots shown 500');
-    expect(normalizedText(fixture)).toContain('First point 10,001.00 USDT');
-    expect(normalizedText(fixture)).not.toContain('First point 10,000.00 USDT');
+    expect(summaryText(fixture, 3)).toBe('Snapshots shown500');
+    expect(pointSummaryText(fixture, 0)).toContain('First point10,001.00 USDT');
+    expect(pointSummaryText(fixture, 0)).not.toContain('First point10,000.00 USDT');
     const baseline = fixture.nativeElement.querySelector('.baseline');
     expect(baseline.getAttribute('y1')).not.toContain('NaN');
     expect(baseline.getAttribute('y1')).not.toContain('Infinity');
@@ -164,6 +164,10 @@ function parsePoints(value: string): number[][] {
   return value.split(' ').map((point) => point.split(',').map(Number));
 }
 
-function normalizedText(fixture: ComponentFixture<EquityHistoryChart>): string {
-  return fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+function summaryText(fixture: ComponentFixture<EquityHistoryChart>, index: number): string {
+  return fixture.nativeElement.querySelectorAll('.chart-summary > div')[index].textContent.trim();
+}
+
+function pointSummaryText(fixture: ComponentFixture<EquityHistoryChart>, index: number): string {
+  return fixture.nativeElement.querySelectorAll('.point-summary > p')[index].textContent.trim();
 }
