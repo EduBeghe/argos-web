@@ -136,11 +136,7 @@
           </div>
         }
         @if ((!historyLoading() && !historyError()) || equitySnapshots().length > 0) {
-          <app-equity-history-chart
-            [run]="run"
-            [snapshots]="equitySnapshots()"
-            [performance]="data.paper.performance"
-          />
+          <app-equity-history-chart [run]="run" [snapshots]="equitySnapshots()" />
         }
       } @else {
         <div class="empty-state"><h3>No active run</h3></div>

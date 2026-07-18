@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../../core/config/api-config';
 import { PaperHistoryApiService } from './paper-history-api.service';
 
 describe('PaperHistoryApiService', () => {
-  it('performs one typed request with the active run and bounded ascending history', () => {
+  it('requests the latest bounded window for the active run', () => {
     TestBed.configureTestingModule({
       providers: [
         PaperHistoryApiService,
@@ -21,7 +21,7 @@ describe('PaperHistoryApiService', () => {
     service.getEquitySnapshots('run-id').subscribe((snapshots) => expect(snapshots).toEqual([]));
 
     const request = http.expectOne(
-      'https://api.example.test/paper/equity-snapshots?run_id=run-id&order=asc&limit=500',
+      'https://api.example.test/paper/equity-snapshots?run_id=run-id&order=desc&limit=500',
     );
     expect(request.request.method).toBe('GET');
     request.flush([]);

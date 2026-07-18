@@ -1,39 +1,34 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { dashboardWithPaper, paperSnapshot } from '../../../features/dashboard/dashboard.fixture';
-import {
-  PaperPerformance,
-  PaperPortfolioSnapshot,
-  PaperRun,
-} from '../../../features/dashboard/dashboard.models';
+import { PaperPortfolioSnapshot, PaperRun } from '../../../features/dashboard/dashboard.models';
 import { EquityHistoryChart } from './equity-history-chart';
 
 describe('EquityHistoryChart', () => {
   const run = dashboardWithPaper.paper.run as PaperRun;
-  const performance = dashboardWithPaper.paper.performance as PaperPerformance;
 
   async function render(
     snapshots: PaperPortfolioSnapshot[],
     selectedRun: PaperRun = run,
-    selectedPerformance: PaperPerformance | null = performance,
   ): Promise<ComponentFixture<EquityHistoryChart>> {
     await TestBed.configureTestingModule({ imports: [EquityHistoryChart] }).compileComponents();
     const fixture = TestBed.createComponent(EquityHistoryChart);
     fixture.componentRef.setInput('run', selectedRun);
     fixture.componentRef.setInput('snapshots', snapshots);
-    fixture.componentRef.setInput('performance', selectedPerformance);
     fixture.detectChanges();
     return fixture;
   }
 
   it('shows only the initial point while waiting for the first snapshot', async () => {
-    const fixture = await render([], run, null);
+    const fixture = await render([], run);
 
     expect(fixture.nativeElement.textContent).toContain(
       'Waiting for the first persisted equity snapshot',
     );
     expect(fixture.nativeElement.querySelectorAll('circle')).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('10,000.00 USDT');
+    expect(normalizedText(fixture)).toContain('Change from start No data');
+    expect(normalizedText(fixture)).toContain('Persisted return No data');
   });
 
   it('renders one persisted snapshot without including current portfolio equity', async () => {
@@ -54,7 +49,7 @@ describe('EquityHistoryChart', () => {
       equity: '10300',
     };
     const duplicate = { ...paperSnapshot, id: 'replacement', equity: '10150' };
-    const fixture = await render([later, paperSnapshot, duplicate], run, null);
+    const fixture = await render([later, paperSnapshot, duplicate], run);
 
     expect(
       fixture.nativeElement.querySelector('polyline').getAttribute('points').split(' '),
@@ -90,13 +85,67 @@ describe('EquityHistoryChart', () => {
     const fixture = await render(
       [{ ...paperSnapshot, initial_cash: '0E-18', equity: '0E-18' }],
       scientificRun,
-      null,
     );
 
     expect(fixture.nativeElement.querySelector('polyline').getAttribute('points')).not.toContain(
       'NaN',
     );
     expect(fixture.nativeElement.textContent).toContain('0.00 USDT');
+  });
+
+  it('uses the latest ordered snapshot for aligned equity, P&L, and return', async () => {
+    const latest = {
+      ...paperSnapshot,
+      id: 'latest',
+      scheduled_boundary: '2026-07-18T19:00:00Z',
+      equity: '10400',
+      total_pnl: '400',
+      total_return: '0.04',
+    };
+    const fixture = await render([latest, paperSnapshot]);
+
+    expect(normalizedText(fixture)).toContain('Latest persisted equity 10,400.00 USDT');
+    expect(normalizedText(fixture)).toContain('Change from start +400.00 USDT');
+    expect(normalizedText(fixture)).toContain('Persisted return +4.00%');
+    expect(normalizedText(fixture)).toContain('Snapshots shown 2');
+  });
+
+  it('draws a complete short history from the run start', async () => {
+    const fixture = await render([paperSnapshot]);
+    const points = fixture.nativeElement
+      .querySelector('polyline')
+      .getAttribute('points')
+      .split(' ');
+
+    expect(points).toHaveLength(2);
+    expect(normalizedText(fixture)).toContain('First point 10,000.00 USDT');
+  });
+
+  it('draws exactly the latest 500 snapshots without connecting omitted history', async () => {
+    const snapshots = Array.from({ length: 500 }, (_, index) => ({
+      ...paperSnapshot,
+      id: `snapshot-${index}`,
+      scheduled_boundary: new Date(
+        Date.parse('2026-01-01T00:00:00Z') + index * 30 * 60 * 1000,
+      ).toISOString(),
+      equity: String(10001 + index),
+    })).reverse();
+    const fixture = await render(snapshots);
+    const points = fixture.nativeElement
+      .querySelector('polyline')
+      .getAttribute('points')
+      .split(' ');
+
+    expect(points).toHaveLength(500);
+    expect(fixture.nativeElement.textContent).toContain(
+      'Showing the latest 500 persisted snapshots.',
+    );
+    expect(normalizedText(fixture)).toContain('Snapshots shown 500');
+    expect(normalizedText(fixture)).toContain('First point 10,001.00 USDT');
+    expect(normalizedText(fixture)).not.toContain('First point 10,000.00 USDT');
+    const baseline = fixture.nativeElement.querySelector('.baseline');
+    expect(baseline.getAttribute('y1')).not.toContain('NaN');
+    expect(baseline.getAttribute('y1')).not.toContain('Infinity');
   });
 
   it('provides an accessible SVG and a visible textual point summary', async () => {
@@ -113,4 +162,8 @@ describe('EquityHistoryChart', () => {
 
 function parsePoints(value: string): number[][] {
   return value.split(' ').map((point) => point.split(',').map(Number));
+}
+
+function normalizedText(fixture: ComponentFixture<EquityHistoryChart>): string {
+  return fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 }

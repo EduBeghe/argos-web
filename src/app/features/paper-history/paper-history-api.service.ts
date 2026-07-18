@@ -11,7 +11,7 @@ export class PaperHistoryApiService {
   private readonly apiBaseUrl = inject(API_BASE_URL);
 
   getEquitySnapshots(runId: string): Observable<PaperPortfolioSnapshot[]> {
-    const params = new HttpParams().set('run_id', runId).set('order', 'asc').set('limit', 500);
+    const params = new HttpParams().set('run_id', runId).set('order', 'desc').set('limit', 500);
     return this.http.get<PaperPortfolioSnapshot[]>(`${this.apiBaseUrl}/paper/equity-snapshots`, {
       params,
     });
