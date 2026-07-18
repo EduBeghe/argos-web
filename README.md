@@ -36,8 +36,9 @@ Do not place the Railway URL inside components or services.
 
 Use the public API domain, not Railway's private service URL, because visitors' browsers cannot
 resolve private Railway networking. `API_BASE_URL` is embedded into the Angular bundle at build
-time, so changing it requires a new build and deployment. Do not place secrets in this variable or
-in any frontend bundle.
+time, so changing it requires a new build and deployment. Its value must be only the public HTTP or
+HTTPS origin, such as `https://dominio`, without a path, query, or fragment. Do not place secrets in
+this variable or in any frontend bundle.
 
 ## Quality checks
 

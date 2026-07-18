@@ -23,11 +23,9 @@ test('generates the expected environment for a valid API URL', async () => {
   );
 });
 
-test('removes only the final slash', () => {
-  assert.equal(
-    normalizeApiBaseUrl('https://api.example.test/path/'),
-    'https://api.example.test/path',
-  );
+test('normalizes the origin and removes its final slash', () => {
+  assert.equal(normalizeApiBaseUrl('https://api.example.test/'), 'https://api.example.test');
+  assert.equal(normalizeApiBaseUrl('  https://api.example.test/  '), 'https://api.example.test');
 });
 
 test('rejects a missing value', () => {
@@ -42,11 +40,22 @@ test('rejects credentials', () => {
   assert.throws(() => normalizeApiBaseUrl('https://user:secret@example.test'), /credentials/);
 });
 
-test('serializes special characters without TypeScript injection', async () => {
-  const maliciousUrl = 'https://example.test/?value=\";globalThis.injected=true';
-  const content = await generate(maliciousUrl);
+test('rejects a path, query, or fragment', () => {
+  assert.throws(() => normalizeApiBaseUrl('https://api.example.test/v1'), /origin/);
+  assert.throws(() => normalizeApiBaseUrl('https://api.example.test?region=us'), /origin/);
+  assert.throws(() => normalizeApiBaseUrl('https://api.example.test#status'), /origin/);
+});
 
-  assert.ok(content.includes(JSON.stringify(maliciousUrl)));
-  assert.equal(content.match(/globalThis\.injected/g)?.length, 1);
-  assert.ok(!content.includes('apiBaseUrl: "https://example.test/?value=";'));
+test('rejects a non-HTTP protocol', () => {
+  assert.throws(() => normalizeApiBaseUrl('ftp://api.example.test'), /http or https/);
+});
+
+test('serializes special characters without TypeScript injection', async () => {
+  const validOrigin = 'https://[2001:db8::1]:8443';
+  const content = await generate(validOrigin);
+
+  assert.equal(
+    content,
+    `export const environment = {\n  apiBaseUrl: ${JSON.stringify(validOrigin)},\n};\n`,
+  );
 });

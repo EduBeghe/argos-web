@@ -22,8 +22,11 @@ export function normalizeApiBaseUrl(value) {
   if (url.username || url.password) {
     throw new Error('API_BASE_URL must not contain credentials.');
   }
+  if (url.pathname !== '/' || url.search || url.hash) {
+    throw new Error('API_BASE_URL must be an origin without a path, query, or fragment.');
+  }
 
-  return value.endsWith('/') ? value.slice(0, -1) : value;
+  return url.origin;
 }
 
 export async function generateProductionEnvironment({ apiBaseUrl, outputPath }) {
