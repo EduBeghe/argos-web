@@ -63,6 +63,52 @@ describe('EquityHistoryChart', () => {
     expect(labels.every((label) => Number(label.replace(/[^0-9.-]/g, '')) > 9000)).toBe(true);
   });
 
+  it('gives a realistic 10,000 to 10,012 USDT movement meaningful plot height', async () => {
+    const fixture = await render([{ ...paperSnapshot, equity: '10012' }]);
+    const [domainMin, domainMax] = chartDomain(fixture);
+    const points = chartCoordinates(fixture);
+
+    expectDomainContains(domainMin, domainMax, [10000, 10012]);
+    const plottedHeight = Math.abs(points[1][1] - points[0][1]);
+    const plotHeight = 222;
+    expect(plottedHeight / plotHeight).toBeGreaterThanOrEqual(0.1);
+  });
+
+  it.each([
+    { name: 'ascending', equities: ['10000', '10012', '10025'] },
+    { name: 'descending', equities: ['10000', '9988', '9975'] },
+    { name: 'both sides of initial equity', equities: ['10000', '9988', '10012'] },
+  ])('contains initial equity and every plotted value for $name history', async ({ equities }) => {
+    const snapshots = equities.slice(1).map((equity, index) => ({
+      ...paperSnapshot,
+      id: `domain-${index}`,
+      scheduled_boundary: new Date(
+        Date.parse('2026-07-18T18:30:00Z') + index * 30 * 60 * 1000,
+      ).toISOString(),
+      equity,
+    }));
+    const fixture = await render(snapshots);
+    const [domainMin, domainMax] = chartDomain(fixture);
+
+    expectDomainContains(domainMin, domainMax, equities.map(Number));
+  });
+
+  it('lets a larger real movement control the contextual domain', async () => {
+    const fixture = await render([
+      { ...paperSnapshot, equity: '9000' },
+      {
+        ...paperSnapshot,
+        id: 'large-movement',
+        scheduled_boundary: '2026-07-18T19:00:00Z',
+        equity: '11000',
+      },
+    ]);
+    const [domainMin, domainMax] = chartDomain(fixture);
+
+    expectDomainContains(domainMin, domainMax, [9000, 10000, 11000]);
+    expect(2000 / (domainMax - domainMin)).toBeGreaterThanOrEqual(0.5);
+  });
+
   it('renders UTC X-axis references from actual point timestamps', async () => {
     const fixture = await render([paperSnapshot]);
     const labels = [...fixture.nativeElement.querySelectorAll('.x-label')].map((element) =>
@@ -213,6 +259,25 @@ function parsePoints(value: string): number[][] {
   return value.split(' ').map((point) => point.split(',').map(Number));
 }
 
+function chartCoordinates(fixture: ComponentFixture<EquityHistoryChart>): number[][] {
+  return parsePoints(fixture.nativeElement.querySelector('polyline').getAttribute('points'));
+}
+
+function chartDomain(fixture: ComponentFixture<EquityHistoryChart>): [number, number] {
+  const component = fixture.componentInstance as unknown as {
+    domainMin: () => number;
+    domainMax: () => number;
+  };
+  return [component.domainMin(), component.domainMax()];
+}
+
+function expectDomainContains(domainMin: number, domainMax: number, values: number[]): void {
+  for (const value of values) {
+    expect(value).toBeGreaterThanOrEqual(domainMin);
+    expect(value).toBeLessThanOrEqual(domainMax);
+  }
+}
+
 function summaryText(fixture: ComponentFixture<EquityHistoryChart>, index: number): string {
   return fixture.nativeElement.querySelectorAll('.chart-summary > div')[index].textContent.trim();
 }
@@ -220,3 +285,4 @@ function summaryText(fixture: ComponentFixture<EquityHistoryChart>, index: numbe
 function pointSummaryText(fixture: ComponentFixture<EquityHistoryChart>, index: number): string {
   return fixture.nativeElement.querySelectorAll('.point-summary > p')[index].textContent.trim();
 }
+

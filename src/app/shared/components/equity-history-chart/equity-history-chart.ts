@@ -76,7 +76,7 @@ export class EquityHistoryChart {
     const rawMin = Math.min(...scaleValues);
     const rawMax = Math.max(...scaleValues);
     const referenceMagnitude = Math.max(Math.abs(rawMin), Math.abs(rawMax), 1);
-    const minimumRange = Math.max(referenceMagnitude * 0.02, 1);
+    const minimumRange = Math.max(referenceMagnitude * 0.005, 1);
     const rawRange = rawMax - rawMin;
     const visualRange = Math.max(rawRange, minimumRange);
     const center = (rawMin + rawMax) / 2;
@@ -211,3 +211,4 @@ function formatUtcTick(timestamp: string, includeDate: boolean): string {
     ...(includeDate ? { month: 'short', day: 'numeric' } : {}),
   }).format(new Date(timestamp));
 }
+
