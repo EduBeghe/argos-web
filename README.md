@@ -21,6 +21,24 @@ The development API base URL is defined in `src/environments/environment.ts`. Pr
 
 Do not place the Railway URL inside components or services.
 
+## Railway deployment
+
+1. Create a Railway service from `EduBeghe/argos-web`. Railway detects the repository's
+   `Dockerfile` and serves the production Angular build through Caddy.
+2. Configure the build variable without quotes:
+
+   ```text
+   API_BASE_URL=https://<public-argos-api-domain>
+   ```
+
+3. Generate a public domain for the web service.
+4. Add that public `argos-web` origin to the allowed CORS origins in `argos-api`.
+
+Use the public API domain, not Railway's private service URL, because visitors' browsers cannot
+resolve private Railway networking. `API_BASE_URL` is embedded into the Angular bundle at build
+time, so changing it requires a new build and deployment. Do not place secrets in this variable or
+in any frontend bundle.
+
 ## Quality checks
 
 ```sh
