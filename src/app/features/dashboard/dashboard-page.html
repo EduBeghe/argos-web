@@ -45,54 +45,64 @@
           <h2 id="paper-title">Paper Trading</h2>
         </div>
       </div>
-      @if (data.paper.run && data.paper.portfolio && data.paper.performance) {
-        <div class="paper-grid">
-          <article class="summary-card hero-metric">
-            <span>Equity actual</span>
-            <strong>{{ formatMoney(data.paper.portfolio.equity) }}</strong>
-            <small
-              >Valuado: {{ data.paper.portfolio.valued_at | date: 'medium' : 'UTC' }} UTC</small
-            >
-          </article>
-          <article class="summary-card">
-            <span>Efectivo</span
-            ><strong>{{ formatMoney(data.paper.portfolio.current_cash) }}</strong>
-          </article>
-          <article class="summary-card">
-            <span>Posiciones</span
-            ><strong>{{ formatMoney(data.paper.portfolio.positions_market_value) }}</strong>
-          </article>
-          <article class="summary-card">
-            <span>P&amp;L total</span
-            ><strong>{{ formatMoney(data.paper.portfolio.total_pnl) }}</strong>
-          </article>
-          <article class="summary-card">
-            <span>Retorno total</span
-            ><strong>{{ formatPercentage(data.paper.portfolio.total_return) }}</strong>
-          </article>
-          <article class="summary-card">
-            <span>Drawdown actual</span
-            ><strong>{{ formatPercentage(data.paper.performance.current_drawdown) }}</strong>
-          </article>
-          <article class="summary-card">
-            <span>Drawdown máximo</span
-            ><strong>{{ formatPercentage(data.paper.performance.max_drawdown) }}</strong>
-          </article>
-          <article class="summary-card">
-            <span>Snapshots</span><strong>{{ data.paper.performance.snapshot_count }}</strong>
-          </article>
-        </div>
+      @if (data.paper.run; as run) {
         <div class="timeline-note">
           <p>
-            <strong>Run {{ data.paper.run.status }}</strong> · Inicio:
-            {{ data.paper.run.started_at | date: 'medium' : 'UTC' }} UTC
-          </p>
-          <p>
-            Performance evaluada hasta
-            {{ data.paper.performance.evaluated_until | date: 'medium' : 'UTC' }} UTC. Puede ser
-            anterior a la valuación actual del portfolio.
+            <strong>Run {{ run.status }}</strong> · Inicio:
+            {{ run.started_at | date: 'medium' : 'UTC' }} UTC
           </p>
         </div>
+        @if (data.paper.portfolio; as portfolio) {
+          <div class="paper-grid">
+            <article class="summary-card hero-metric">
+              <span>Equity actual</span>
+              <strong>{{ formatMoney(portfolio.equity) }}</strong>
+              <small>Valuado: {{ portfolio.valued_at | date: 'medium' : 'UTC' }} UTC</small>
+            </article>
+            <article class="summary-card">
+              <span>Efectivo</span><strong>{{ formatMoney(portfolio.current_cash) }}</strong>
+            </article>
+            <article class="summary-card">
+              <span>Posiciones</span
+              ><strong>{{ formatMoney(portfolio.positions_market_value) }}</strong>
+            </article>
+            <article class="summary-card">
+              <span>P&amp;L total</span><strong>{{ formatMoney(portfolio.total_pnl) }}</strong>
+            </article>
+            <article class="summary-card">
+              <span>Retorno total</span
+              ><strong>{{ formatPercentage(portfolio.total_return) }}</strong>
+            </article>
+          </div>
+        } @else {
+          <div class="empty-state"><h3>Valuación actual no disponible</h3></div>
+        }
+        @if (data.paper.performance; as performance) {
+          <div class="paper-grid">
+            <article class="summary-card">
+              <span>Drawdown actual</span
+              ><strong>{{ formatPercentage(performance.current_drawdown) }}</strong>
+            </article>
+            <article class="summary-card">
+              <span>Drawdown máximo</span
+              ><strong>{{ formatPercentage(performance.max_drawdown) }}</strong>
+            </article>
+            <article class="summary-card">
+              <span>Snapshots</span><strong>{{ performance.snapshot_count }}</strong>
+            </article>
+          </div>
+          <div class="timeline-note">
+            <p>
+              Performance evaluada hasta
+              {{ performance.evaluated_until | date: 'medium' : 'UTC' }} UTC.
+              @if (data.paper.portfolio) {
+                Puede ser anterior a la valuación actual del portfolio.
+              }
+            </p>
+          </div>
+        } @else {
+          <div class="empty-state"><h3>Métricas históricas todavía no disponibles</h3></div>
+        }
       } @else {
         <div class="empty-state">
           <h3>Sin run activo</h3>

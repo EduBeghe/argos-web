@@ -51,6 +51,38 @@ describe('DashboardPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Puede ser anterior');
   });
 
+  it('shows the run while reporting an unavailable current valuation', () => {
+    api.getOverview.mockReturnValue(
+      of({
+        ...dashboardWithPaper,
+        paper: { ...dashboardWithPaper.paper, portfolio: null },
+      }),
+    );
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Run active');
+    expect(fixture.nativeElement.textContent).toContain('Valuación actual no disponible');
+    expect(fixture.nativeElement.textContent).not.toContain('Sin run activo');
+  });
+
+  it('shows the run while reporting unavailable historical metrics', () => {
+    api.getOverview.mockReturnValue(
+      of({
+        ...dashboardWithPaper,
+        paper: { ...dashboardWithPaper.paper, performance: null },
+      }),
+    );
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Run active');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Métricas históricas todavía no disponibles',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Sin run activo');
+  });
+
   it('keeps previous data when a refresh fails and maps 409 safely', () => {
     api.getOverview.mockReturnValueOnce(of(dashboardOverview));
     const fixture = TestBed.createComponent(DashboardPage);

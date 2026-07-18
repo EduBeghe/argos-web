@@ -6,6 +6,13 @@ import {
   ValuedPaperPosition,
 } from '../../../features/dashboard/dashboard.models';
 import { formatCurrency, formatDecimal, formatQuantity } from '../../formatting/decimal-format';
+import {
+  assetClassLabel,
+  decisionActionLabel,
+  interpretationLabel,
+  marketTypeLabel,
+  positionStatusLabel,
+} from '../../formatting/presentation-labels';
 
 @Component({
   selector: 'app-instrument-card',
@@ -21,6 +28,10 @@ export class InstrumentCard {
 
   protected readonly formatDecimal = formatDecimal;
   protected readonly formatQuantity = formatQuantity;
+  protected readonly assetClassLabel = assetClassLabel;
+  protected readonly decisionActionLabel = decisionActionLabel;
+  protected readonly interpretationLabel = interpretationLabel;
+  protected readonly positionStatusLabel = positionStatusLabel;
 
   protected formatMoney(value: string | null): string {
     return formatCurrency(value, this.currency());
@@ -31,7 +42,7 @@ export class InstrumentCard {
     return [
       instrument.asset,
       instrument.provider,
-      instrument.market_type,
+      marketTypeLabel(instrument.market_type),
       instrument.interval,
     ].join(' · ');
   }

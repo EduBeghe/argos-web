@@ -1,7 +1,7 @@
 <article class="instrument-card">
   <header>
     <div>
-      <p class="eyebrow">{{ card().instrument.asset_class }}</p>
+      <p class="eyebrow">{{ assetClassLabel(card().instrument.asset_class) }}</p>
       <h3>{{ card().instrument.display_name }}</h3>
       <p class="symbol">{{ card().instrument.display_symbol }}</p>
     </div>
@@ -31,8 +31,12 @@
     @if (card().latest_score; as score) {
       <div class="metric-row">
         <strong>{{ formatDecimal(score.overall_score, 3) }}</strong>
-        <span class="interpretation" [class.bullish]="score.interpretation.includes('bullish')">
-          {{ score.interpretation }}
+        <span
+          class="interpretation"
+          [class.bullish]="score.interpretation.includes('bullish')"
+          [attr.aria-label]="'Interpretación: ' + interpretationLabel(score.interpretation)"
+        >
+          {{ interpretationLabel(score.interpretation) }}
         </span>
       </div>
       <p>Fuerza de señal: {{ formatDecimal(score.signal_strength, 3) }}</p>
@@ -63,7 +67,7 @@
   <section>
     <h4>Última decisión</h4>
     @if (card().latest_decision; as decision) {
-      <p class="action">{{ decision.action }}</p>
+      <p class="action">{{ decisionActionLabel(decision.action) }}</p>
       <p>{{ decision.explanation }}</p>
       <p class="muted">{{ decision.decision_timestamp | date: 'medium' : 'UTC' }} UTC</p>
     } @else {
@@ -77,7 +81,7 @@
       <dl class="position-grid">
         <div>
           <dt>Estado</dt>
-          <dd>{{ position.status }}</dd>
+          <dd>{{ positionStatusLabel(position.status) }}</dd>
         </div>
         <div>
           <dt>Cantidad</dt>
