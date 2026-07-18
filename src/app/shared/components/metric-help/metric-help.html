@@ -4,12 +4,12 @@
   [attr.aria-label]="'Learn about ' + definition().title"
   [attr.aria-expanded]="open()"
   [attr.aria-describedby]="open() ? tooltipId : null"
-  (mouseenter)="show()"
-  (mouseleave)="hide()"
-  (focus)="show()"
+  (mouseenter)="handleTriggerEnter()"
+  (mouseleave)="handleTriggerLeave($event)"
+  (focus)="handleFocus()"
   (focusout)="handleFocusOut($event)"
   (pointerdown)="$event.preventDefault()"
-  (click)="toggle()"
+  (click)="togglePinned()"
 ></button>
 
 @if (open()) {
@@ -19,10 +19,10 @@
     [id]="tooltipId"
     [style.left.px]="position().left"
     [style.top.px]="position().top"
-    [style.bottom.px]="position().bottom"
     [style.width.px]="position().width"
-    (mouseenter)="show()"
-    (mouseleave)="hide()"
+    [style.max-height.px]="position().maxHeight"
+    (mouseenter)="handleTooltipEnter()"
+    (mouseleave)="handleTooltipLeave($event)"
   >
     <strong>{{ definition().title }}</strong>
     <p>{{ definition().explanation }}</p>
