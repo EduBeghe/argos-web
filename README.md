@@ -17,9 +17,32 @@ npm start
 
 Open `http://localhost:4200`.
 
-The development API base URL is defined in `src/environments/environment.ts`. Production builds use `src/environments/environment.production.ts` through Angular file replacement. Set `apiBaseUrl` to the deployed API origin, or leave it empty when the API is available on the same origin through a reverse proxy. The API must allow the frontend origin in its CORS configuration.
+Development uses the API base URL defined in `src/environments/environment.ts`. The production
+Docker build requires `API_BASE_URL` and generates `src/environments/environment.production.ts`
+for Angular file replacement. A future same-origin architecture with a reverse proxy would require
+an explicit change to this configuration. The API must allow the frontend origin in its CORS
+configuration.
 
 Do not place the Railway URL inside components or services.
+
+## Railway deployment
+
+1. Create a Railway service from `EduBeghe/argos-web`. Railway detects the repository's
+   `Dockerfile` and serves the production Angular build through Caddy.
+2. Configure the build variable without quotes:
+
+   ```text
+   API_BASE_URL=https://<public-argos-api-domain>
+   ```
+
+3. Generate a public domain for the web service.
+4. Add that public `argos-web` origin to the allowed CORS origins in `argos-api`.
+
+Use the public API domain, not Railway's private service URL, because visitors' browsers cannot
+resolve private Railway networking. `API_BASE_URL` is embedded into the Angular bundle at build
+time, so changing it requires a new build and deployment. Its value must be only the public HTTP or
+HTTPS origin, such as `https://dominio`, without a path, query, or fragment. Do not place secrets in
+this variable or in any frontend bundle.
 
 ## Quality checks
 
@@ -43,4 +66,4 @@ Decimal strings are converted only inside pure display formatters. The original 
 
 ## Current limitations
 
-This PR intentionally excludes authentication, charts, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, backtesting, and deployment configuration.
+This PR intentionally excludes authentication, charts, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, and backtesting.

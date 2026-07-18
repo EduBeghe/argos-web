@@ -19,5 +19,11 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run test:environment
       - run: npm test -- --watch=false
+      - run: node scripts/generate-production-environment.mjs
+        env:
+          API_BASE_URL: https://api.example.test
       - run: npm run build
+      - run: test -f dist/argos-web/browser/index.html
+      - run: docker build --build-arg API_BASE_URL=https://api.example.test .
