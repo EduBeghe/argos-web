@@ -285,4 +285,3 @@ function summaryText(fixture: ComponentFixture<EquityHistoryChart>, index: numbe
 function pointSummaryText(fixture: ComponentFixture<EquityHistoryChart>, index: number): string {
   return fixture.nativeElement.querySelectorAll('.point-summary > p')[index].textContent.trim();
 }
-

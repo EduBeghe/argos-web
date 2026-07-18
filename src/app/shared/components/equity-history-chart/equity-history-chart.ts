@@ -211,4 +211,3 @@ function formatUtcTick(timestamp: string, includeDate: boolean): string {
     ...(includeDate ? { month: 'short', day: 'numeric' } : {}),
   }).format(new Date(timestamp));
 }
-
