@@ -105,8 +105,8 @@ describe('EquityHistoryChart', () => {
     const fixture = await render([latest, paperSnapshot]);
 
     expect(summaryText(fixture, 0)).toBe('Latest persisted equity10,400.00 USDT');
-    expect(summaryText(fixture, 1)).toBe('Change from start+400.00 USDT');
-    expect(summaryText(fixture, 2)).toBe('Persisted return+4.00%');
+    expect(summaryText(fixture, 1)).toBe('Change from start +400.00 USDT');
+    expect(summaryText(fixture, 2)).toBe('Persisted return +4.00%');
     expect(summaryText(fixture, 3)).toBe('Snapshots shown2');
   });
 
