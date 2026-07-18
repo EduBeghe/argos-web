@@ -31,22 +31,68 @@
   </div>
 
   <svg
-    viewBox="0 0 800 260"
+    viewBox="0 0 800 320"
     preserveAspectRatio="xMidYMid meet"
     role="img"
     aria-labelledby="equity-chart-title equity-chart-description"
   >
     <title id="equity-chart-title">Persisted Paper Trading equity history</title>
     <desc id="equity-chart-description">
-      Equity through persisted 30-minute boundaries. When the complete available history is shown,
-      the series starts with initial cash. The dashed horizontal line always marks initial equity.
+      Equity through persisted 30-minute boundaries with contextual USDT and UTC axes. When the
+      complete available history is shown, the series starts with initial cash. The labeled dashed
+      horizontal line always marks initial equity.
     </desc>
-    <line class="baseline" x1="28" x2="772" [attr.y1]="baselineY()" [attr.y2]="baselineY()" />
+    @for (tick of yTicks(); track tick.value) {
+      <line
+        class="grid-line"
+        x1="112"
+        x2="770"
+        [attr.y1]="tick.position"
+        [attr.y2]="tick.position"
+      />
+      <text class="axis-label y-label" x="104" [attr.y]="tick.position + 4">{{ tick.label }}</text>
+    }
+    <line class="axis-line" x1="112" x2="770" y1="256" y2="256" />
+    @for (tick of xTicks(); track tick.timestamp) {
+      <g class="x-tick" [class.intermediate]="tick.intermediate">
+        <line
+          class="tick-mark"
+          [attr.x1]="tick.position"
+          [attr.x2]="tick.position"
+          y1="256"
+          y2="262"
+        />
+        <text
+          class="axis-label x-label"
+          [attr.x]="tick.position"
+          y="281"
+          [attr.text-anchor]="tick.anchor"
+        >
+          {{ tick.label }} UTC
+        </text>
+      </g>
+    }
+    <line class="baseline" x1="112" x2="770" [attr.y1]="baselineY()" [attr.y2]="baselineY()" />
+    <text
+      class="baseline-label"
+      x="120"
+      [attr.y]="baselineY() < 52 ? baselineY() + 17 : baselineY() - 8"
+    >
+      Initial equity · {{ formatMoney(run().initial_cash) }}
+    </text>
     <polyline class="equity-line" [attr.points]="polylinePoints()" />
     <circle class="endpoint" [attr.cx]="firstPoint().x" [attr.cy]="firstPoint().y" r="4" />
     @if (latestSnapshot()) {
       @let last = lastPoint();
       <circle class="endpoint" [attr.cx]="last.x" [attr.cy]="last.y" r="4" />
+      <text
+        class="latest-label"
+        [attr.x]="latestLabelX()"
+        [attr.y]="latestLabelY()"
+        [attr.text-anchor]="latestLabelAnchor()"
+      >
+        {{ formatMoney(last.equity) }}
+      </text>
     }
   </svg>
 

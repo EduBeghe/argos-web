@@ -38,6 +38,32 @@ svg {
   stroke-width: 1.5;
   stroke-dasharray: 8 7;
 }
+.grid-line {
+  stroke: #263650;
+  stroke-width: 1;
+}
+.axis-line,
+.tick-mark {
+  stroke: #53657c;
+  stroke-width: 1;
+}
+.axis-label,
+.baseline-label,
+.latest-label {
+  fill: #aab9cb;
+  font-size: 12px;
+}
+.y-label {
+  text-anchor: end;
+}
+.baseline-label {
+  fill: #b6c0ce;
+  font-size: 11px;
+}
+.latest-label {
+  fill: #c7d5e8;
+  font-weight: 600;
+}
 .equity-line {
   fill: none;
   stroke: #7fa9c9;
@@ -71,5 +97,13 @@ svg {
   }
   .point-summary {
     grid-template-columns: 1fr;
+  }
+  .x-tick.intermediate {
+    display: none;
+  }
+  .axis-label,
+  .baseline-label,
+  .latest-label {
+    font-size: 11px;
   }
 }
