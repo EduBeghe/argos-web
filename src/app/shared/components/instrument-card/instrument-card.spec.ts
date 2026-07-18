@@ -10,9 +10,9 @@ describe('InstrumentCard', () => {
     fixture.componentRef.setInput('card', instrumentCard);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Instrumento Test');
+    expect(fixture.nativeElement.textContent).toContain('Test Instrument');
     expect(fixture.nativeElement.textContent).toContain('TEST/USDT');
-    expect(fixture.nativeElement.textContent).toContain('Sin datos de score');
-    expect(fixture.nativeElement.textContent).toContain('Sin posición abierta');
+    expect(fixture.nativeElement.textContent).toContain('No score data');
+    expect(fixture.nativeElement.textContent).toContain('No open position');
   });
 });

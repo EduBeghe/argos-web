@@ -36,7 +36,7 @@ h2 {
 button {
   border: 1px solid #5a769b;
   background: #1d4f78;
-  color: white;
+  color: #edf3fb;
   border-radius: 0.6rem;
   padding: 0.7rem 1rem;
   font: inherit;
@@ -86,6 +86,9 @@ section {
   grid-template-columns: repeat(4, 1fr);
   gap: 0.8rem;
 }
+.paper-grid + .paper-grid {
+  margin-top: 1.25rem;
+}
 .summary-card {
   background: #111c2f;
   border: 1px solid #263650;
@@ -100,6 +103,15 @@ section {
 }
 .summary-card strong {
   font-size: 1.2rem;
+}
+.value-positive {
+  color: #86c9aa;
+}
+.value-negative {
+  color: #d79a91;
+}
+.value-neutral {
+  color: #b6c0ce;
 }
 .hero-metric {
   grid-column: span 2;

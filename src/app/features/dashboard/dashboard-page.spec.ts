@@ -25,13 +25,13 @@ describe('DashboardPage', () => {
     api.getOverview.mockReturnValue(response);
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Cargando overview');
+    expect(fixture.nativeElement.textContent).toContain('Loading Argos overview');
 
     response.next(dashboardOverview);
     response.complete();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Sin run activo');
-    expect(fixture.nativeElement.textContent).toContain('Instrumento Test');
+    expect(fixture.nativeElement.textContent).toContain('No active run');
+    expect(fixture.nativeElement.textContent).toContain('Test Instrument');
     expect(api.getOverview).toHaveBeenCalledTimes(1);
   });
 
@@ -39,16 +39,19 @@ describe('DashboardPage', () => {
     api.getOverview.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('No se pudo cargar el dashboard');
+    expect(fixture.nativeElement.textContent).toContain('The dashboard could not be loaded');
   });
 
   it('renders the complete Paper Trading summary without recalculating values', () => {
     api.getOverview.mockReturnValue(of(dashboardWithPaper));
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('10.200,00 USDT');
-    expect(fixture.nativeElement.textContent).toContain('2,00');
-    expect(fixture.nativeElement.textContent).toContain('Puede ser anterior');
+    expect(fixture.nativeElement.textContent).toContain('10,200.00 USDT');
+    expect(fixture.nativeElement.textContent).toContain('+2.00%');
+    expect(fixture.nativeElement.textContent).toContain('It may precede');
+    expect(fixture.nativeElement.querySelector('.value-positive')?.textContent).toContain(
+      '+200.00 USDT',
+    );
   });
 
   it('shows the run while reporting an unavailable current valuation', () => {
@@ -61,9 +64,9 @@ describe('DashboardPage', () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Run active');
-    expect(fixture.nativeElement.textContent).toContain('Valuación actual no disponible');
-    expect(fixture.nativeElement.textContent).not.toContain('Sin run activo');
+    expect(fixture.nativeElement.textContent).toContain('Active run');
+    expect(fixture.nativeElement.textContent).toContain('Current valuation unavailable');
+    expect(fixture.nativeElement.textContent).not.toContain('No active run');
   });
 
   it('shows the run while reporting unavailable historical metrics', () => {
@@ -76,11 +79,9 @@ describe('DashboardPage', () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Run active');
-    expect(fixture.nativeElement.textContent).toContain(
-      'Métricas históricas todavía no disponibles',
-    );
-    expect(fixture.nativeElement.textContent).not.toContain('Sin run activo');
+    expect(fixture.nativeElement.textContent).toContain('Active run');
+    expect(fixture.nativeElement.textContent).toContain('Historical metrics are not available yet');
+    expect(fixture.nativeElement.textContent).not.toContain('No active run');
   });
 
   it('keeps previous data when a refresh fails and maps 409 safely', () => {
@@ -92,8 +93,8 @@ describe('DashboardPage', () => {
     fixture.componentInstance.refresh();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Instrumento Test');
-    expect(fixture.nativeElement.textContent).toContain('No se pudo valorar el portfolio');
+    expect(fixture.nativeElement.textContent).toContain('Test Instrument');
+    expect(fixture.nativeElement.textContent).toContain('The portfolio could not be valued');
     expect(api.getOverview).toHaveBeenCalledTimes(2);
   });
 });
