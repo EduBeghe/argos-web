@@ -51,9 +51,8 @@ describe('DashboardPage', () => {
     fixture.detectChanges();
     const status = fixture.nativeElement.querySelector('.system-status-healthy');
 
-    expect(status.textContent.replace(/\s+/g, ' ').trim()).toContain(
-      'All systems operational · 1 instrument fresh',
-    );
+    expect(status.querySelector('strong').textContent).toBe('All systems operational');
+    expect(status.textContent).toContain('1 instrument fresh');
     expect(status.getAttribute('aria-label')).toContain('all systems operational');
     expect(fixture.nativeElement.querySelector('.system-status-warning')).toBeNull();
   });
