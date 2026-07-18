@@ -17,7 +17,11 @@ npm start
 
 Open `http://localhost:4200`.
 
-The development API base URL is defined in `src/environments/environment.ts`. Production builds use `src/environments/environment.production.ts` through Angular file replacement. Set `apiBaseUrl` to the deployed API origin, or leave it empty when the API is available on the same origin through a reverse proxy. The API must allow the frontend origin in its CORS configuration.
+Development uses the API base URL defined in `src/environments/environment.ts`. The production
+Docker build requires `API_BASE_URL` and generates `src/environments/environment.production.ts`
+for Angular file replacement. A future same-origin architecture with a reverse proxy would require
+an explicit change to this configuration. The API must allow the frontend origin in its CORS
+configuration.
 
 Do not place the Railway URL inside components or services.
 
@@ -62,4 +66,4 @@ Decimal strings are converted only inside pure display formatters. The original 
 
 ## Current limitations
 
-This PR intentionally excludes authentication, charts, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, backtesting, and deployment configuration.
+This PR intentionally excludes authentication, charts, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, and backtesting.
