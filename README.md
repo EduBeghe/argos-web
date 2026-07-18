@@ -68,6 +68,10 @@ treated as a potentially truncated recent window and is not connected back to th
 current portfolio valuation is shown separately because it may be newer and is not inserted into the
 historical series.
 
+The chart uses a contextual Y-axis domain with readable USDT ticks; it does not force the scale to
+zero. The dashed reference line marks initial equity, and all X-axis timestamps are displayed in
+UTC. On narrow screens, intermediate time labels are hidden to preserve legibility.
+
 Missing Scores, Decisions, positions, candles, or an active Paper Run are normal display states. A failed refresh preserves previously loaded data. HTTP 409 is shown as unavailable valuation evidence rather than as an invented portfolio value.
 
 Decimal strings are converted only inside pure display formatters. The original values are never reinterpreted as frontend financial calculations.

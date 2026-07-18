@@ -39,6 +39,49 @@ describe('EquityHistoryChart', () => {
     ).toHaveLength(2);
     expect(fixture.nativeElement.textContent).toContain('10,100.00 USDT');
     expect(fixture.nativeElement.textContent).not.toContain('10,200.00 USDT');
+    expect(fixture.nativeElement.querySelector('.latest-label')?.textContent).toContain(
+      '10,100.00 USDT',
+    );
+  });
+
+  it('renders contextual USDT Y-axis ticks without forcing a narrow series to zero', async () => {
+    const fixture = await render([
+      paperSnapshot,
+      {
+        ...paperSnapshot,
+        id: 'narrow-latest',
+        scheduled_boundary: '2026-07-18T19:00:00Z',
+        equity: '10020',
+      },
+    ]);
+    const labels = [...fixture.nativeElement.querySelectorAll('.y-label')].map((element) =>
+      element.textContent.trim(),
+    );
+
+    expect(labels).toHaveLength(5);
+    expect(labels.every((label) => label.endsWith('USDT'))).toBe(true);
+    expect(labels.every((label) => Number(label.replace(/[^0-9.-]/g, '')) > 9000)).toBe(true);
+  });
+
+  it('renders UTC X-axis references from actual point timestamps', async () => {
+    const fixture = await render([paperSnapshot]);
+    const labels = [...fixture.nativeElement.querySelectorAll('.x-label')].map((element) =>
+      element.textContent.replace(/\s+/g, ' ').trim(),
+    );
+
+    expect(labels).toContain('18:00 UTC');
+    expect(labels).toContain('18:30 UTC');
+  });
+
+  it('labels the patterned initial-equity reference visibly', async () => {
+    const fixture = await render([paperSnapshot]);
+
+    expect(fixture.nativeElement.querySelector('.baseline-label')?.textContent).toContain(
+      'Initial equity · 10,000.00 USDT',
+    );
+    expect(
+      fixture.nativeElement.querySelector('.baseline').getAttribute('stroke-dasharray'),
+    ).not.toBe('');
   });
 
   it('sorts multiple snapshots and deduplicates stable boundaries', async () => {
@@ -63,6 +106,8 @@ describe('EquityHistoryChart', () => {
 
     expect(points).not.toContain('NaN');
     expect(points).not.toContain('Infinity');
+    expect(fixture.nativeElement.querySelectorAll('.y-label')).toHaveLength(5);
+    expect(fixture.nativeElement.querySelectorAll('.y-label')[0].textContent).toContain('USDT');
   });
 
   it('positions ascending and descending series in the expected visual direction', async () => {
@@ -146,6 +191,9 @@ describe('EquityHistoryChart', () => {
     const baseline = fixture.nativeElement.querySelector('.baseline');
     expect(baseline.getAttribute('y1')).not.toContain('NaN');
     expect(baseline.getAttribute('y1')).not.toContain('Infinity');
+    expect(fixture.nativeElement.querySelectorAll('.x-tick')).toHaveLength(5);
+    expect(fixture.nativeElement.querySelectorAll('.x-tick.intermediate')).toHaveLength(3);
+    expect(fixture.nativeElement.querySelectorAll('.x-tick:not(.intermediate)')).toHaveLength(2);
   });
 
   it('provides an accessible SVG and a visible textual point summary', async () => {
@@ -155,6 +203,7 @@ describe('EquityHistoryChart', () => {
     expect(svg.getAttribute('role')).toBe('img');
     expect(svg.querySelector('title')?.textContent).toContain('equity history');
     expect(svg.querySelector('desc')?.textContent).toContain('dashed horizontal line');
+    expect(svg.querySelector('desc')?.textContent).toContain('USDT and UTC axes');
     expect(fixture.nativeElement.textContent).toContain('First point');
     expect(fixture.nativeElement.textContent).toContain('Last point');
   });
