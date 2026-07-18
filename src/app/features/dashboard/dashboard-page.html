@@ -1,0 +1,124 @@
+<main>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Plataforma cuantitativa privada</p>
+      <h1>Argos</h1>
+      <p>Investigación y soporte de decisiones · Paper Trading</p>
+      @if (overview(); as data) {
+        <p class="generated">Actualizado: {{ data.generated_at | date: 'medium' : 'UTC' }} UTC</p>
+      }
+    </div>
+    <button type="button" (click)="refresh()" [disabled]="loading()">
+      {{ loading() ? 'Actualizando…' : 'Actualizar' }}
+    </button>
+  </header>
+
+  @if (loading() && !overview()) {
+    <section class="notice" aria-live="polite">Cargando overview de Argos…</section>
+  }
+
+  @if (error(); as message) {
+    <section class="notice error" role="alert">
+      <span>{{ message }}</span>
+      <button type="button" (click)="refresh()">Reintentar</button>
+    </section>
+  }
+
+  @if (overview(); as data) {
+    <section class="system-panel" aria-labelledby="system-title">
+      <div>
+        <p class="eyebrow" id="system-title">Estado del sistema</p>
+        <h2 [class.fresh]="data.system.market_data_fresh">
+          {{ data.system.market_data_fresh ? '✓ Datos actualizados' : '⚠ Datos desactualizados' }}
+        </h2>
+      </div>
+      <p>
+        <strong>{{ data.system.instruments_fresh }}</strong> /
+        {{ data.system.instruments_total }} instrumentos frescos
+      </p>
+    </section>
+
+    <section aria-labelledby="paper-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Simulación</p>
+          <h2 id="paper-title">Paper Trading</h2>
+        </div>
+      </div>
+      @if (data.paper.run && data.paper.portfolio && data.paper.performance) {
+        <div class="paper-grid">
+          <article class="summary-card hero-metric">
+            <span>Equity actual</span>
+            <strong>{{ formatMoney(data.paper.portfolio.equity) }}</strong>
+            <small
+              >Valuado: {{ data.paper.portfolio.valued_at | date: 'medium' : 'UTC' }} UTC</small
+            >
+          </article>
+          <article class="summary-card">
+            <span>Efectivo</span
+            ><strong>{{ formatMoney(data.paper.portfolio.current_cash) }}</strong>
+          </article>
+          <article class="summary-card">
+            <span>Posiciones</span
+            ><strong>{{ formatMoney(data.paper.portfolio.positions_market_value) }}</strong>
+          </article>
+          <article class="summary-card">
+            <span>P&amp;L total</span
+            ><strong>{{ formatMoney(data.paper.portfolio.total_pnl) }}</strong>
+          </article>
+          <article class="summary-card">
+            <span>Retorno total</span
+            ><strong>{{ formatPercentage(data.paper.portfolio.total_return) }}</strong>
+          </article>
+          <article class="summary-card">
+            <span>Drawdown actual</span
+            ><strong>{{ formatPercentage(data.paper.performance.current_drawdown) }}</strong>
+          </article>
+          <article class="summary-card">
+            <span>Drawdown máximo</span
+            ><strong>{{ formatPercentage(data.paper.performance.max_drawdown) }}</strong>
+          </article>
+          <article class="summary-card">
+            <span>Snapshots</span><strong>{{ data.paper.performance.snapshot_count }}</strong>
+          </article>
+        </div>
+        <div class="timeline-note">
+          <p>
+            <strong>Run {{ data.paper.run.status }}</strong> · Inicio:
+            {{ data.paper.run.started_at | date: 'medium' : 'UTC' }} UTC
+          </p>
+          <p>
+            Performance evaluada hasta
+            {{ data.paper.performance.evaluated_until | date: 'medium' : 'UTC' }} UTC. Puede ser
+            anterior a la valuación actual del portfolio.
+          </p>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <h3>Sin run activo</h3>
+          <p>
+            El mercado puede seguir disponible aunque todavía no exista una cuenta simulada activa.
+          </p>
+        </div>
+      }
+    </section>
+
+    <section aria-labelledby="instruments-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Catálogo</p>
+          <h2 id="instruments-title">Instrumentos analizados</h2>
+        </div>
+      </div>
+      <div class="instrument-grid">
+        @for (card of orderedInstruments(); track instrumentKey(card)) {
+          <app-instrument-card
+            [card]="card"
+            [valuedPosition]="valuedPosition(card)"
+            [currency]="data.paper.portfolio?.account_currency ?? 'USDT'"
+          />
+        }
+      </div>
+    </section>
+  }
+</main>
