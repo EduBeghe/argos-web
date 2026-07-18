@@ -27,8 +27,8 @@ describe('EquityHistoryChart', () => {
     );
     expect(fixture.nativeElement.querySelectorAll('circle')).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('10,000.00 USDT');
-    expect(summaryText(fixture, 1)).toBe('Change from startNo data');
-    expect(summaryText(fixture, 2)).toBe('Persisted returnNo data');
+    expect(summaryText(fixture, 1)).toBe('Change from start No data');
+    expect(summaryText(fixture, 2)).toBe('Persisted return No data');
   });
 
   it('renders one persisted snapshot without including current portfolio equity', async () => {
@@ -249,10 +249,10 @@ describe('EquityHistoryChart', () => {
     };
     const fixture = await render([latest, paperSnapshot]);
 
-    expect(summaryText(fixture, 0)).toBe('Latest persisted equity10,400.00 USDT');
+    expect(summaryText(fixture, 0)).toBe('Latest persisted equity 10,400.00 USDT');
     expect(summaryText(fixture, 1)).toBe('Change from start +400.00 USDT');
     expect(summaryText(fixture, 2)).toBe('Persisted return +4.00%');
-    expect(summaryText(fixture, 3)).toBe('Snapshots shown2');
+    expect(summaryText(fixture, 3)).toBe('Snapshots shown 2');
   });
 
   it('draws a complete short history from the run start', async () => {
@@ -285,7 +285,7 @@ describe('EquityHistoryChart', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Showing the latest 500 persisted snapshots.',
     );
-    expect(summaryText(fixture, 3)).toBe('Snapshots shown500');
+    expect(summaryText(fixture, 3)).toBe('Snapshots shown 500');
     expect(pointSummaryText(fixture, 0)).toContain('First point10,001.00 USDT');
     expect(pointSummaryText(fixture, 0)).not.toContain('First point10,000.00 USDT');
     const baseline = fixture.nativeElement.querySelector('.baseline');
@@ -333,7 +333,8 @@ function expectDomainContains(domainMin: number, domainMax: number, values: numb
 }
 
 function summaryText(fixture: ComponentFixture<EquityHistoryChart>, index: number): string {
-  return fixture.nativeElement.querySelectorAll('.chart-summary > div')[index].textContent.trim();
+  const summary = fixture.nativeElement.querySelectorAll('.chart-summary > div')[index];
+  return summary.textContent.replace(/\s+/g, ' ').trim();
 }
 
 function pointSummaryText(fixture: ComponentFixture<EquityHistoryChart>, index: number): string {
