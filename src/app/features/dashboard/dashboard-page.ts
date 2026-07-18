@@ -12,6 +12,7 @@ import { finalize, Subscription } from 'rxjs';
 
 import { EquityHistoryChart } from '../../shared/components/equity-history-chart/equity-history-chart';
 import { InstrumentCard } from '../../shared/components/instrument-card/instrument-card';
+import { MetricHelp } from '../../shared/components/metric-help/metric-help';
 import {
   decimalValueTone,
   formatCurrency,
@@ -32,7 +33,7 @@ import { PaperHistoryApiService } from '../paper-history/paper-history-api.servi
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [DatePipe, EquityHistoryChart, InstrumentCard],
+  imports: [DatePipe, EquityHistoryChart, InstrumentCard, MetricHelp],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -69,8 +69,15 @@ current portfolio valuation is shown separately because it may be newer and is n
 historical series.
 
 The chart uses a contextual Y-axis domain with readable USDT ticks; it does not force the scale to
-zero. The dashed reference line marks initial equity, and all X-axis timestamps are displayed in
-UTC. On narrow screens, intermediate time labels are hidden to preserve legibility.
+zero. Its X axis is a continuous UTC timeline with evenly distributed temporal references and a
+reduced tick set on narrow screens. The dashed reference line marks initial equity and is explained
+by a compact legend outside the plot.
+
+Visible financial metrics and technical indicators provide reusable contextual help on hover,
+keyboard focus, and click or tap. The explanations offer educational context about interpretation
+and limitations; they are not financial advice. Definitions live in
+`src/app/shared/metrics/metric-definitions.ts` so components use one typed source instead of
+duplicating explanation text.
 
 Missing Scores, Decisions, positions, candles, or an active Paper Run are normal display states. A failed refresh preserves previously loaded data. HTTP 409 is shown as unavailable valuation evidence rather than as an invented portfolio value.
 
@@ -78,4 +85,4 @@ Decimal strings are converted only inside pure display formatters. The original 
 
 ## Current limitations
 
-This PR intentionally excludes authentication, charts, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, and backtesting.
+This PR intentionally excludes authentication, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, and backtesting.

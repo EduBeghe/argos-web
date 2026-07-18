@@ -1,0 +1,73 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 0.35rem;
+  vertical-align: middle;
+}
+
+.metric-help-trigger {
+  display: inline-grid;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #60718a;
+  border-radius: 50%;
+  background: #15243a;
+  color: #b8c7d9;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+}
+
+.metric-help-trigger::before {
+  content: 'i';
+}
+
+.metric-help-trigger:hover,
+.metric-help-trigger:focus-visible,
+.metric-help-trigger[aria-expanded='true'] {
+  border-color: #8297b2;
+  background: #1c2e49;
+  color: #d5dfeb;
+}
+
+.metric-help-bubble {
+  position: fixed;
+  z-index: 1000;
+  max-height: min(22rem, calc(100vh - 1.5rem));
+  overflow: auto;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #3b4d67;
+  border-radius: 0.65rem;
+  background: #101d30;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 38%);
+  color: #c4d0df;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.metric-help-bubble strong {
+  color: #e0e8f2;
+}
+
+.metric-help-bubble p {
+  margin: 0.45rem 0 0;
+}
+
+.metric-help-bubble span {
+  color: #d2dce8;
+  font-weight: 600;
+}
+
+.metric-help-bubble .limitation {
+  color: #b8c5d5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metric-help-trigger,
+  .metric-help-bubble {
+    transition: none;
+  }
+}

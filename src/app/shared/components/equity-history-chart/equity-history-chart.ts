@@ -1,7 +1,19 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  HostListener,
+  inject,
+  input,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 
 import { PaperPortfolioSnapshot, PaperRun } from '../../../features/dashboard/dashboard.models';
+import { MetricHelp } from '../metric-help/metric-help';
 import {
   decimalValueTone,
   formatCurrency,
@@ -41,14 +53,35 @@ const Y_TICK_COUNT = 5;
 
 @Component({
   selector: 'app-equity-history-chart',
-  imports: [DatePipe],
+  imports: [DatePipe, MetricHelp],
   templateUrl: './equity-history-chart.html',
   styleUrl: './equity-history-chart.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EquityHistoryChart {
+export class EquityHistoryChart implements AfterViewInit, OnDestroy {
   readonly run = input.required<PaperRun>();
   readonly snapshots = input.required<PaperPortfolioSnapshot[]>();
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly layoutWidth = signal(CHART_WIDTH);
+  private resizeObserver: ResizeObserver | null = null;
+
+  ngAfterViewInit(): void {
+    this.measureLayout();
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.measureLayout());
+      this.resizeObserver.observe(this.element.nativeElement);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+  }
+
+  @HostListener('window:resize')
+  protected measureLayout(): void {
+    const width = this.element.nativeElement.getBoundingClientRect().width;
+    if (width > 0) this.layoutWidth.set(width);
+  }
 
   protected readonly isTruncatedWindow = computed(() => this.snapshots().length === SNAPSHOT_LIMIT);
   protected readonly orderedSnapshots = computed(() => {
@@ -110,8 +143,16 @@ export class EquityHistoryChart {
     const crossesDays =
       new Date(minTime).getUTCDate() !== new Date(maxTime).getUTCDate() ||
       maxTime - minTime >= 86_400_000;
-    const xTicks = timeTicks(points, crossesDays);
+    const xTickCount = this.layoutWidth() < 600 ? 2 : this.layoutWidth() < 760 ? 3 : 5;
+    const xTicks = timeTicks(minTime, maxTime, xTickCount, crossesDays);
     const lastPoint = points.at(-1)!;
+    const previousPoint = points.at(-2);
+    const labelBelow =
+      lastPoint.y <= PLOT_TOP + 22 || (previousPoint?.y ?? lastPoint.y) < lastPoint.y;
+    const latestLabelY = Math.min(
+      PLOT_TOP + drawableHeight - 8,
+      Math.max(PLOT_TOP + 14, lastPoint.y + (labelBelow ? 18 : -12)),
+    );
 
     return {
       points,
@@ -120,10 +161,12 @@ export class EquityHistoryChart {
       domainMin,
       domainMax,
       baselineY: yCoordinate(Number(this.run().initial_cash)),
-      latestLabelX:
-        lastPoint.x > CHART_WIDTH - PLOT_RIGHT - 150 ? lastPoint.x - 9 : lastPoint.x + 9,
-      latestLabelY: lastPoint.y < PLOT_TOP + 20 ? lastPoint.y + 20 : lastPoint.y - 10,
-      latestLabelAnchor: lastPoint.x > CHART_WIDTH - PLOT_RIGHT - 150 ? 'end' : 'start',
+      latestLabelX: Math.min(
+        PLOT_LEFT + drawableWidth - 9,
+        Math.max(PLOT_LEFT + 100, lastPoint.x - 9),
+      ),
+      latestLabelY,
+      latestLabelAnchor: 'end' as const,
     };
   });
 
@@ -180,26 +223,26 @@ function formatAxisValue(value: number): string {
   }).format(value);
 }
 
-function timeTicks(points: EquityPoint[], includeDate: boolean): TimeTick[] {
-  const indexes =
-    points.length === 1
-      ? [0]
-      : [
-          ...new Set([
-            0,
-            Math.round((points.length - 1) * 0.25),
-            Math.round((points.length - 1) * 0.5),
-            Math.round((points.length - 1) * 0.75),
-            points.length - 1,
-          ]),
-        ];
-  return indexes.map((index, tickIndex) => ({
-    timestamp: points[index].timestamp,
-    position: points[index].x,
-    label: formatUtcTick(points[index].timestamp, includeDate),
-    anchor: tickIndex === 0 ? 'start' : tickIndex === indexes.length - 1 ? 'end' : 'middle',
-    intermediate: tickIndex > 0 && tickIndex < indexes.length - 1,
-  }));
+function timeTicks(
+  minimumTime: number,
+  maximumTime: number,
+  count: number,
+  includeDate: boolean,
+): TimeTick[] {
+  const drawableWidth = CHART_WIDTH - PLOT_LEFT - PLOT_RIGHT;
+  const tickCount = maximumTime === minimumTime ? 1 : count;
+  return Array.from({ length: tickCount }, (_, index) => {
+    const fraction = tickCount === 1 ? 0.5 : index / (tickCount - 1);
+    const time = minimumTime + (maximumTime - minimumTime) * fraction;
+    const timestamp = new Date(time).toISOString();
+    return {
+      timestamp,
+      position: PLOT_LEFT + drawableWidth * fraction,
+      label: formatUtcTick(timestamp, includeDate),
+      anchor: index === 0 ? 'start' : index === tickCount - 1 ? 'end' : 'middle',
+      intermediate: index > 0 && index < tickCount - 1,
+    };
+  });
 }
 
 function formatUtcTick(timestamp: string, includeDate: boolean): string {

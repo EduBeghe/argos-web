@@ -119,15 +119,69 @@ describe('EquityHistoryChart', () => {
     expect(labels).toContain('18:30 UTC');
   });
 
-  it('labels the patterned initial-equity reference visibly', async () => {
-    const fixture = await render([paperSnapshot]);
-
-    expect(fixture.nativeElement.querySelector('.baseline-label')?.textContent).toContain(
-      'Initial equity · 10,000.00 USDT',
+  it('distributes timeline ticks evenly for irregularly clustered snapshots', async () => {
+    const irregularRun = { ...run, started_at: '2026-07-17T23:58:00Z' };
+    const snapshots = ['2026-07-18T19:00:00Z', '2026-07-18T21:30:00Z', '2026-07-18T22:00:00Z'].map(
+      (scheduledBoundary, index) => ({
+        ...paperSnapshot,
+        id: `irregular-${index}`,
+        scheduled_boundary: scheduledBoundary,
+        equity: String(10004 + index * 4),
+      }),
     );
-    expect(
-      fixture.nativeElement.querySelector('.baseline').getAttribute('stroke-dasharray'),
-    ).not.toBe('');
+    const fixture = await render(snapshots, irregularRun);
+    const ticks = [...fixture.nativeElement.querySelectorAll('.x-tick')];
+    const positions = ticks.map((tick) => Number(tick.querySelector('line').getAttribute('x1')));
+    const gaps = positions.slice(1).map((position, index) => position - positions[index]);
+    const labels = ticks.map((tick) => tick.textContent.replace(/\s+/g, ' ').trim());
+
+    expect(ticks).toHaveLength(5);
+    expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThan(0.01);
+    expect(labels[0]).toContain('Jul 17');
+    expect(labels.at(-1)).toContain('Jul 18');
+    expect(ticks[0].querySelector('text').getAttribute('text-anchor')).toBe('start');
+    expect(ticks.at(-1)?.querySelector('text').getAttribute('text-anchor')).toBe('end');
+    expect(positions[0]).toBeGreaterThanOrEqual(0);
+    expect(positions.at(-1)).toBeLessThanOrEqual(800);
+  });
+
+  it('generates a reduced temporal tick set for a narrow layout', async () => {
+    const fixture = await render([paperSnapshot]);
+    vi.spyOn(fixture.nativeElement, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ width: 480, height: 320 }),
+    );
+
+    window.dispatchEvent(new Event('resize'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.x-tick')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('.x-tick.intermediate')).toHaveLength(0);
+  });
+
+  it('moves the initial-equity explanation into an external dashed-line legend', async () => {
+    const fixture = await render([paperSnapshot]);
+    const svg = fixture.nativeElement.querySelector('svg');
+    const legend = fixture.nativeElement.querySelector('.chart-legend');
+
+    expect(svg.textContent).not.toContain('Initial equity');
+    expect(legend.textContent.replace(/\s+/g, ' ').trim()).toContain(
+      'Initial equity 10,000.00 USDT',
+    );
+    expect(legend.querySelector('.legend-line')).not.toBeNull();
+    expect(svg.querySelector('.baseline')).not.toBeNull();
+  });
+
+  it('keeps the latest persisted annotation within safe plot bounds', async () => {
+    const fixture = await render([{ ...paperSnapshot, equity: '10012' }]);
+    const annotation = fixture.nativeElement.querySelector('.latest-label');
+    const x = Number(annotation.getAttribute('x'));
+    const y = Number(annotation.getAttribute('y'));
+
+    expect(x).toBeGreaterThanOrEqual(112);
+    expect(x).toBeLessThanOrEqual(770);
+    expect(y).toBeGreaterThanOrEqual(34);
+    expect(y).toBeLessThanOrEqual(248);
+    expect(annotation.getAttribute('text-anchor')).toBe('end');
   });
 
   it('sorts multiple snapshots and deduplicates stable boundaries', async () => {
