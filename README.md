@@ -60,6 +60,14 @@ The Angular 22 scaffold uses standalone components, strict TypeScript, routing, 
 
 The `/` route makes one request to `{API_BASE_URL}/dashboard/overview`. Instrument cards are generated from the ordered catalog response and keyed by asset, provider, market type, and interval. There are no BTC- or ETH-specific components and no requests per instrument.
 
+When the overview contains an active Paper Run, the dashboard makes one additional request to
+`/paper/equity-snapshots` for the latest 500 persisted snapshots. Results are ordered chronologically
+for display. When fewer than 500 snapshots are available, equity history starts at the run's initial
+cash and continues through confirmed 30-minute snapshot boundaries. A full 500-point response is
+treated as a potentially truncated recent window and is not connected back to the run start. The
+current portfolio valuation is shown separately because it may be newer and is not inserted into the
+historical series.
+
 Missing Scores, Decisions, positions, candles, or an active Paper Run are normal display states. A failed refresh preserves previously loaded data. HTTP 409 is shown as unavailable valuation evidence rather than as an invented portfolio value.
 
 Decimal strings are converted only inside pure display formatters. The original values are never reinterpreted as frontend financial calculations.

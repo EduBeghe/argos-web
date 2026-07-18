@@ -65,6 +65,21 @@ button:disabled {
   align-items: center;
   gap: 1rem;
 }
+.history-status {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  color: #aab9cb;
+  background: #17243a;
+  border: 1px solid #324665;
+  border-radius: 0.75rem;
+}
+.history-status.warning {
+  border-color: #8f7351;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
 .system-panel {
   margin: 2rem 0 3rem;
   padding: 1.2rem 1.4rem;

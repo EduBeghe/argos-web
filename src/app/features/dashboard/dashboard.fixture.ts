@@ -1,4 +1,8 @@
-import { DashboardOverview, MarketInstrumentCard } from './dashboard.models';
+import {
+  DashboardOverview,
+  MarketInstrumentCard,
+  PaperPortfolioSnapshot,
+} from './dashboard.models';
 
 export const instrumentCard: MarketInstrumentCard = {
   instrument: {
@@ -86,4 +90,20 @@ export const dashboardWithPaper: DashboardOverview = {
       evaluated_until: '2026-07-18T19:30:00Z',
     },
   },
+};
+
+export const paperSnapshot: PaperPortfolioSnapshot = {
+  id: 'snapshot-id',
+  run_id: 'run-id',
+  scheduled_boundary: '2026-07-18T18:30:00Z',
+  recorded_at: '2026-07-18T18:30:02Z',
+  account_currency: 'USDT',
+  initial_cash: '10000',
+  current_cash: '9000',
+  positions_market_value: '1100',
+  equity: '10100',
+  total_pnl: '100',
+  total_return: '0.01',
+  configuration_version: 1,
+  positions: [],
 };
