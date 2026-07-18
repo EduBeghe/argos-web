@@ -1,0 +1,136 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+main {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2.5rem 0 4rem;
+}
+.page-header,
+.system-panel,
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  letter-spacing: -0.06em;
+}
+h2 {
+  margin: 0.15rem 0;
+}
+.eyebrow {
+  color: #84a3c7;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  margin: 0;
+}
+.generated {
+  color: #91a4bd;
+}
+button {
+  border: 1px solid #5a769b;
+  background: #1d4f78;
+  color: white;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: 3px solid #90caf9;
+  outline-offset: 3px;
+}
+button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.notice,
+.empty-state {
+  margin: 2rem 0;
+  padding: 1rem 1.2rem;
+  background: #17243a;
+  border: 1px solid #324665;
+  border-radius: 0.8rem;
+}
+.notice.error {
+  border-color: #a85b55;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.system-panel {
+  margin: 2rem 0 3rem;
+  padding: 1.2rem 1.4rem;
+  background: #111c2f;
+  border: 1px solid #31425b;
+  border-radius: 1rem;
+}
+.system-panel h2 {
+  color: #ffb4a5;
+}
+.system-panel h2.fresh {
+  color: #76d8b1;
+}
+section {
+  margin-top: 3rem;
+}
+.paper-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8rem;
+}
+.summary-card {
+  background: #111c2f;
+  border: 1px solid #263650;
+  border-radius: 0.8rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.summary-card span,
+.summary-card small {
+  color: #91a4bd;
+}
+.summary-card strong {
+  font-size: 1.2rem;
+}
+.hero-metric {
+  grid-column: span 2;
+}
+.hero-metric strong {
+  font-size: 2rem;
+}
+.timeline-note {
+  color: #aab9cb;
+  margin-top: 1rem;
+}
+.instrument-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (max-width: 760px) {
+  main {
+    width: min(100% - 1rem, 1180px);
+    padding-top: 1rem;
+  }
+  .page-header,
+  .system-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .paper-grid,
+  .instrument-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-metric {
+    grid-column: auto;
+  }
+}
