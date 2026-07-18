@@ -27,7 +27,7 @@
   </p>
 
   <section>
-    <h4>Technical score</h4>
+    <h4>Technical score <app-metric-help metric="overallScore" /></h4>
     @if (card().latest_score; as score) {
       <div class="metric-row">
         <strong>{{ formatDecimal(score.overall_score, 3) }}</strong>
@@ -41,22 +41,25 @@
           {{ interpretationLabel(score.interpretation) }}
         </span>
       </div>
-      <p>Signal strength: {{ formatDecimal(score.signal_strength, 3) }}</p>
+      <p>
+        Signal strength <app-metric-help metric="signalStrength" />:
+        {{ formatDecimal(score.signal_strength, 3) }}
+      </p>
       <dl class="explanations">
         <div>
-          <dt>Trend</dt>
+          <dt>Trend <app-metric-help metric="trendScore" /></dt>
           <dd>{{ score.explanations.trend }}</dd>
         </div>
         <div>
-          <dt>Momentum</dt>
+          <dt>Momentum <app-metric-help metric="momentumScore" /></dt>
           <dd>{{ score.explanations.momentum }}</dd>
         </div>
         <div>
-          <dt>Volume</dt>
+          <dt>Volume <app-metric-help metric="volumeActivity" /></dt>
           <dd>{{ score.explanations.volume }}</dd>
         </div>
         <div>
-          <dt>Volatility</dt>
+          <dt>Volatility <app-metric-help metric="volatilityRatio" /></dt>
           <dd>{{ score.explanations.volatility }}</dd>
         </div>
       </dl>
@@ -67,7 +70,7 @@
   </section>
 
   <section>
-    <h4>Latest decision</h4>
+    <h4>Latest decision <app-metric-help metric="latestDecision" /></h4>
     @if (card().latest_decision; as decision) {
       <p class="action">{{ decisionActionLabel(decision.action) }}</p>
       <p>{{ decision.explanation }}</p>
@@ -82,19 +85,19 @@
     @if (card().open_position; as position) {
       <dl class="position-grid">
         <div>
-          <dt>Status</dt>
+          <dt>Status <app-metric-help metric="positionStatus" /></dt>
           <dd>{{ positionStatusLabel(position.status) }}</dd>
         </div>
         <div>
-          <dt>Quantity</dt>
+          <dt>Quantity <app-metric-help metric="quantity" /></dt>
           <dd>{{ formatQuantity(position.quantity) }}</dd>
         </div>
         <div>
-          <dt>Average entry price</dt>
+          <dt>Average entry price <app-metric-help metric="averageEntryPrice" /></dt>
           <dd>{{ formatMoney(position.average_entry_price) }}</dd>
         </div>
         <div>
-          <dt>Current exposure</dt>
+          <dt>Current exposure <app-metric-help metric="marketValue" /></dt>
           <dd>{{ formatMoney(valuedPosition()?.market_value ?? null) }}</dd>
         </div>
       </dl>

@@ -1,0 +1,39 @@
+<button
+  type="button"
+  class="metric-help-trigger"
+  [attr.aria-label]="'Learn about ' + definition().title"
+  [attr.aria-expanded]="open()"
+  [attr.aria-describedby]="open() ? tooltipId : null"
+  (mouseenter)="handleTriggerEnter()"
+  (mouseleave)="handleTriggerLeave($event)"
+  (focus)="handleFocus()"
+  (focusout)="handleFocusOut($event)"
+  (pointerdown)="$event.preventDefault()"
+  (click)="togglePinned()"
+></button>
+
+@if (open()) {
+  <section
+    class="metric-help-bubble"
+    role="tooltip"
+    [id]="tooltipId"
+    [style.left.px]="position().left"
+    [style.top.px]="position().top"
+    [style.width.px]="position().width"
+    [style.max-height.px]="position().maxHeight"
+    (mouseenter)="handleTooltipEnter()"
+    (mouseleave)="handleTooltipLeave($event)"
+  >
+    <strong>{{ definition().title }}</strong>
+    <p>{{ definition().explanation }}</p>
+    @if (definition().rangeOrUnit; as rangeOrUnit) {
+      <p><span>Unit or range:</span> {{ rangeOrUnit }}</p>
+    }
+    @if (definition().interpretation; as interpretation) {
+      <p>{{ interpretation }}</p>
+    }
+    @if (definition().limitation; as limitation) {
+      <p class="limitation"><span>Important:</span> {{ limitation }}</p>
+    }
+  </section>
+}

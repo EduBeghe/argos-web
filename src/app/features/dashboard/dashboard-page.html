@@ -55,25 +55,26 @@
         @if (data.paper.portfolio; as portfolio) {
           <div class="paper-grid">
             <article class="summary-card hero-metric">
-              <span>Current equity</span>
+              <span>Current equity <app-metric-help metric="equity" /></span>
               <strong>{{ formatMoney(portfolio.equity) }}</strong>
               <small>Valued: {{ portfolio.valued_at | date: 'medium' : 'UTC' }} UTC</small>
             </article>
             <article class="summary-card">
-              <span>Available cash</span><strong>{{ formatMoney(portfolio.current_cash) }}</strong>
+              <span>Available cash <app-metric-help metric="currentCash" /></span
+              ><strong>{{ formatMoney(portfolio.current_cash) }}</strong>
             </article>
             <article class="summary-card">
-              <span>Position value</span
+              <span>Position value <app-metric-help metric="positionsMarketValue" /></span
               ><strong>{{ formatMoney(portfolio.positions_market_value) }}</strong>
             </article>
             <article class="summary-card">
-              <span>Total P&amp;L</span
+              <span>Total P&amp;L <app-metric-help metric="totalPnl" /></span
               ><strong [class]="'value-' + decimalValueTone(portfolio.total_pnl)">{{
                 formatSignedMoney(portfolio.total_pnl)
               }}</strong>
             </article>
             <article class="summary-card">
-              <span>Total return</span
+              <span>Total return <app-metric-help metric="totalReturn" /></span
               ><strong [class]="'value-' + decimalValueTone(portfolio.total_return ?? '0')">{{
                 portfolio.total_return === null
                   ? 'No data'
@@ -87,15 +88,16 @@
         @if (data.paper.performance; as performance) {
           <div class="paper-grid">
             <article class="summary-card">
-              <span>Current drawdown</span
+              <span>Current drawdown <app-metric-help metric="currentDrawdown" /></span
               ><strong>{{ formatPercentage(performance.current_drawdown) }}</strong>
             </article>
             <article class="summary-card">
-              <span>Maximum drawdown</span
+              <span>Maximum drawdown <app-metric-help metric="maximumDrawdown" /></span
               ><strong>{{ formatPercentage(performance.max_drawdown) }}</strong>
             </article>
             <article class="summary-card">
-              <span>Snapshots</span><strong>{{ performance.snapshot_count }}</strong>
+              <span>Snapshots <app-metric-help metric="snapshotCount" /></span
+              ><strong>{{ performance.snapshot_count }}</strong>
             </article>
           </div>
           <div class="timeline-note">

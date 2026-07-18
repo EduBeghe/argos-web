@@ -6,6 +6,7 @@ import {
   ValuedPaperPosition,
 } from '../../../features/dashboard/dashboard.models';
 import { formatCurrency, formatDecimal, formatQuantity } from '../../formatting/decimal-format';
+import { MetricHelp } from '../metric-help/metric-help';
 import {
   assetClassLabel,
   decisionActionLabel,
@@ -16,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-instrument-card',
-  imports: [DatePipe],
+  imports: [DatePipe, MetricHelp],
   templateUrl: './instrument-card.html',
   styleUrl: './instrument-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

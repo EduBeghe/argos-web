@@ -1,11 +1,11 @@
 <article class="history-card">
   <div class="chart-summary">
     <div>
-      <span>Latest persisted equity</span>
+      <span>Latest persisted equity <app-metric-help metric="persistedEquity" /></span>
       <strong>{{ formatMoney(latestSnapshot()?.equity ?? run().initial_cash) }}</strong>
     </div>
     <div>
-      <span>Change from start</span>
+      <span>Change from start <app-metric-help metric="changeFromStart" /></span>
       @if (latestSnapshot(); as latest) {
         <strong [class]="'value-' + decimalValueTone(latest.total_pnl)">
           {{ formatSignedMoney(latest.total_pnl) }}
@@ -15,7 +15,7 @@
       }
     </div>
     <div>
-      <span>Persisted return</span>
+      <span>Persisted return <app-metric-help metric="persistedReturn" /></span>
       @if (latestSnapshot()?.total_return; as persistedReturn) {
         <strong [class]="'value-' + decimalValueTone(persistedReturn)">
           {{ formatSignedPercentage(persistedReturn) }}
@@ -25,9 +25,15 @@
       }
     </div>
     <div>
-      <span>Snapshots shown</span>
+      <span>Snapshots shown <app-metric-help metric="snapshotCount" /></span>
       <strong>{{ orderedSnapshots().length }}</strong>
     </div>
+  </div>
+
+  <div class="chart-legend" aria-label="Chart reference">
+    <span class="legend-line" aria-hidden="true"></span>
+    <span>Initial equity <app-metric-help metric="initialEquity" /></span>
+    <strong>{{ formatMoney(run().initial_cash) }}</strong>
   </div>
 
   <svg
@@ -39,8 +45,8 @@
     <title id="equity-chart-title">Persisted Paper Trading equity history</title>
     <desc id="equity-chart-description">
       Equity through persisted 30-minute boundaries with contextual USDT and UTC axes. When the
-      complete available history is shown, the series starts with initial cash. The labeled dashed
-      horizontal line always marks initial equity.
+      complete available history is shown, the series starts with initial cash. The dashed
+      horizontal line marks initial equity and is identified by the legend outside the plot.
     </desc>
     @for (tick of yTicks(); track tick.value) {
       <line
@@ -73,13 +79,6 @@
       </g>
     }
     <line class="baseline" x1="112" x2="770" [attr.y1]="baselineY()" [attr.y2]="baselineY()" />
-    <text
-      class="baseline-label"
-      x="120"
-      [attr.y]="baselineY() < 52 ? baselineY() + 17 : baselineY() - 8"
-    >
-      Initial equity · {{ formatMoney(run().initial_cash) }}
-    </text>
     <polyline class="equity-line" [attr.points]="polylinePoints()" />
     <circle class="endpoint" [attr.cx]="firstPoint().x" [attr.cy]="firstPoint().y" r="4" />
     @if (latestSnapshot()) {

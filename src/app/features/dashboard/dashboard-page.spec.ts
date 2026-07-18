@@ -66,6 +66,22 @@ describe('DashboardPage', () => {
     expect(historyApi.getEquitySnapshots).toHaveBeenCalledWith('run-id');
   });
 
+  it('keeps authoritative financial formatting unchanged when contextual help opens', () => {
+    api.getOverview.mockReturnValue(of(dashboardWithPaper));
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    const equityValue = fixture.nativeElement.querySelector('.hero-metric strong');
+    const valueBeforeHelp = equityValue.textContent.trim();
+    const helpTrigger = fixture.nativeElement.querySelector('.hero-metric app-metric-help button');
+
+    helpTrigger.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="tooltip"]')).not.toBeNull();
+    expect(equityValue.textContent.trim()).toBe(valueBeforeHelp);
+    expect(valueBeforeHelp).toBe('10,200.00 USDT');
+  });
+
   it('replaces history when the active run changes and ignores the old response', () => {
     const runAHistory = new Subject<PaperPortfolioSnapshot[]>();
     const runBHistory = new Subject<PaperPortfolioSnapshot[]>();
