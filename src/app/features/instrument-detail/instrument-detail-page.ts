@@ -11,7 +11,7 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin, Observable, Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 
 import { MetricHelp } from '../../shared/components/metric-help/metric-help';
 import {
@@ -30,6 +30,7 @@ import {
   marketTypeLabel,
   positionStatusLabel,
 } from '../../shared/formatting/presentation-labels';
+import { DashboardOverview, InstrumentDefinition } from '../dashboard/dashboard.models';
 import { PriceHistoryChart } from './price-history-chart';
 import { ScoreHistoryChart } from './score-history-chart';
 import { HistoryRequest, InstrumentHistoryApiService } from './instrument-history-api.service';
@@ -65,14 +66,28 @@ export class InstrumentDetailPage implements OnDestroy {
   readonly selectedRange = signal<HistoryRange>('24h');
   readonly window = signal(historyWindow('24h'));
   readonly invalidIdentity = signal<string | null>(null);
-  readonly context = signal<InstrumentContext | null>(null);
+  readonly definition = signal<InstrumentDefinition | null>(null);
+  readonly overview = signal<DashboardOverview | null>(null);
   readonly contextState = signal<CollectionState>('loading');
   readonly contextMessage = signal<string | null>(null);
+  readonly overviewState = signal<CollectionState>('loading');
+  readonly overviewMessage = signal<string | null>(null);
   readonly candles = signal(emptyCollection<MarketCandle>());
   readonly scores = signal(emptyCollection<MarketScore>());
   readonly decisions = signal(emptyCollection<DecisionSnapshot>());
   readonly trades = signal(emptyCollection<PaperTrade>());
   readonly compactCharts = signal(false);
+
+  readonly context = computed<InstrumentContext | null>(() => {
+    const definition = this.definition();
+    if (!definition) return null;
+    const overview = this.overview();
+    const card =
+      overview?.instruments.find((item) => sameIdentity(item.instrument, definition)) ?? null;
+    const position =
+      overview?.paper.portfolio?.positions.find((item) => sameIdentity(item, definition)) ?? null;
+    return { definition, card, position };
+  });
 
   readonly events = computed(() => {
     const decisions = this.decisions().data.map((value) => ({
@@ -127,7 +142,7 @@ export class InstrumentDetailPage implements OnDestroy {
   }
 
   protected formatRequestedPercentage(value: string | null): string {
-    return value === null ? 'None' : `${formatDecimal(value, 2)}%`;
+    return value === null ? 'None' : formatPercentage(value);
   }
 
   selectRange(range: HistoryRange): void {
@@ -143,13 +158,17 @@ export class InstrumentDetailPage implements OnDestroy {
     if (!request) return;
     const generation = this.generation;
     if (kind === 'candles')
-      this.loadCollection(this.candles, this.api.getCandles(request), generation);
+      this.refreshCollection(this.candles, this.api.getCandles(request), generation);
     if (kind === 'scores')
-      this.loadCollection(this.scores, this.api.getScores(request), generation);
+      this.refreshCollection(this.scores, this.api.getScores(request), generation);
     if (kind === 'decisions')
-      this.loadCollection(this.decisions, this.api.getDecisions(request), generation);
+      this.refreshCollection(this.decisions, this.api.getDecisions(request), generation);
     if (kind === 'trades')
-      this.loadCollection(this.trades, this.api.getTrades(request), generation);
+      this.refreshCollection(this.trades, this.api.getTrades(request), generation);
+  }
+
+  retryOverview(): void {
+    this.loadOverview(this.generation);
   }
 
   protected hasTrade(decision: DecisionSnapshot): boolean {
@@ -185,13 +204,17 @@ export class InstrumentDetailPage implements OnDestroy {
     const identity = this.identity()!;
     this.contextState.set('loading');
     this.contextMessage.set(null);
-    this.context.set(null);
+    this.definition.set(null);
+    this.overviewState.set('loading');
+    this.overviewMessage.set(null);
+    this.overview.set(null);
+    this.candles.set(emptyCollection<MarketCandle>());
+    this.scores.set(emptyCollection<MarketScore>());
+    this.decisions.set(emptyCollection<DecisionSnapshot>());
+    this.trades.set(emptyCollection<PaperTrade>());
     this.requests.add(
-      forkJoin({
-        instruments: this.api.getInstruments(),
-        overview: this.api.getOverview(),
-      }).subscribe({
-        next: ({ instruments, overview }) => {
+      this.api.getInstruments().subscribe({
+        next: (instruments) => {
           if (generation !== this.generation) return;
           const definition = instruments.find((item) => sameIdentity(item, identity));
           if (!definition) {
@@ -199,13 +222,13 @@ export class InstrumentDetailPage implements OnDestroy {
             this.contextMessage.set('This instrument is not present in the Argos catalog.');
             return;
           }
-          const card =
-            overview.instruments.find((item) => sameIdentity(item.instrument, identity)) ?? null;
-          const position =
-            overview.paper.portfolio?.positions.find((item) => sameIdentity(item, identity)) ??
-            null;
-          this.context.set({ definition, card, position });
+          this.definition.set(definition);
           this.contextState.set('success');
+          const request = this.request()!;
+          this.loadCollection(this.candles, this.api.getCandles(request), generation);
+          this.loadCollection(this.scores, this.api.getScores(request), generation);
+          this.loadCollection(this.decisions, this.api.getDecisions(request), generation);
+          this.loadCollection(this.trades, this.api.getTrades(request), generation);
         },
         error: () => {
           if (generation !== this.generation) return;
@@ -214,11 +237,26 @@ export class InstrumentDetailPage implements OnDestroy {
         },
       }),
     );
-    const request = this.request()!;
-    this.loadCollection(this.candles, this.api.getCandles(request), generation);
-    this.loadCollection(this.scores, this.api.getScores(request), generation);
-    this.loadCollection(this.decisions, this.api.getDecisions(request), generation);
-    this.loadCollection(this.trades, this.api.getTrades(request), generation);
+    this.loadOverview(generation);
+  }
+
+  private loadOverview(generation: number): void {
+    this.overviewState.set('loading');
+    this.overviewMessage.set(null);
+    this.requests.add(
+      this.api.getOverview().subscribe({
+        next: (overview) => {
+          if (generation !== this.generation) return;
+          this.overview.set(overview);
+          this.overviewState.set('success');
+        },
+        error: () => {
+          if (generation !== this.generation) return;
+          this.overviewState.set('error');
+          this.overviewMessage.set('Current dashboard context could not be loaded.');
+        },
+      }),
+    );
   }
 
   private loadCollection<T>(
@@ -242,6 +280,30 @@ export class InstrumentDetailPage implements OnDestroy {
               error.status === 404
                 ? 'No active Paper run is available.'
                 : 'This history could not be loaded.',
+          });
+        },
+      }),
+    );
+  }
+
+  private refreshCollection<T>(
+    target: WritableSignal<HistoricalCollection<T>>,
+    source: Observable<T[]>,
+    generation: number,
+  ): void {
+    const previous = target();
+    target.set({ ...previous, message: null });
+    this.requests.add(
+      source.subscribe({
+        next: (data) => {
+          if (generation !== this.generation) return;
+          target.set({ state: data.length ? 'success' : 'empty', data, message: null });
+        },
+        error: () => {
+          if (generation !== this.generation) return;
+          target.set({
+            ...previous,
+            message: 'Refresh failed. Previously loaded history remains visible.',
           });
         },
       }),

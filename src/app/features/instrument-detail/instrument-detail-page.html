@@ -41,6 +41,16 @@
         }
       </header>
 
+      @if (overviewState() === 'loading') {
+        <div class="context-state" aria-live="polite">Loading current dashboard context…</div>
+      }
+      @if (overviewState() === 'error') {
+        <div class="context-state error" role="alert">
+          <span>{{ overviewMessage() }}</span>
+          <button type="button" (click)="retryOverview()">Retry current context</button>
+        </div>
+      }
+
       <section class="range-bar" aria-label="History range">
         <span>UTC history range</span>
         <div>
@@ -72,7 +82,9 @@
         </article>
         <article>
           <span>Latest score <app-metric-help metric="overallScore" /></span>
-          @if (data.card?.latest_score; as score) {
+          @if (overviewState() === 'error') {
+            <strong>Unavailable</strong>
+          } @else if (data.card?.latest_score; as score) {
             <strong>{{ formatDecimal(score.overall_score, 3) }}</strong
             ><small>{{ interpretationLabel(score.interpretation) }}</small>
           } @else {
@@ -81,7 +93,9 @@
         </article>
         <article>
           <span>Latest Decision <app-metric-help metric="latestDecision" /></span>
-          @if (data.card?.latest_decision; as decision) {
+          @if (overviewState() === 'error') {
+            <strong>Unavailable</strong>
+          } @else if (data.card?.latest_decision; as decision) {
             <strong>{{ decisionActionLabel(decision.action) }}</strong
             ><small>{{ decision.decision_timestamp | date: 'medium' : 'UTC' }} UTC</small>
           } @else {
@@ -90,7 +104,9 @@
         </article>
         <article>
           <span>Position <app-metric-help metric="positionStatus" /></span>
-          @if (data.card?.open_position; as position) {
+          @if (overviewState() === 'error') {
+            <strong>Unavailable</strong>
+          } @else if (data.card?.open_position; as position) {
             <strong>{{ positionStatusLabel(position.status) }}</strong
             ><small>{{ formatQuantity(position.quantity) }} units</small>
           } @else {
@@ -107,6 +123,12 @@
           <div class="collection-state error" role="alert">
             <span>{{ candles().message }}</span
             ><button type="button" (click)="retry('candles')">Retry price history</button>
+          </div>
+        }
+        @if (candles().state !== 'error' && candles().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ candles().message }}</span>
+            <button type="button" (click)="retry('candles')">Retry price history</button>
           </div>
         }
         @if (candles().state === 'success' || candles().state === 'empty') {
@@ -130,6 +152,12 @@
             ><button type="button" (click)="retry('scores')">Retry Score history</button>
           </div>
         }
+        @if (scores().state !== 'error' && scores().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ scores().message }}</span>
+            <button type="button" (click)="retry('scores')">Retry Score history</button>
+          </div>
+        }
         @if (scores().state === 'success' || scores().state === 'empty') {
           <app-score-history-chart
             [scores]="scores().data"
@@ -143,7 +171,13 @@
 
       <section class="position-card" aria-labelledby="position-title">
         <h2 id="position-title">Current position</h2>
-        @if (data.position; as position) {
+        @if (overviewState() === 'error') {
+          <p class="empty">
+            Current position is unavailable because dashboard context could not be loaded.
+          </p>
+        } @else if (overviewState() === 'loading') {
+          <p class="empty">Loading current position…</p>
+        } @else if (data.position; as position) {
           <dl>
             <div>
               <dt>Quantity <app-metric-help metric="quantity" /></dt>
@@ -198,10 +232,22 @@
             ><button type="button" (click)="retry('decisions')">Retry Decisions</button>
           </div>
         }
+        @if (decisions().state !== 'error' && decisions().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ decisions().message }}</span>
+            <button type="button" (click)="retry('decisions')">Retry Decisions</button>
+          </div>
+        }
         @if (trades().state === 'error') {
           <div class="collection-state error">
             <span>{{ trades().message }}</span
             ><button type="button" (click)="retry('trades')">Retry Trades</button>
+          </div>
+        }
+        @if (trades().state !== 'error' && trades().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ trades().message }}</span>
+            <button type="button" (click)="retry('trades')">Retry Trades</button>
           </div>
         }
         @if (!events().length && decisions().state !== 'loading' && trades().state !== 'loading') {

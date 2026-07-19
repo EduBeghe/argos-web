@@ -101,7 +101,11 @@ The page requests bounded, ascending, synchronized UTC windows from:
 - `GET /market/decisions`
 - `GET /paper/trades`
 
-Each collection loads and retries independently. Persisted Scores are analytical model evidence;
+The instrument catalog validates and describes the complete identity independently from the
+dashboard overview. The overview supplies optional current Score, Decision, freshness, and position
+context; if it is unavailable, persisted histories remain usable and the current position is shown
+as unavailable. Each historical collection loads and retries independently. A failed retry preserves
+and continues rendering its previously loaded data while exposing a refresh error. Persisted Scores are analytical model evidence;
 Decision Snapshots are immutable strategy conclusions; Paper Trades are simulated executions. The
 frontend never reconstructs one from another, and a `NO_ACTION` Decision does not create a Trade
 marker. The price chart is a dependency-free close-price line with Decision and Trade markers. The

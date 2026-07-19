@@ -111,11 +111,25 @@ button.selected {
   margin-top: 1rem;
 }
 .collection-state,
+.context-state,
 .page-state {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem;
+}
+.context-state {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #263650;
+  border-radius: 0.75rem;
+  background: #111c2f;
+}
+.refresh-error {
+  color: #d7b18c;
 }
 .page-state {
   display: block;
