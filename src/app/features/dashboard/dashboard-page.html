@@ -67,6 +67,7 @@
           <span class="run-status">{{ paperRunStatusLabel(run.status) }}</span>
         }
       </div>
+      <a class="secondary-action" routerLink="/evaluation">View strategy evaluation</a>
       @if (data.paper.run; as run) {
         <div class="paper-primary-grid">
           @if (data.paper.portfolio; as portfolio) {

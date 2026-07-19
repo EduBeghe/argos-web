@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { finalize, Subscription } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 import { EquityHistoryChart } from '../../shared/components/equity-history-chart/equity-history-chart';
 import { InstrumentCard } from '../../shared/components/instrument-card/instrument-card';
@@ -33,7 +34,7 @@ import { PaperHistoryApiService } from '../paper-history/paper-history-api.servi
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [DatePipe, EquityHistoryChart, InstrumentCard, MetricHelp],
+  imports: [DatePipe, EquityHistoryChart, InstrumentCard, MetricHelp, RouterLink],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

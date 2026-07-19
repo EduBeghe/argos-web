@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { Observable, of, Subject, throwError } from 'rxjs';
 
 import { DashboardApiService } from './dashboard-api.service';
@@ -23,10 +24,22 @@ describe('DashboardPage', () => {
     TestBed.configureTestingModule({
       imports: [DashboardPage],
       providers: [
+        provideRouter([{ path: 'evaluation', component: DashboardPage }]),
         { provide: DashboardApiService, useValue: api },
         { provide: PaperHistoryApiService, useValue: historyApi },
       ],
     });
+  });
+
+  it('navigates to the dedicated Strategy evaluation route', async () => {
+    api.getOverview.mockReturnValue(of(dashboardWithPaper));
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    (
+      fixture.nativeElement.querySelector('a[routerLink="/evaluation"]') as HTMLAnchorElement
+    ).click();
+    await fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe('/evaluation');
   });
 
   it('shows initial loading and then a data-driven instrument with no active run', () => {

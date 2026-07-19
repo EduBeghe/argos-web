@@ -119,6 +119,27 @@ Missing Scores, Decisions, positions, candles, or an active Paper Run are normal
 
 Decimal strings are converted only inside pure display formatters. The original values are never reinterpreted as frontend financial calculations.
 
+## Strategy evaluation
+
+The `/evaluation` route loads the authoritative read-only `GET /paper/evaluation` response and
+keeps the dashboard focused by placing detailed Strategy evidence on a dedicated page. Its primary
+summary compares Strategy return and P&L with the `equal_weight_buy_and_hold_v1` reference; secondary
+Position, Decision, Trade, cost, benchmark, instrument, and methodology evidence remains collapsed
+in independent disclosures.
+
+The benchmark is fully invested and does not share the Strategy's exposure or risk profile. It
+compares outcomes, not equal risk: entry fees and simulated entry slippage are included, while no
+hypothetical exit cost is deducted. The comparison is not alpha or a profitability guarantee.
+
+Unavailable statuses and null financial values are rendered as explicit evidence states rather than
+zero. A missing active Paper Run is a normal empty state. Failed refreshes preserve the previous
+successful evaluation. Financial values remain Decimal strings and are formatted for presentation;
+the frontend does not reconstruct or recalculate authoritative metrics. The return chart converts
+strings to numbers only for dependency-free SVG geometry.
+
+The evaluation page intentionally excludes mutations, polling, WebSockets, backtesting, strategy
+editing, Risk Engine functionality, and backend changes.
+
 ## Current limitations
 
 This PR intentionally excludes authentication, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, and backtesting.

@@ -7,6 +7,11 @@ export const routes: Routes = [
       import('./features/dashboard/dashboard-page').then((module) => module.DashboardPage),
   },
   {
+    path: 'evaluation',
+    loadComponent: () =>
+      import('./features/evaluation/evaluation-page').then((module) => module.EvaluationPage),
+  },
+  {
     path: 'instruments/detail',
     loadComponent: () =>
       import('./features/instrument-detail/instrument-detail-page').then(
