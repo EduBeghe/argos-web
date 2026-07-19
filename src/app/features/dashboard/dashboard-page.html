@@ -1,14 +1,15 @@
 <main>
   <header class="page-header">
-    <div>
-      <p class="eyebrow">Private quantitative platform</p>
-      <h1>Argos</h1>
-      <p>Research and decision support · Paper Trading</p>
+    <div class="brand-block">
+      <div class="brand-line">
+        <h1>Argos</h1>
+        <p>Private quantitative research and decision support · Paper Trading</p>
+      </div>
       @if (overview(); as data) {
         <p class="generated">Updated: {{ data.generated_at | date: 'medium' : 'UTC' }} UTC</p>
       }
     </div>
-    <button type="button" (click)="refresh()" [disabled]="loading()">
+    <button class="refresh-button" type="button" (click)="refresh()" [disabled]="loading()">
       {{ loading() ? 'Refreshing…' : 'Refresh' }}
     </button>
   </header>
@@ -25,55 +26,62 @@
   }
 
   @if (overview(); as data) {
-    <section class="system-panel" aria-labelledby="system-title">
-      <div>
-        <p class="eyebrow" id="system-title">System status</p>
-        <h2 [class.fresh]="data.system.market_data_fresh">
-          {{ data.system.market_data_fresh ? '✓ Market data up to date' : '⚠ Market data stale' }}
-        </h2>
-      </div>
-      <p>
-        <strong>{{ data.system.instruments_fresh }}</strong> /
-        {{ data.system.instruments_total }} instruments fresh
-      </p>
-    </section>
+    @if (
+      data.system.market_data_fresh &&
+      data.system.instruments_total > 0 &&
+      data.system.instruments_fresh === data.system.instruments_total
+    ) {
+      <section
+        class="system-status system-status-healthy"
+        aria-label="Market data status: up to date"
+      >
+        <span class="status-mark" aria-hidden="true">●</span>
+        <strong>Market data up to date</strong>
+        <span aria-hidden="true">·</span>
+        <span>
+          {{ data.system.instruments_fresh }} of {{ data.system.instruments_total }}
+          {{ data.system.instruments_fresh === 1 ? 'instrument' : 'instruments' }} fresh
+        </span>
+      </section>
+    } @else {
+      <section class="system-status system-status-warning" aria-labelledby="system-warning-title">
+        <div>
+          <p class="eyebrow">System status</p>
+          <h2 id="system-warning-title">⚠ Market data needs attention</h2>
+          <p>
+            {{ data.system.instruments_fresh }} of {{ data.system.instruments_total }} instruments
+            fresh. Stale or missing evidence can limit current analysis.
+          </p>
+        </div>
+        <button type="button" (click)="refresh()" [disabled]="loading()">Retry refresh</button>
+      </section>
+    }
 
-    <section aria-labelledby="paper-title">
+    <section class="paper-section" aria-labelledby="paper-title">
       <div class="section-heading">
         <div>
           <p class="eyebrow">Simulation</p>
           <h2 id="paper-title">Paper Trading</h2>
         </div>
+        @if (data.paper.run; as run) {
+          <span class="run-status">{{ paperRunStatusLabel(run.status) }}</span>
+        }
       </div>
       @if (data.paper.run; as run) {
-        <div class="timeline-note">
-          <p>
-            <strong>{{ paperRunStatusLabel(run.status) }}</strong> · Started:
-            {{ run.started_at | date: 'medium' : 'UTC' }} UTC
-          </p>
-        </div>
-        @if (data.paper.portfolio; as portfolio) {
-          <div class="paper-grid">
-            <article class="summary-card hero-metric">
+        <div class="paper-primary-grid">
+          @if (data.paper.portfolio; as portfolio) {
+            <article class="primary-metric hero-metric">
               <span>Current equity <app-metric-help metric="equity" /></span>
               <strong>{{ formatMoney(portfolio.equity) }}</strong>
               <small>Valued: {{ portfolio.valued_at | date: 'medium' : 'UTC' }} UTC</small>
             </article>
-            <article class="summary-card">
-              <span>Available cash <app-metric-help metric="currentCash" /></span
-              ><strong>{{ formatMoney(portfolio.current_cash) }}</strong>
-            </article>
-            <article class="summary-card">
-              <span>Position value <app-metric-help metric="positionsMarketValue" /></span
-              ><strong>{{ formatMoney(portfolio.positions_market_value) }}</strong>
-            </article>
-            <article class="summary-card">
+            <article class="primary-metric">
               <span>Total P&amp;L <app-metric-help metric="totalPnl" /></span
               ><strong [class]="'value-' + decimalValueTone(portfolio.total_pnl)">{{
                 formatSignedMoney(portfolio.total_pnl)
               }}</strong>
             </article>
-            <article class="summary-card">
+            <article class="primary-metric">
               <span>Total return <app-metric-help metric="totalReturn" /></span
               ><strong [class]="'value-' + decimalValueTone(portfolio.total_return ?? '0')">{{
                 portfolio.total_return === null
@@ -81,37 +89,105 @@
                   : formatSignedPercentage(portfolio.total_return)
               }}</strong>
             </article>
-          </div>
-        } @else {
-          <div class="empty-state"><h3>Current valuation unavailable</h3></div>
-        }
-        @if (data.paper.performance; as performance) {
-          <div class="paper-grid">
-            <article class="summary-card">
-              <span>Current drawdown <app-metric-help metric="currentDrawdown" /></span
-              ><strong>{{ formatPercentage(performance.current_drawdown) }}</strong>
+          } @else {
+            <article class="primary-metric hero-metric metric-unavailable">
+              <span>Current equity <app-metric-help metric="equity" /></span>
+              <strong>No data</strong>
+              <small>Current valuation unavailable</small>
             </article>
-            <article class="summary-card">
+            <article class="primary-metric metric-unavailable">
+              <span>Total P&amp;L <app-metric-help metric="totalPnl" /></span
+              ><strong>No data</strong>
+            </article>
+            <article class="primary-metric metric-unavailable">
+              <span>Total return <app-metric-help metric="totalReturn" /></span
+              ><strong>No data</strong>
+            </article>
+          }
+          @if (data.paper.performance; as performance) {
+            <article class="primary-metric">
               <span>Maximum drawdown <app-metric-help metric="maximumDrawdown" /></span
               ><strong>{{ formatPercentage(performance.max_drawdown) }}</strong>
             </article>
-            <article class="summary-card">
-              <span>Snapshots <app-metric-help metric="snapshotCount" /></span
-              ><strong>{{ performance.snapshot_count }}</strong>
+          } @else {
+            <article class="primary-metric metric-unavailable">
+              <span>Maximum drawdown <app-metric-help metric="maximumDrawdown" /></span
+              ><strong>No data</strong>
+              <small>Historical metrics are not available yet</small>
             </article>
-          </div>
-          <div class="timeline-note">
-            <p>
-              Performance evaluated through
+          }
+        </div>
+
+        <details class="run-details">
+          <summary>Run details</summary>
+          <dl class="run-detail-grid">
+            <div>
+              <dt>Run status</dt>
+              <dd>{{ paperRunStatusLabel(run.status) }}</dd>
+            </div>
+            <div>
+              <dt>Run start</dt>
+              <dd>{{ run.started_at | date: 'medium' : 'UTC' }} UTC</dd>
+            </div>
+            <div>
+              <dt>Account currency</dt>
+              <dd>{{ run.account_currency }}</dd>
+            </div>
+            <div>
+              <dt>Configuration version <app-metric-help metric="configurationVersion" /></dt>
+              <dd>{{ run.configuration_version }}</dd>
+            </div>
+            <div>
+              <dt>Available cash <app-metric-help metric="currentCash" /></dt>
+              <dd>
+                {{
+                  data.paper.portfolio ? formatMoney(data.paper.portfolio.current_cash) : 'No data'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>Positions market value <app-metric-help metric="positionsMarketValue" /></dt>
+              <dd>
+                {{
+                  data.paper.portfolio
+                    ? formatMoney(data.paper.portfolio.positions_market_value)
+                    : 'No data'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>Current drawdown <app-metric-help metric="currentDrawdown" /></dt>
+              <dd>
+                {{
+                  data.paper.performance
+                    ? formatPercentage(data.paper.performance.current_drawdown)
+                    : 'No data'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>Snapshot count <app-metric-help metric="snapshotCount" /></dt>
+              <dd>{{ data.paper.performance?.snapshot_count ?? 'No data' }}</dd>
+            </div>
+            <div>
+              <dt>Fee rate <app-metric-help metric="feeRate" /></dt>
+              <dd>{{ formatPercentage(run.fee_rate) }}</dd>
+            </div>
+            <div>
+              <dt>Slippage rate <app-metric-help metric="slippageRate" /></dt>
+              <dd>{{ formatPercentage(run.slippage_rate) }}</dd>
+            </div>
+          </dl>
+          @if (data.paper.performance; as performance) {
+            <p class="timeline-note">
+              Persisted performance evaluated through
               {{ performance.evaluated_until | date: 'medium' : 'UTC' }} UTC.
               @if (data.paper.portfolio) {
                 It may precede the current portfolio valuation.
               }
             </p>
-          </div>
-        } @else {
-          <div class="empty-state"><h3>Historical metrics are not available yet</h3></div>
-        }
+          }
+        </details>
       } @else {
         <div class="empty-state">
           <h3>No active run</h3>

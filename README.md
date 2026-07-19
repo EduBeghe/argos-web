@@ -79,6 +79,15 @@ and limitations; they are not financial advice. Definitions live in
 `src/app/shared/metrics/metric-definitions.ts` so components use one typed source instead of
 duplicating explanation text.
 
+The dashboard uses progressive disclosure to keep the first view focused. Its primary Paper Trading
+summary shows current equity, total P&L, total return, and maximum drawdown; cash, position value,
+run configuration, simulated cost rates, and persisted-performance context remain available through
+the native **Run details** disclosure. Equity history follows immediately. Each catalog-driven
+instrument card presents a compact score, decision, position, and exposure summary, with the existing
+technical and decision evidence available under **More details**. A future iteration may introduce
+generic instrument-detail routes, but this dashboard does not create links to routes that do not yet
+exist. This information-hierarchy change does not alter backend contracts or add API requests.
+
 Missing Scores, Decisions, positions, candles, or an active Paper Run are normal display states. A failed refresh preserves previously loaded data. HTTP 409 is shown as unavailable valuation evidence rather than as an invented portfolio value.
 
 Decimal strings are converted only inside pure display formatters. The original values are never reinterpreted as frontend financial calculations.

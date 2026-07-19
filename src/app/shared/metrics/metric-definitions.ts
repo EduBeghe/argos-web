@@ -184,6 +184,14 @@ export const METRIC_DEFINITIONS = {
     'They reduce account performance to make the simulation more realistic.',
     'Actual exchange fees can differ.',
   ),
+  feeRate: definition(
+    'feeRate',
+    'Fee rate',
+    'The configured percentage of simulated trade notional charged as a fee on each Paper Trading execution. Argos uses it to model transaction costs. The actual accumulated fee amount is recorded separately, and real exchange fees may differ.',
+    'Percentage of execution notional',
+    undefined,
+    'It is a simulation parameter, not a quote from an exchange.',
+  ),
   slippage: definition(
     'slippage',
     'Slippage',
@@ -191,6 +199,14 @@ export const METRIC_DEFINITIONS = {
     undefined,
     'It approximates that orders may not execute at the displayed price.',
     'The model is simplified and cannot reproduce every real market condition.',
+  ),
+  slippageRate: definition(
+    'slippageRate',
+    'Slippage rate',
+    'The configured percentage Argos applies to the observed market price when calculating a simulated execution price. It approximates unfavorable price movement between observation and execution.',
+    'Percentage of observed market price',
+    undefined,
+    'It is a simplified simulation assumption and does not reproduce order-book depth or every real market condition.',
   ),
   executionPrice: definition(
     'executionPrice',

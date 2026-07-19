@@ -1,37 +1,31 @@
 <article class="instrument-card">
   <header>
-    <div>
+    <div class="instrument-heading">
       <p class="eyebrow">{{ assetClassLabel(card().instrument.asset_class) }}</p>
       <h3>{{ card().instrument.display_name }}</h3>
       <p class="symbol">{{ card().instrument.display_symbol }}</p>
     </div>
-    <span
-      class="status"
-      [class.fresh]="card().market_status?.is_fresh"
-      [attr.aria-label]="
-        card().market_status?.is_fresh ? 'Market data up to date' : 'Market data stale'
-      "
-    >
-      {{ card().market_status?.is_fresh ? '● Up to date' : '○ Stale' }}
-    </span>
+    @if (card().market_status; as marketStatus) {
+      <span
+        class="status"
+        [class.fresh]="marketStatus.is_fresh"
+        [attr.aria-label]="marketStatus.is_fresh ? 'Market data up to date' : 'Market data stale'"
+      >
+        {{ marketStatus.is_fresh ? '● Up to date' : '○ Stale' }}
+      </span>
+    } @else {
+      <span class="status unavailable" aria-label="Market data unavailable">○ Unavailable</span>
+    }
   </header>
 
   <p class="identity">{{ identity() }}</p>
-  <p class="muted">
-    Latest candle:
-    {{
-      card().market_status?.latest_close_time
-        ? (card().market_status?.latest_close_time | date: 'medium' : 'UTC') + ' UTC'
-        : 'No data'
-    }}
-  </p>
 
-  <section>
-    <h4>Technical score <app-metric-help metric="overallScore" /></h4>
-    @if (card().latest_score; as score) {
-      <div class="metric-row">
+  <div class="instrument-summary">
+    <div>
+      <span>Overall score <app-metric-help metric="overallScore" /></span>
+      @if (card().latest_score; as score) {
         <strong>{{ formatDecimal(score.overall_score, 3) }}</strong>
-        <span
+        <small
           class="interpretation"
           [class.bullish]="score.interpretation.includes('bullish')"
           [class.bearish]="score.interpretation.includes('bearish')"
@@ -39,70 +33,107 @@
           [attr.aria-label]="'Interpretation: ' + interpretationLabel(score.interpretation)"
         >
           {{ interpretationLabel(score.interpretation) }}
-        </span>
-      </div>
-      <p>
-        Signal strength <app-metric-help metric="signalStrength" />:
-        {{ formatDecimal(score.signal_strength, 3) }}
+        </small>
+      } @else {
+        <strong class="empty">No score</strong>
+      }
+    </div>
+    <div>
+      <span>Latest decision <app-metric-help metric="latestDecision" /></span>
+      @if (card().latest_decision; as decision) {
+        <strong>{{ decisionActionLabel(decision.action) }}</strong>
+      } @else {
+        <strong class="empty">No decision</strong>
+      }
+    </div>
+    <div>
+      <span>Position <app-metric-help metric="positionStatus" /></span>
+      @if (card().open_position; as position) {
+        <strong>{{ positionStatusLabel(position.status) }}</strong>
+        @if (valuedPosition(); as valued) {
+          <small>
+            Exposure <app-metric-help metric="marketValue" /> ·
+            {{ formatMoney(valued.market_value) }}
+          </small>
+        }
+      } @else {
+        <strong class="empty">No open position</strong>
+      }
+    </div>
+  </div>
+
+  <details class="instrument-details">
+    <summary [attr.aria-label]="'More details for ' + card().instrument.display_name">
+      More details
+    </summary>
+    <div class="instrument-detail-content">
+      <p class="muted">
+        Latest candle:
+        {{
+          card().market_status?.latest_close_time
+            ? (card().market_status?.latest_close_time | date: 'medium' : 'UTC') + ' UTC'
+            : 'No data'
+        }}
       </p>
-      <dl class="explanations">
-        <div>
-          <dt>Trend <app-metric-help metric="trendScore" /></dt>
-          <dd>{{ score.explanations.trend }}</dd>
-        </div>
-        <div>
-          <dt>Momentum <app-metric-help metric="momentumScore" /></dt>
-          <dd>{{ score.explanations.momentum }}</dd>
-        </div>
-        <div>
-          <dt>Volume <app-metric-help metric="volumeActivity" /></dt>
-          <dd>{{ score.explanations.volume }}</dd>
-        </div>
-        <div>
-          <dt>Volatility <app-metric-help metric="volatilityRatio" /></dt>
-          <dd>{{ score.explanations.volatility }}</dd>
-        </div>
-      </dl>
-      <p class="disclaimer">Analytical signal, not financial advice.</p>
-    } @else {
-      <p class="empty">No score data</p>
-    }
-  </section>
 
-  <section>
-    <h4>Latest decision <app-metric-help metric="latestDecision" /></h4>
-    @if (card().latest_decision; as decision) {
-      <p class="action">{{ decisionActionLabel(decision.action) }}</p>
-      <p>{{ decision.explanation }}</p>
-      <p class="muted">{{ decision.decision_timestamp | date: 'medium' : 'UTC' }} UTC</p>
-    } @else {
-      <p class="empty">No decision data</p>
-    }
-  </section>
+      @if (card().latest_score; as score) {
+        <section>
+          <h4>Technical evidence</h4>
+          <p>
+            Signal strength <app-metric-help metric="signalStrength" />:
+            {{ formatDecimal(score.signal_strength, 3) }}
+          </p>
+          <dl class="explanations">
+            <div>
+              <dt>Trend <app-metric-help metric="trendScore" /></dt>
+              <dd>{{ score.explanations.trend }}</dd>
+            </div>
+            <div>
+              <dt>Momentum <app-metric-help metric="momentumScore" /></dt>
+              <dd>{{ score.explanations.momentum }}</dd>
+            </div>
+            <div>
+              <dt>Volume <app-metric-help metric="volumeActivity" /></dt>
+              <dd>{{ score.explanations.volume }}</dd>
+            </div>
+            <div>
+              <dt>Volatility <app-metric-help metric="volatilityRatio" /></dt>
+              <dd>{{ score.explanations.volatility }}</dd>
+            </div>
+          </dl>
+          <p class="disclaimer">Analytical signal, not financial advice.</p>
+        </section>
+      } @else {
+        <p class="empty">No detailed score evidence</p>
+      }
 
-  <section>
-    <h4>Open position</h4>
-    @if (card().open_position; as position) {
-      <dl class="position-grid">
-        <div>
-          <dt>Status <app-metric-help metric="positionStatus" /></dt>
-          <dd>{{ positionStatusLabel(position.status) }}</dd>
-        </div>
-        <div>
-          <dt>Quantity <app-metric-help metric="quantity" /></dt>
-          <dd>{{ formatQuantity(position.quantity) }}</dd>
-        </div>
-        <div>
-          <dt>Average entry price <app-metric-help metric="averageEntryPrice" /></dt>
-          <dd>{{ formatMoney(position.average_entry_price) }}</dd>
-        </div>
-        <div>
-          <dt>Current exposure <app-metric-help metric="marketValue" /></dt>
-          <dd>{{ formatMoney(valuedPosition()?.market_value ?? null) }}</dd>
-        </div>
-      </dl>
-    } @else {
-      <p class="empty">No open position</p>
-    }
-  </section>
+      @if (card().latest_decision; as decision) {
+        <section>
+          <h4>Decision evidence</h4>
+          <p>{{ decision.explanation }}</p>
+          <p class="muted">{{ decision.decision_timestamp | date: 'medium' : 'UTC' }} UTC</p>
+        </section>
+      } @else {
+        <p class="empty">No detailed decision evidence</p>
+      }
+
+      @if (card().open_position; as position) {
+        <section>
+          <h4>Position evidence</h4>
+          <dl class="position-grid">
+            <div>
+              <dt>Quantity <app-metric-help metric="quantity" /></dt>
+              <dd>{{ formatQuantity(position.quantity) }}</dd>
+            </div>
+            <div>
+              <dt>Average entry price <app-metric-help metric="averageEntryPrice" /></dt>
+              <dd>{{ formatMoney(position.average_entry_price) }}</dd>
+            </div>
+          </dl>
+        </section>
+      } @else {
+        <p class="empty">No detailed position evidence</p>
+      }
+    </div>
+  </details>
 </article>
