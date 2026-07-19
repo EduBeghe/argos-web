@@ -1,0 +1,60 @@
+<article class="chart-card">
+  <header>
+    <div>
+      <h2>Price history</h2>
+      <p>Persisted candle close prices</p>
+    </div>
+    @if (latest(); as value) {
+      <strong>{{ formatMoney(value.close_price) }}</strong>
+    }
+  </header>
+  @if (geometry().candles.length) {
+    <svg viewBox="0 0 800 300" role="img" aria-labelledby="price-title price-description">
+      <title id="price-title">Persisted price history</title>
+      <desc id="price-description">
+        Contextual quote-currency axis and UTC time axis. Diamonds are Decisions and outlined
+        squares are simulated Trades.
+      </desc>
+      @for (tick of geometry().yTicks; track tick.label) {
+        <line class="grid" x1="92" x2="776" [attr.y1]="tick.position" [attr.y2]="tick.position" />
+        <text class="axis y" x="84" [attr.y]="tick.position + 4">{{ tick.label }}</text>
+      }
+      @for (tick of xTicks(); track tick.position) {
+        <text class="axis x" [attr.x]="tick.position" y="278">{{ tick.label }} UTC</text>
+      }
+      <polyline class="price-line" [attr.points]="polyline()" />
+      @for (marker of decisionMarkers(); track marker.id) {
+        <rect
+          class="decision-marker"
+          [attr.x]="marker.x - 4"
+          [attr.y]="marker.y - 4"
+          width="8"
+          height="8"
+          [attr.transform]="'rotate(45 ' + marker.x + ' ' + marker.y + ')'"
+        >
+          <title>Decision: {{ marker.action }}</title>
+        </rect>
+      }
+      @for (marker of tradeMarkers(); track marker.id) {
+        <rect
+          class="trade-marker"
+          [attr.x]="marker.x - 5"
+          [attr.y]="marker.y - 5"
+          width="10"
+          height="10"
+        >
+          <title>Paper Trade: {{ marker.side }}</title>
+        </rect>
+      }
+    </svg>
+    <div class="marker-key" aria-label="Chart marker meanings">
+      <span>◆ Decision</span><span>□ Paper Trade</span>
+    </div>
+    <div class="text-summary">
+      <span>First: {{ formatMoney(first()!.close_price) }} · {{ first()!.open_time }}</span>
+      <span>Latest: {{ formatMoney(latest()!.close_price) }} · {{ latest()!.open_time }}</span>
+    </div>
+  } @else {
+    <p class="empty">No persisted candles in this range.</p>
+  }
+</article>

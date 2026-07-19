@@ -84,9 +84,32 @@ summary shows current equity, total P&L, total return, and maximum drawdown; cas
 run configuration, simulated cost rates, and persisted-performance context remain available through
 the native **Run details** disclosure. Equity history follows immediately. Each catalog-driven
 instrument card presents a compact score, decision, position, and exposure summary, with the existing
-technical and decision evidence available under **More details**. A future iteration may introduce
-generic instrument-detail routes, but this dashboard does not create links to routes that do not yet
-exist. This information-hierarchy change does not alter backend contracts or add API requests.
+technical and decision evidence available under **More details**. Every card links to the generic
+instrument-detail route using its complete catalog identity.
+
+## Generic instrument details
+
+`/instruments/detail` requires `asset`, `provider`, `market_type`, and `interval` query parameters.
+The canonical asset may contain `/`, so identity remains in the query string rather than a path
+segment. The optional `range` parameter accepts `6h`, `24h`, or `72h` and defaults to `24h` only
+when the complete identity is valid. Range changes remain in the URL and survive refresh.
+
+The page requests bounded, ascending, synchronized UTC windows from:
+
+- `GET /market/candles`
+- `GET /market/scores`
+- `GET /market/decisions`
+- `GET /paper/trades`
+
+Each collection loads and retries independently. Persisted Scores are analytical model evidence;
+Decision Snapshots are immutable strategy conclusions; Paper Trades are simulated executions. The
+frontend never reconstructs one from another, and a `NO_ACTION` Decision does not create a Trade
+marker. The price chart is a dependency-free close-price line with Decision and Trade markers. The
+Score chart uses the authoritative `overall_score` on a fixed −1 to +1 domain. Current position P&L
+and valuation come only from the dashboard's authoritative portfolio response.
+
+Current detail-page limitations are a line price chart rather than candlesticks, the three fixed
+history ranges rather than a custom date picker, and no polling, WebSockets, or mutations.
 
 Missing Scores, Decisions, positions, candles, or an active Paper Run are normal display states. A failed refresh preserves previously loaded data. HTTP 409 is shown as unavailable valuation evidence rather than as an invented portfolio value.
 

@@ -19,6 +19,9 @@
   </header>
 
   <p class="identity">{{ identity() }}</p>
+  <a class="detail-link" routerLink="/instruments/detail" [queryParams]="detailQuery()">
+    View details
+  </a>
 
   <div class="instrument-summary">
     <div>
