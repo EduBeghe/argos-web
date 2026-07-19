@@ -67,6 +67,9 @@ h4 {
 .status.fresh {
   color: #86c9aa;
 }
+.status.unavailable {
+  color: #91a4bd;
+}
 .instrument-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -5,17 +5,17 @@
       <h3>{{ card().instrument.display_name }}</h3>
       <p class="symbol">{{ card().instrument.display_symbol }}</p>
     </div>
-    <span
-      class="status"
-      [class.fresh]="card().market_status?.is_fresh"
-      [attr.aria-label]="
-        card().market_status?.is_fresh
-          ? 'Market data up to date'
-          : 'Market data stale or unavailable'
-      "
-    >
-      {{ card().market_status?.is_fresh ? '● Up to date' : '○ Stale' }}
-    </span>
+    @if (card().market_status; as marketStatus) {
+      <span
+        class="status"
+        [class.fresh]="marketStatus.is_fresh"
+        [attr.aria-label]="marketStatus.is_fresh ? 'Market data up to date' : 'Market data stale'"
+      >
+        {{ marketStatus.is_fresh ? '● Up to date' : '○ Stale' }}
+      </span>
+    } @else {
+      <span class="status unavailable" aria-label="Market data unavailable">○ Unavailable</span>
+    }
   </header>
 
   <p class="identity">{{ identity() }}</p>

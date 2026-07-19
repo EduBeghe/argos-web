@@ -228,6 +228,8 @@ describe('MetricHelp', () => {
   it('keeps unknown metric keys outside the typed public API', () => {
     expectTypeOf<'unknownMetric'>().not.toMatchTypeOf<MetricKey>();
     expectTypeOf<'equity'>().toMatchTypeOf<MetricKey>();
+    expectTypeOf<'feeRate'>().toMatchTypeOf<MetricKey>();
+    expectTypeOf<'slippageRate'>().toMatchTypeOf<MetricKey>();
   });
 });
 

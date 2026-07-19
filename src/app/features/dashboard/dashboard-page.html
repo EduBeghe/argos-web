@@ -33,13 +33,13 @@
     ) {
       <section
         class="system-status system-status-healthy"
-        aria-label="System status: all systems operational"
+        aria-label="Market data status: up to date"
       >
         <span class="status-mark" aria-hidden="true">●</span>
-        <strong>All systems operational</strong>
+        <strong>Market data up to date</strong>
         <span aria-hidden="true">·</span>
         <span>
-          {{ data.system.instruments_fresh }}
+          {{ data.system.instruments_fresh }} of {{ data.system.instruments_total }}
           {{ data.system.instruments_fresh === 1 ? 'instrument' : 'instruments' }} fresh
         </span>
       </section>
@@ -170,11 +170,11 @@
               <dd>{{ data.paper.performance?.snapshot_count ?? 'No data' }}</dd>
             </div>
             <div>
-              <dt>Fee rate <app-metric-help metric="fees" /></dt>
+              <dt>Fee rate <app-metric-help metric="feeRate" /></dt>
               <dd>{{ formatPercentage(run.fee_rate) }}</dd>
             </div>
             <div>
-              <dt>Slippage rate <app-metric-help metric="slippage" /></dt>
+              <dt>Slippage rate <app-metric-help metric="slippageRate" /></dt>
               <dd>{{ formatPercentage(run.slippage_rate) }}</dd>
             </div>
           </dl>

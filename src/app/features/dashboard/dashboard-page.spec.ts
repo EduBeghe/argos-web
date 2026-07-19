@@ -51,9 +51,9 @@ describe('DashboardPage', () => {
     fixture.detectChanges();
     const status = fixture.nativeElement.querySelector('.system-status-healthy');
 
-    expect(status.querySelector('strong').textContent).toBe('All systems operational');
-    expect(status.textContent).toContain('1 instrument fresh');
-    expect(status.getAttribute('aria-label')).toContain('all systems operational');
+    expect(status.querySelector('strong').textContent).toBe('Market data up to date');
+    expect(status.textContent).toContain('1 of 1 instrument fresh');
+    expect(status.getAttribute('aria-label')).toBe('Market data status: up to date');
     expect(fixture.nativeElement.querySelector('.system-status-warning')).toBeNull();
   });
 
@@ -133,6 +133,10 @@ describe('DashboardPage', () => {
     expect(runDetails.textContent).toContain('USDT');
     expect(runDetails.textContent).toContain('0.10%');
     expect(runDetails.textContent).toContain('0.05%');
+    expect(runDetails.querySelector('app-metric-help[metric="feeRate"]')).not.toBeNull();
+    expect(runDetails.querySelector('app-metric-help[metric="slippageRate"]')).not.toBeNull();
+    expect(runDetails.querySelector('app-metric-help[metric="fees"]')).toBeNull();
+    expect(runDetails.querySelector('app-metric-help[metric="slippage"]')).toBeNull();
   });
 
   it('places Equity history before compact instruments in document order', () => {

@@ -117,6 +117,28 @@ describe('InstrumentCard', () => {
     expect(element.querySelector('details')?.open).toBe(false);
   });
 
+  it('distinguishes fresh, stale, and unavailable market evidence', async () => {
+    const fresh = await render(instrumentCard);
+    const freshStatus = fresh.querySelector('.status');
+    expect(freshStatus?.textContent).toContain('Up to date');
+    expect(freshStatus?.getAttribute('aria-label')).toBe('Market data up to date');
+
+    const stale = await render({
+      ...instrumentCard,
+      market_status: { ...instrumentCard.market_status!, is_fresh: false },
+    });
+    const staleStatus = stale.querySelector('.status');
+    expect(staleStatus?.textContent).toContain('Stale');
+    expect(staleStatus?.getAttribute('aria-label')).toBe('Market data stale');
+
+    const unavailable = await render({ ...instrumentCard, market_status: null });
+    const unavailableStatus = unavailable.querySelector('.status');
+    expect(unavailableStatus?.textContent).toContain('Unavailable');
+    expect(unavailableStatus?.textContent).not.toContain('Stale');
+    expect(unavailableStatus?.getAttribute('aria-label')).toBe('Market data unavailable');
+    expect(unavailableStatus?.classList.contains('unavailable')).toBe(true);
+  });
+
   it('keeps score, decision, position, and exposure in the compact overview', async () => {
     const element = await render(completeCard);
     const summary = element.querySelector('.instrument-summary');
