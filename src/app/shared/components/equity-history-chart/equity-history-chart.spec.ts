@@ -39,9 +39,10 @@ describe('EquityHistoryChart', () => {
     ).toHaveLength(2);
     expect(fixture.nativeElement.textContent).toContain('10,100.00 USDT');
     expect(fixture.nativeElement.textContent).not.toContain('10,200.00 USDT');
-    expect(fixture.nativeElement.querySelector('.latest-label')?.textContent).toContain(
-      '10,100.00 USDT',
-    );
+    expect(fixture.nativeElement.querySelector('svg .latest-label')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('svg .endpoint')).toHaveLength(2);
+    expect(summaryText(fixture, 0)).toBe('Latest persisted equity 10,100.00 USDT');
+    expect(fixture.nativeElement.querySelector('.chart-summary app-metric-help')).not.toBeNull();
   });
 
   it('renders contextual USDT Y-axis ticks without forcing a narrow series to zero', async () => {
@@ -171,17 +172,16 @@ describe('EquityHistoryChart', () => {
     expect(svg.querySelector('.baseline')).not.toBeNull();
   });
 
-  it('keeps the latest persisted annotation within safe plot bounds', async () => {
+  it('keeps the final endpoint marker without a permanent latest-value annotation', async () => {
     const fixture = await render([{ ...paperSnapshot, equity: '10012' }]);
-    const annotation = fixture.nativeElement.querySelector('.latest-label');
-    const x = Number(annotation.getAttribute('x'));
-    const y = Number(annotation.getAttribute('y'));
+    const svg = fixture.nativeElement.querySelector('svg');
+    const endpoints = svg.querySelectorAll('.endpoint');
 
-    expect(x).toBeGreaterThanOrEqual(112);
-    expect(x).toBeLessThanOrEqual(770);
-    expect(y).toBeGreaterThanOrEqual(34);
-    expect(y).toBeLessThanOrEqual(248);
-    expect(annotation.getAttribute('text-anchor')).toBe('end');
+    expect(svg.querySelector('.latest-label')).toBeNull();
+    expect(endpoints).toHaveLength(2);
+    expect(endpoints[1].getAttribute('cx')).toBeTruthy();
+    expect(endpoints[1].getAttribute('cy')).toBeTruthy();
+    expect(summaryText(fixture, 0)).toBe('Latest persisted equity 10,012.00 USDT');
   });
 
   it('sorts multiple snapshots and deduplicates stable boundaries', async () => {

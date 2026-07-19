@@ -62,17 +62,12 @@ svg {
   stroke: #53657c;
   stroke-width: 1;
 }
-.axis-label,
-.latest-label {
+.axis-label {
   fill: #aab9cb;
   font-size: 12px;
 }
 .y-label {
   text-anchor: end;
-}
-.latest-label {
-  fill: #c7d5e8;
-  font-weight: 600;
 }
 .equity-line {
   fill: none;
@@ -108,8 +103,7 @@ svg {
   .point-summary {
     grid-template-columns: 1fr;
   }
-  .axis-label,
-  .latest-label {
+  .axis-label {
     font-size: 11px;
   }
 }
