@@ -41,13 +41,15 @@ describe('EvaluationPage', () => {
       (item: HTMLDetailsElement) =>
         item.querySelector('summary')?.textContent.includes('Benchmark'),
     ) as HTMLDetailsElement;
-    expect(benchmarkDetails.textContent).toContain('Absolute P&L +45.00 USD');
-    expect(benchmarkDetails.textContent).toContain('Entry fees 3.00 USD');
-    expect(benchmarkDetails.textContent).toContain('Entry slippage cost 2.00 USD');
-    expect(benchmarkDetails.textContent).toContain('Ending candle Jul 19, 2026, 1:00:00 PM UTC');
+    expect(definitionValue(benchmarkDetails, 'Absolute P&L')).toBe('+45.00 USD');
+    expect(definitionValue(benchmarkDetails, 'Entry fees')).toBe('3.00 USD');
+    expect(definitionValue(benchmarkDetails, 'Entry slippage cost')).toBe('2.00 USD');
+    expect(definitionValue(benchmarkDetails, 'Ending candle')).toMatch(
+      /^Jul 19, 2026, 1:00:00.*PM UTC$/,
+    );
     const strategyInstruments = fixture.nativeElement.querySelectorAll('.strategy-instrument');
-    expect(strategyInstruments[1].textContent).toContain('Gross realized +5.00 USD');
-    expect(strategyInstruments[1].textContent).toContain('Net realized +4.00 USD');
+    expect(normalizedText(strategyInstruments[1])).toContain('Gross realized +5.00 USD');
+    expect(normalizedText(strategyInstruments[1])).toContain('Net realized +4.00 USD');
   });
 
   it('treats 404 as a normal no-active-run state', () => {
@@ -149,3 +151,14 @@ describe('EvaluationPage', () => {
     expect(fixture.nativeElement.querySelectorAll('app-metric-help').length).toBeGreaterThan(10);
   });
 });
+
+function definitionValue(root: HTMLElement, label: string): string | undefined {
+  const group = [...root.querySelectorAll('div')].find(
+    (item) => item.querySelector(':scope > dt')?.textContent.trim() === label,
+  );
+  return group?.querySelector(':scope > dd')?.textContent.trim();
+}
+
+function normalizedText(element: Element): string {
+  return element.textContent.replace(/\s+/g, ' ').trim();
+}
