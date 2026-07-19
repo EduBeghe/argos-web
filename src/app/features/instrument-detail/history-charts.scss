@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.chart-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #263650;
+  border-radius: 0.9rem;
+  background: #111c2f;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+h2,
+p {
+  margin: 0;
+}
+header p,
+.text-summary,
+.marker-key,
+.empty {
+  color: #91a4bd;
+}
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 1rem;
+  border-radius: 0.65rem;
+  background: #0d1728;
+}
+.grid {
+  stroke: #263650;
+  stroke-width: 1;
+}
+.axis {
+  fill: #aab9cb;
+  font-size: 11px;
+}
+.axis.y {
+  text-anchor: end;
+}
+.axis.x {
+  text-anchor: middle;
+}
+.price-line {
+  fill: none;
+  stroke: #7fa9c9;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.score-line {
+  fill: none;
+  stroke: #a7a0d6;
+  stroke-width: 2.5;
+}
+.decision-marker {
+  fill: #d4b56f;
+  stroke: #0d1728;
+  stroke-width: 2;
+}
+.trade-marker {
+  fill: #0d1728;
+  stroke: #86c9aa;
+  stroke-width: 2.5;
+}
+.zero-line {
+  stroke: #71849e;
+  stroke-dasharray: 6 6;
+}
+.marker-key,
+.text-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-top: 0.65rem;
+  font-size: 0.78rem;
+}
+@media (max-width: 520px) {
+  .chart-card {
+    padding: 0.7rem;
+  }
+  .axis {
+    font-size: 10px;
+  }
+  header {
+    display: grid;
+  }
+}

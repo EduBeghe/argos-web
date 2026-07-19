@@ -1,0 +1,53 @@
+<article class="chart-card">
+  <header>
+    <div>
+      <h2>Technical score <app-metric-help metric="overallScore" /></h2>
+      <p>Fixed domain from −1 to +1</p>
+    </div>
+    @if (latest(); as value) {
+      <strong>{{ formatScore(value.overall_score) }}</strong>
+    }
+  </header>
+  @if (ordered().length) {
+    <svg viewBox="0 0 800 300" role="img" aria-labelledby="score-title score-description">
+      <title id="score-title">Persisted technical score history</title>
+      <desc id="score-description">
+        Overall Score on a fixed minus one to plus one axis with a zero reference and UTC time.
+        Diamonds identify persisted Decisions.
+      </desc>
+      @for (tick of yTicks; track tick.value) {
+        <line class="grid" x1="92" x2="776" [attr.y1]="tick.y" [attr.y2]="tick.y" />
+        <text class="axis y" x="84" [attr.y]="tick.y + 4">{{ tick.value }}</text>
+      }
+      <line class="zero-line" x1="92" x2="776" [attr.y1]="zeroY" [attr.y2]="zeroY" />
+      @for (tick of xTicks(); track tick.position) {
+        <text class="axis x" [attr.x]="tick.position" y="278">{{ tick.label }} UTC</text>
+      }
+      <polyline class="score-line" [attr.points]="polyline()" />
+      @for (marker of decisionMarkers(); track marker.id) {
+        <rect
+          class="decision-marker"
+          [attr.x]="marker.x - 4"
+          [attr.y]="marker.y - 4"
+          width="8"
+          height="8"
+          [attr.transform]="'rotate(45 ' + marker.x + ' ' + marker.y + ')'"
+        >
+          <title>Decision: {{ marker.action }}</title>
+        </rect>
+      }
+    </svg>
+    <div class="marker-key"><span>◆ Decision</span><span>Zero is the neutral reference</span></div>
+    <div class="text-summary">
+      <span
+        >First: {{ formatScore(ordered()[0].overall_score) }} ·
+        {{ ordered()[0].candle_open_time }}</span
+      ><span
+        >Latest: {{ formatScore(latest()!.overall_score) }} · {{ latest()!.candle_open_time }}</span
+      >
+    </div>
+  } @else {
+    <p class="empty">No persisted Scores in this range.</p>
+  }
+  <p class="empty">The Score is model evidence, not a probability of profit.</p>
+</article>

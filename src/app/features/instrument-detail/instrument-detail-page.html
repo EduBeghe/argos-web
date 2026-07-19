@@ -1,0 +1,350 @@
+<main>
+  <a class="back-link" routerLink="/">← Back to overview</a>
+
+  @if (invalidIdentity(); as message) {
+    <section class="page-state error" role="alert">
+      <h1>Instrument details unavailable</h1>
+      <p>{{ message }}</p>
+    </section>
+  } @else {
+    @if (contextState() === 'loading') {
+      <section class="page-state" aria-live="polite">Loading instrument context…</section>
+    }
+    @if (contextState() === 'error') {
+      <section class="page-state error" role="alert">
+        <h1>Instrument details unavailable</h1>
+        <p>{{ contextMessage() }}</p>
+      </section>
+    }
+    @if (context(); as data) {
+      <header class="instrument-header">
+        <div>
+          <p class="eyebrow">{{ assetClassLabel(data.definition.asset_class) }}</p>
+          <h1>{{ data.definition.display_name }}</h1>
+          <p class="symbol">{{ data.definition.display_symbol }}</p>
+          <p class="identity">
+            {{ data.definition.asset }} · {{ data.definition.provider }} ·
+            {{ marketTypeLabel(data.definition.market_type) }} · {{ data.definition.interval }}
+          </p>
+        </div>
+        @if (data.card?.market_status; as status) {
+          <span
+            class="freshness"
+            [class.fresh]="status.is_fresh"
+            [attr.aria-label]="status.is_fresh ? 'Market data up to date' : 'Market data stale'"
+            >{{ status.is_fresh ? '● Up to date' : '○ Stale' }}</span
+          >
+        } @else {
+          <span class="freshness unavailable" aria-label="Market data unavailable"
+            >○ Unavailable</span
+          >
+        }
+      </header>
+
+      @if (overviewState() === 'loading') {
+        <div class="context-state" aria-live="polite">Loading current dashboard context…</div>
+      }
+      @if (overviewState() === 'error') {
+        <div class="context-state error" role="alert">
+          <span>{{ overviewMessage() }}</span>
+          <button type="button" (click)="retryOverview()">Retry current context</button>
+        </div>
+      }
+
+      <section class="range-bar" aria-label="History range">
+        <span>UTC history range</span>
+        <div>
+          @for (range of ranges; track range) {
+            <button
+              type="button"
+              [class.selected]="selectedRange() === range"
+              [attr.aria-pressed]="selectedRange() === range"
+              (click)="selectRange(range)"
+            >
+              {{ range === '6h' ? '6 hours' : range === '24h' ? '24 hours' : '72 hours' }}
+            </button>
+          }
+        </div>
+        <small
+          >{{ window().from | date: 'medium' : 'UTC' }} UTC →
+          {{ window().to | date: 'medium' : 'UTC' }} UTC</small
+        >
+      </section>
+
+      <section class="primary-grid" aria-label="Current instrument summary">
+        <article>
+          <span>Latest candle</span>
+          <strong>{{
+            data.card?.market_status?.latest_close_time
+              ? (data.card?.market_status?.latest_close_time | date: 'medium' : 'UTC') + ' UTC'
+              : 'No data'
+          }}</strong>
+        </article>
+        <article>
+          <span>Latest score <app-metric-help metric="overallScore" /></span>
+          @if (overviewState() === 'error') {
+            <strong>Unavailable</strong>
+          } @else if (data.card?.latest_score; as score) {
+            <strong>{{ formatDecimal(score.overall_score, 3) }}</strong
+            ><small>{{ interpretationLabel(score.interpretation) }}</small>
+          } @else {
+            <strong>No data</strong>
+          }
+        </article>
+        <article>
+          <span>Latest Decision <app-metric-help metric="latestDecision" /></span>
+          @if (overviewState() === 'error') {
+            <strong>Unavailable</strong>
+          } @else if (data.card?.latest_decision; as decision) {
+            <strong>{{ decisionActionLabel(decision.action) }}</strong
+            ><small>{{ decision.decision_timestamp | date: 'medium' : 'UTC' }} UTC</small>
+          } @else {
+            <strong>No data</strong>
+          }
+        </article>
+        <article>
+          <span>Position <app-metric-help metric="positionStatus" /></span>
+          @if (overviewState() === 'error') {
+            <strong>Unavailable</strong>
+          } @else if (data.card?.open_position; as position) {
+            <strong>{{ positionStatusLabel(position.status) }}</strong
+            ><small>{{ formatQuantity(position.quantity) }} units</small>
+          } @else {
+            <strong>No open position</strong>
+          }
+        </article>
+      </section>
+
+      <section class="charts" aria-label="Synchronized historical charts">
+        @if (candles().state === 'loading') {
+          <div class="collection-state">Loading price history…</div>
+        }
+        @if (candles().state === 'error') {
+          <div class="collection-state error" role="alert">
+            <span>{{ candles().message }}</span
+            ><button type="button" (click)="retry('candles')">Retry price history</button>
+          </div>
+        }
+        @if (candles().state !== 'error' && candles().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ candles().message }}</span>
+            <button type="button" (click)="retry('candles')">Retry price history</button>
+          </div>
+        }
+        @if (candles().state === 'success' || candles().state === 'empty') {
+          <app-price-history-chart
+            [candles]="candles().data"
+            [decisions]="decisions().data"
+            [trades]="trades().data"
+            [from]="window().from"
+            [to]="window().to"
+            [quoteCurrency]="data.definition.quote_currency"
+            [compact]="compactCharts()"
+          />
+        }
+
+        @if (scores().state === 'loading') {
+          <div class="collection-state">Loading Score history…</div>
+        }
+        @if (scores().state === 'error') {
+          <div class="collection-state error" role="alert">
+            <span>{{ scores().message }}</span
+            ><button type="button" (click)="retry('scores')">Retry Score history</button>
+          </div>
+        }
+        @if (scores().state !== 'error' && scores().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ scores().message }}</span>
+            <button type="button" (click)="retry('scores')">Retry Score history</button>
+          </div>
+        }
+        @if (scores().state === 'success' || scores().state === 'empty') {
+          <app-score-history-chart
+            [scores]="scores().data"
+            [decisions]="decisions().data"
+            [from]="window().from"
+            [to]="window().to"
+            [compact]="compactCharts()"
+          />
+        }
+      </section>
+
+      <section class="position-card" aria-labelledby="position-title">
+        <h2 id="position-title">Current position</h2>
+        @if (overviewState() === 'error') {
+          <p class="empty">
+            Current position is unavailable because dashboard context could not be loaded.
+          </p>
+        } @else if (overviewState() === 'loading') {
+          <p class="empty">Loading current position…</p>
+        } @else if (data.position; as position) {
+          <dl>
+            <div>
+              <dt>Quantity <app-metric-help metric="quantity" /></dt>
+              <dd>{{ formatQuantity(position.quantity) }}</dd>
+            </div>
+            <div>
+              <dt>Average entry <app-metric-help metric="averageEntryPrice" /></dt>
+              <dd>{{ formatMoney(position.average_entry_price) }}</dd>
+            </div>
+            <div>
+              <dt>Cost basis <app-metric-help metric="costBasis" /></dt>
+              <dd>{{ formatMoney(position.cost_basis) }}</dd>
+            </div>
+            <div>
+              <dt>Mark price <app-metric-help metric="markPrice" /></dt>
+              <dd>{{ formatMoney(position.mark_price) }}</dd>
+            </div>
+            <div>
+              <dt>Market value <app-metric-help metric="marketValue" /></dt>
+              <dd>{{ formatMoney(position.market_value) }}</dd>
+            </div>
+            <div>
+              <dt>Unrealized P&amp;L <app-metric-help metric="unrealizedPnl" /></dt>
+              <dd [class]="'value-' + decimalValueTone(position.unrealized_pnl)">
+                {{ formatSignedMoney(position.unrealized_pnl) }}
+              </dd>
+            </div>
+            <div>
+              <dt>Unrealized return <app-metric-help metric="unrealizedReturn" /></dt>
+              <dd>
+                {{
+                  position.unrealized_return === null
+                    ? 'No data'
+                    : formatSignedPercentage(position.unrealized_return)
+                }}
+              </dd>
+            </div>
+          </dl>
+        } @else {
+          <p class="empty">No open position for this instrument.</p>
+        }
+      </section>
+
+      <details class="event-history">
+        <summary>Decision and trade history</summary>
+        @if (decisions().state === 'loading' || trades().state === 'loading') {
+          <p>Loading persisted events…</p>
+        }
+        @if (decisions().state === 'error') {
+          <div class="collection-state error">
+            <span>{{ decisions().message }}</span
+            ><button type="button" (click)="retry('decisions')">Retry Decisions</button>
+          </div>
+        }
+        @if (decisions().state !== 'error' && decisions().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ decisions().message }}</span>
+            <button type="button" (click)="retry('decisions')">Retry Decisions</button>
+          </div>
+        }
+        @if (trades().state === 'error') {
+          <div class="collection-state error">
+            <span>{{ trades().message }}</span
+            ><button type="button" (click)="retry('trades')">Retry Trades</button>
+          </div>
+        }
+        @if (trades().state !== 'error' && trades().message) {
+          <div class="collection-state refresh-error" role="status">
+            <span>{{ trades().message }}</span>
+            <button type="button" (click)="retry('trades')">Retry Trades</button>
+          </div>
+        }
+        @if (!events().length && decisions().state !== 'loading' && trades().state !== 'loading') {
+          <p class="empty">No persisted Decisions or Paper Trades in this range.</p>
+        }
+        <div class="events">
+          @for (event of events(); track event.kind + event.value.id) {
+            @if (event.kind === 'decision') {
+              <article class="decision-event">
+                <header>
+                  <strong>◆ Decision · {{ decisionActionLabel(event.value.action) }}</strong
+                  ><time>{{ event.value.decision_timestamp | date: 'medium' : 'UTC' }} UTC</time>
+                </header>
+                <p>{{ event.value.explanation }}</p>
+                <dl>
+                  <div>
+                    <dt>Score used</dt>
+                    <dd>{{ formatDecimal(event.value.source_overall_score, 3) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Observed price</dt>
+                    <dd>{{ formatMoney(event.value.source_market_price) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Applied rule</dt>
+                    <dd>{{ event.value.applied_rule }}</dd>
+                  </div>
+                  <div>
+                    <dt>Requested target</dt>
+                    <dd>
+                      {{
+                        formatRequestedPercentage(event.value.requested_target_portfolio_percentage)
+                      }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Requested position</dt>
+                    <dd>
+                      {{ formatRequestedPercentage(event.value.requested_position_percentage) }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Versions</dt>
+                    <dd>
+                      Strategy {{ event.value.strategy_version }} · Configuration
+                      {{ event.value.configuration_version }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Linked Trade</dt>
+                    <dd>
+                      {{ hasTrade(event.value) ? 'Recorded separately' : 'None in loaded history' }}
+                    </dd>
+                  </div>
+                </dl>
+              </article>
+            } @else {
+              <article class="trade-event">
+                <header>
+                  <strong>□ Paper Trade · {{ event.value.side }}</strong
+                  ><time>{{ event.value.executed_at | date: 'medium' : 'UTC' }} UTC</time>
+                </header>
+                <dl>
+                  <div>
+                    <dt>Observed price</dt>
+                    <dd>{{ formatMoney(event.value.observed_market_price) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Execution price <app-metric-help metric="executionPrice" /></dt>
+                    <dd>{{ formatMoney(event.value.execution_price) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Quantity</dt>
+                    <dd>{{ formatQuantity(event.value.quantity) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Notional</dt>
+                    <dd>{{ formatMoney(event.value.executed_notional) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Fee <app-metric-help metric="fees" /></dt>
+                    <dd>{{ formatMoney(event.value.fee_amount) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Slippage <app-metric-help metric="slippage" /></dt>
+                    <dd>{{ formatPercentage(event.value.slippage_rate) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Cash impact</dt>
+                    <dd>{{ formatSignedMoney(event.value.cash_impact) }}</dd>
+                  </div>
+                </dl>
+              </article>
+            }
+          }
+        </div>
+      </details>
+    }
+  }
+</main>

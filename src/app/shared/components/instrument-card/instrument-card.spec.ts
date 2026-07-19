@@ -97,7 +97,9 @@ const valuedPosition: ValuedPaperPosition = {
 
 describe('InstrumentCard', () => {
   async function render(card: MarketInstrumentCard = instrumentCard): Promise<HTMLElement> {
-    await TestBed.configureTestingModule({ imports: [InstrumentCard] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [InstrumentCard],
+    }).compileComponents();
     const fixture = TestBed.createComponent(InstrumentCard);
     fixture.componentRef.setInput('card', card);
     fixture.componentRef.setInput('valuedPosition', card.open_position ? valuedPosition : null);
@@ -115,6 +117,11 @@ describe('InstrumentCard', () => {
     expect(summary?.textContent).toContain('No decision');
     expect(summary?.textContent).toContain('No open position');
     expect(element.querySelector('details')?.open).toBe(false);
+    const detailLink = element.querySelector<HTMLAnchorElement>('.detail-link')!;
+    expect(detailLink.getAttribute('href')).toContain('asset=TEST%2FUSDT');
+    expect(detailLink.getAttribute('href')).toContain('provider=provider');
+    expect(detailLink.getAttribute('href')).toContain('market_type=spot');
+    expect(detailLink.getAttribute('href')).toContain('interval=5m');
   });
 
   it('renders fresh market evidence as up to date', async () => {
@@ -207,7 +214,9 @@ class TwoInstrumentCardsHost {
 
 describe('independent instrument disclosures', () => {
   it('opens one instrument without expanding another', async () => {
-    await TestBed.configureTestingModule({ imports: [TwoInstrumentCardsHost] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [TwoInstrumentCardsHost],
+    }).compileComponents();
     const fixture = TestBed.createComponent(TwoInstrumentCardsHost);
     fixture.detectChanges();
     const details = fixture.nativeElement.querySelectorAll('details');

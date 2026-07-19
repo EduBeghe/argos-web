@@ -47,4 +47,16 @@ export class InstrumentCard {
       instrument.interval,
     ].join(' · ');
   }
+
+  protected detailHref(): string {
+    const instrument = this.card().instrument;
+    const query = new URLSearchParams({
+      asset: instrument.asset,
+      provider: instrument.provider,
+      market_type: instrument.market_type,
+      interval: instrument.interval,
+      range: '24h',
+    });
+    return `/instruments/detail?${query.toString()}`;
+  }
 }

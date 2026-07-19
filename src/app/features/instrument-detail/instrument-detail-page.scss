@@ -1,0 +1,239 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+main {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1rem 0 3rem;
+  color: #dce6f2;
+}
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #9fb6d1;
+}
+.instrument-header,
+.range-bar,
+.primary-grid article,
+.position-card,
+.event-history,
+.page-state,
+.collection-state {
+  border: 1px solid #263650;
+  border-radius: 0.9rem;
+  background: #111c2f;
+}
+.instrument-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem;
+}
+h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+}
+.eyebrow,
+.symbol,
+.identity,
+small,
+dt,
+.empty {
+  color: #91a4bd;
+}
+.eyebrow {
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+}
+.symbol,
+.identity {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+.freshness {
+  color: #d79a91;
+  white-space: nowrap;
+}
+.freshness.fresh {
+  color: #86c9aa;
+}
+.freshness.unavailable {
+  color: #91a4bd;
+}
+.range-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.8rem 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+}
+.range-bar div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+button {
+  min-height: 2.5rem;
+  border: 1px solid #40536c;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  color: #cbd7e5;
+  background: #17243a;
+  cursor: pointer;
+}
+button.selected {
+  border-color: #7fa9c9;
+  background: #20334d;
+}
+.primary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.primary-grid article {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  min-width: 0;
+}
+.primary-grid strong {
+  overflow-wrap: anywhere;
+}
+.charts {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.collection-state,
+.context-state,
+.page-state {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+}
+.context-state {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #263650;
+  border-radius: 0.75rem;
+  background: #111c2f;
+}
+.refresh-error {
+  color: #d7b18c;
+}
+.page-state {
+  display: block;
+}
+.error {
+  color: #e2a29a;
+}
+.position-card {
+  margin-top: 1rem;
+  padding: 1rem;
+}
+.position-card h2 {
+  margin-top: 0;
+}
+dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+dl div {
+  min-width: 0;
+}
+dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+.event-history {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+}
+.event-history summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+.events {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.events article {
+  padding: 0.85rem;
+  border-radius: 0.65rem;
+  background: #0e192a;
+}
+.events header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.events dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.decision-event {
+  border-left: 3px solid #d4b56f;
+}
+.trade-event {
+  border-left: 3px double #86c9aa;
+}
+.value-positive {
+  color: #86c9aa;
+}
+.value-negative {
+  color: #d79a91;
+}
+.value-neutral {
+  color: #b6c0ce;
+}
+@media (max-width: 800px) {
+  .primary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .range-bar {
+    grid-template-columns: 1fr;
+  }
+  dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 420px) {
+  main {
+    width: min(100% - 1rem, 1180px);
+  }
+  .instrument-header {
+    display: grid;
+  }
+  .primary-grid,
+  dl,
+  .events dl {
+    grid-template-columns: 1fr;
+  }
+  .range-bar div button {
+    flex: 1;
+  }
+  .collection-state {
+    display: grid;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
