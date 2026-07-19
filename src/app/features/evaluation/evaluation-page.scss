@@ -1,0 +1,138 @@
+:host {
+  display: block;
+  color: #d4dde4;
+}
+main {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+}
+a {
+  color: #a9c5d5;
+}
+h1 {
+  margin: 0.3rem 0;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+.eyebrow {
+  color: #8f9da8;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+}
+button {
+  border: 1px solid #55636e;
+  background: #222c33;
+  color: #d4dde4;
+  border-radius: 0.45rem;
+  padding: 0.65rem 0.9rem;
+}
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #8ba8b6;
+  outline-offset: 3px;
+}
+.intro {
+  max-width: 75ch;
+  color: #aeb9c2;
+}
+.notice,
+.empty,
+.unavailable {
+  padding: 1rem;
+  border: 1px solid #5a4d46;
+  background: #282522;
+  border-radius: 0.6rem;
+}
+.notice {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.run-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.4rem;
+  margin: 1.5rem 0;
+  padding: 0.85rem 1rem;
+  background: #202930;
+  border: 1px solid #3d4952;
+  border-radius: 0.6rem;
+}
+section {
+  margin-top: 2rem;
+}
+.metric-grid,
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 0.75rem;
+}
+.metric-grid article,
+.detail-grid div,
+.instrument {
+  min-width: 0;
+  background: #20282e;
+  border: 1px solid #38444d;
+  border-radius: 0.6rem;
+  padding: 1rem;
+}
+.metric-grid span,
+dt {
+  color: #9fadb7;
+}
+.metric-grid strong,
+dd {
+  display: block;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+details {
+  margin-top: 0.8rem;
+  background: #1c242a;
+  border: 1px solid #37434b;
+  border-radius: 0.6rem;
+  padding: 0.2rem 1rem 1rem;
+}
+summary {
+  cursor: pointer;
+  padding: 0.9rem 0;
+  font-weight: 700;
+}
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 1rem;
+}
+.mapping-grid p {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  overflow-wrap: anywhere;
+}
+.instrument {
+  margin-top: 0.8rem;
+}
+.identity {
+  color: #9fadb7;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  main {
+    width: min(100% - 1rem, 1180px);
+  }
+  .page-header {
+    align-items: start;
+  }
+  .run-strip {
+    display: grid;
+  }
+}

@@ -1,0 +1,371 @@
+<main>
+  <header class="page-header">
+    <div>
+      <a routerLink="/">← Back to overview</a>
+      <p class="eyebrow">Paper Trading</p>
+      <h1>Strategy evaluation</h1>
+    </div>
+    <button type="button" (click)="load()" [disabled]="loading()">
+      {{ loading() ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </header>
+  <p class="intro">
+    A read-only comparison of Argos Strategy outcomes with a passive buy-and-hold reference. It does
+    not predict or guarantee profitability.
+  </p>
+  @if (loading() && !evaluation()) {
+    <section class="notice" aria-live="polite">Loading strategy evaluation…</section>
+  }
+  @if (noActiveRun()) {
+    <section class="empty">
+      <h2>No active Paper Run</h2>
+      <p>Start a Paper Run before requesting its evaluation.</p>
+    </section>
+  }
+  @if (error(); as message) {
+    <section class="notice error" role="alert" aria-live="assertive">
+      <span>{{ message }}</span
+      ><button type="button" (click)="load()">Retry</button>
+    </section>
+  }
+
+  @if (evaluation(); as data) {
+    <section class="run-strip" aria-label="Authoritative evaluation period">
+      <strong>{{ data.run.status }}</strong
+      ><span
+        >{{ data.run.evaluated_from | date: 'medium' : 'UTC' }} UTC →
+        {{ data.run.evaluated_until | date: 'medium' : 'UTC' }} UTC</span
+      ><span>{{ data.run.snapshot_count }} snapshots</span>
+    </section>
+    <section aria-labelledby="summary-title">
+      <h2 id="summary-title">Evaluation summary</h2>
+      @if (data.strategy.status === 'unavailable') {
+        <p class="unavailable">{{ reason(data.strategy.unavailable_reason) }}</p>
+      }
+      <div class="metric-grid">
+        <article>
+          <span>Strategy return <app-metric-help metric="strategyReturn" /></span
+          ><strong>{{ signedPercentage(data.strategy.total_return) }}</strong>
+        </article>
+        <article>
+          <span>Buy-and-hold return <app-metric-help metric="benchmarkReturn" /></span
+          ><strong>{{
+            data.benchmark.status === 'available'
+              ? signedPercentage(data.benchmark.total_return)
+              : 'Benchmark unavailable'
+          }}</strong>
+        </article>
+        <article>
+          <span>Excess return <app-metric-help metric="excessReturn" /></span
+          ><strong>{{
+            data.comparison.status === 'available'
+              ? signedPercentage(data.comparison.strategy_excess_return)
+              : 'Not enough evidence yet'
+          }}</strong>
+        </article>
+        <article>
+          <span>Strategy P&amp;L</span
+          ><strong>{{ signedMoney(data.strategy.absolute_pnl) }}</strong>
+        </article>
+        <article>
+          <span
+            >Strategy minus benchmark P&amp;L
+            <app-metric-help metric="strategyMinusBenchmarkPnl" /></span
+          ><strong>{{
+            data.comparison.status === 'available'
+              ? signedMoney(data.comparison.strategy_minus_benchmark_pnl)
+              : 'Not enough evidence yet'
+          }}</strong>
+        </article>
+        <article>
+          <span>Maximum drawdown <app-metric-help metric="maximumDrawdown" /></span
+          ><strong>{{ percentage(data.strategy.max_drawdown) }}</strong>
+        </article>
+        <article>
+          <span>Fees paid <app-metric-help metric="feesPaid" /></span
+          ><strong>{{ money(data.strategy.fees_paid) }}</strong>
+        </article>
+        <article>
+          <span>Estimated slippage cost <app-metric-help metric="estimatedSlippageCost" /></span
+          ><strong>{{ money(data.strategy.estimated_slippage_cost) }}</strong>
+        </article>
+        @if (data.strategy.closed_position_count > 0) {
+          <article>
+            <span>Win rate <app-metric-help metric="winRate" /></span
+            ><strong>{{ percentage(data.strategy.win_rate) }}</strong>
+          </article>
+        }
+      </div>
+    </section>
+
+    @if (
+      data.strategy.total_return !== null &&
+      data.benchmark.status === 'available' &&
+      data.benchmark.total_return !== null
+    ) {
+      <section aria-labelledby="chart-title">
+        <h2 id="chart-title">Strategy vs buy-and-hold</h2>
+        <app-return-comparison-chart
+          [strategyReturn]="data.strategy.total_return"
+          [benchmarkReturn]="data.benchmark.total_return"
+        />
+      </section>
+    }
+
+    <details>
+      <summary>Position effectiveness</summary>
+      <p>These metrics use net realized P&amp;L from closed Positions.</p>
+      <dl class="detail-grid">
+        <div>
+          <dt>Open / closed</dt>
+          <dd>
+            {{ data.strategy.open_position_count }} / {{ data.strategy.closed_position_count }}
+          </dd>
+        </div>
+        <div>
+          <dt>Winning / losing / breakeven</dt>
+          <dd>
+            {{ data.strategy.winning_position_count }} / {{ data.strategy.losing_position_count }} /
+            {{ data.strategy.breakeven_position_count }}
+          </dd>
+        </div>
+        <div>
+          <dt>Win rate <app-metric-help metric="winRate" /></dt>
+          <dd>
+            {{
+              data.strategy.closed_position_count
+                ? percentage(data.strategy.win_rate)
+                : 'No closed positions yet'
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Average win <app-metric-help metric="averageWin" /></dt>
+          <dd>
+            {{
+              data.strategy.average_win === null
+                ? 'No winning positions yet'
+                : signedMoney(data.strategy.average_win)
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Average loss <app-metric-help metric="averageLoss" /></dt>
+          <dd>
+            {{
+              data.strategy.average_loss === null
+                ? 'No losing positions yet'
+                : signedMoney(data.strategy.average_loss)
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Profit factor <app-metric-help metric="profitFactor" /></dt>
+          <dd>
+            {{
+              data.strategy.profit_factor === null
+                ? 'Unavailable without losses'
+                : formatDecimal(data.strategy.profit_factor)
+            }}
+          </dd>
+        </div>
+      </dl>
+    </details>
+    <details>
+      <summary>Decision and trade activity</summary>
+      <p>
+        Decisions are Strategy conclusions; Trades are simulated executions. NO_ACTION never
+        fabricates a Trade.
+      </p>
+      <div class="mapping-grid">
+        <section>
+          <h3>Decisions</h3>
+          @for (item of entries(data.strategy.decision_counts_by_action); track item[0]) {
+            <p>
+              <span>{{ decisionActionLabel(item[0]) }}</span
+              ><strong>{{ item[1] }}</strong>
+            </p>
+          }
+        </section>
+        <section>
+          <h3>Trades</h3>
+          @for (item of entries(data.strategy.trade_counts_by_side); track item[0]) {
+            <p>
+              <span>{{ sideLabel(item[0]) }}</span
+              ><strong>{{ item[1] }}</strong>
+            </p>
+          }
+        </section>
+      </div>
+    </details>
+    <details>
+      <summary>Costs</summary>
+      <p>
+        Fees come from persisted Paper Trades. Slippage compares observed and simulated execution
+        prices. Unrealized P&amp;L comes from the latest authoritative Equity Snapshot; no
+        hypothetical exit cost is included.
+      </p>
+      <dl class="detail-grid">
+        <div>
+          <dt>Fees <app-metric-help metric="feesPaid" /></dt>
+          <dd>{{ money(data.strategy.fees_paid) }}</dd>
+        </div>
+        <div>
+          <dt>Slippage <app-metric-help metric="estimatedSlippageCost" /></dt>
+          <dd>{{ money(data.strategy.estimated_slippage_cost) }}</dd>
+        </div>
+        <div>
+          <dt>Gross realized P&amp;L <app-metric-help metric="realizedGrossPnl" /></dt>
+          <dd>{{ signedMoney(data.strategy.realized_gross_pnl) }}</dd>
+        </div>
+        <div>
+          <dt>Net realized P&amp;L <app-metric-help metric="realizedNetPnl" /></dt>
+          <dd>{{ signedMoney(data.strategy.realized_net_pnl) }}</dd>
+        </div>
+        <div>
+          <dt>Unrealized P&amp;L <app-metric-help metric="evaluationUnrealizedPnl" /></dt>
+          <dd>{{ signedMoney(data.strategy.unrealized_pnl) }}</dd>
+        </div>
+      </dl>
+    </details>
+    <details>
+      <summary>Benchmark details</summary>
+      @if (data.benchmark.status === 'unavailable') {
+        <p class="unavailable">
+          Benchmark unavailable: {{ reason(data.benchmark.unavailable_reason) }}
+        </p>
+      } @else {
+        <p>
+          <strong>{{ sideLabel(data.benchmark.method) }}</strong>
+          <app-metric-help metric="equalWeightBenchmark" />
+        </p>
+        <dl class="detail-grid">
+          <div>
+            <dt>Instruments</dt>
+            <dd>{{ data.benchmark.instrument_count }}</dd>
+          </div>
+          <div>
+            <dt>Initial equity</dt>
+            <dd>{{ money(data.benchmark.initial_equity) }}</dd>
+          </div>
+          <div>
+            <dt>Ending asset value</dt>
+            <dd>{{ money(data.benchmark.ending_asset_value) }}</dd>
+          </div>
+          <div>
+            <dt>Remaining cash <app-metric-help metric="remainingBenchmarkCash" /></dt>
+            <dd>{{ money(data.benchmark.remaining_cash) }}</dd>
+          </div>
+          <div>
+            <dt>Ending equity</dt>
+            <dd>{{ money(data.benchmark.ending_equity) }}</dd>
+          </div>
+          <div>
+            <dt>Return</dt>
+            <dd>{{ signedPercentage(data.benchmark.total_return) }}</dd>
+          </div>
+        </dl>
+      }
+      @for (
+        item of data.benchmark.instruments;
+        track item.asset + item.provider + item.market_type + item.interval
+      ) {
+        <article class="instrument">
+          <h3>{{ item.asset }}</h3>
+          <p class="identity">
+            {{ item.provider }} · {{ marketTypeLabel(item.market_type) }} · {{ item.interval }}
+          </p>
+          @if (item.status === 'unavailable') {
+            <p class="unavailable">{{ reason(item.unavailable_reason) }}</p>
+          } @else {
+            <dl class="detail-grid">
+              <div>
+                <dt>Allocation</dt>
+                <dd>{{ money(item.allocation) }}</dd>
+              </div>
+              <div>
+                <dt>Entry candle</dt>
+                <dd>{{ item.entry_candle_open_time | date: 'medium' : 'UTC' }} UTC</dd>
+              </div>
+              <div>
+                <dt>Observed / execution price</dt>
+                <dd>
+                  {{ money(item.entry_observed_price) }} / {{ money(item.entry_execution_price) }}
+                </dd>
+              </div>
+              <div>
+                <dt>Quantity</dt>
+                <dd>{{ formatQuantity(item.quantity) }}</dd>
+              </div>
+              <div>
+                <dt>Entry fee / slippage</dt>
+                <dd>
+                  {{ money(item.entry_fee) }} / {{ money(item.estimated_entry_slippage_cost) }}
+                </dd>
+              </div>
+              <div>
+                <dt>Ending mark / value</dt>
+                <dd>{{ money(item.ending_mark_price) }} / {{ money(item.ending_market_value) }}</dd>
+              </div>
+              <div>
+                <dt>P&amp;L / return</dt>
+                <dd>
+                  {{ signedMoney(item.absolute_pnl) }} / {{ signedPercentage(item.total_return) }}
+                </dd>
+              </div>
+            </dl>
+          }
+        </article>
+      }
+    </details>
+    <details>
+      <summary>Evaluation by instrument</summary>
+      @for (
+        item of data.instruments;
+        track item.asset + item.provider + item.market_type + item.interval
+      ) {
+        <article class="instrument">
+          <h3>{{ item.asset }}</h3>
+          <p class="identity">
+            {{ item.provider }} · {{ marketTypeLabel(item.market_type) }} · {{ item.interval }}
+          </p>
+          <div class="mapping-grid">
+            <section>
+              <h4>Decisions</h4>
+              @for (entry of entries(item.decision_counts_by_action); track entry[0]) {
+                <p>
+                  {{ decisionActionLabel(entry[0]) }} <strong>{{ entry[1] }}</strong>
+                </p>
+              }
+            </section>
+            <section>
+              <h4>Trades</h4>
+              @for (entry of entries(item.trade_counts_by_side); track entry[0]) {
+                <p>
+                  {{ sideLabel(entry[0]) }} <strong>{{ entry[1] }}</strong>
+                </p>
+              }
+            </section>
+          </div>
+          <p>
+            Fees {{ money(item.fees_paid) }} · Slippage {{ money(item.estimated_slippage_cost) }}
+          </p>
+          <p>
+            Open {{ item.open_position_count }} · Closed {{ item.closed_position_count }} · Net
+            realized {{ signedMoney(item.realized_net_pnl) }} · Unrealized
+            {{ signedMoney(item.unrealized_pnl) }}
+          </p>
+        </article>
+      }
+    </details>
+    <details>
+      <summary>Methodology and limitations</summary>
+      <p>
+        The equal-weight buy-and-hold v1 benchmark is fully invested and does not use the Strategy's
+        exposure or risk profile. It compares outcomes, not equal risk. Entry fees and simulated
+        entry slippage are included; no hypothetical exit cost is deducted. This is not alpha or a
+        profitability guarantee.
+      </p>
+    </details>
+  }
+</main>
