@@ -117,12 +117,14 @@ describe('InstrumentCard', () => {
     expect(element.querySelector('details')?.open).toBe(false);
   });
 
-  it('distinguishes fresh, stale, and unavailable market evidence', async () => {
+  it('renders fresh market evidence as up to date', async () => {
     const fresh = await render(instrumentCard);
     const freshStatus = fresh.querySelector('.status');
     expect(freshStatus?.textContent).toContain('Up to date');
     expect(freshStatus?.getAttribute('aria-label')).toBe('Market data up to date');
+  });
 
+  it('renders known non-fresh market evidence as stale', async () => {
     const stale = await render({
       ...instrumentCard,
       market_status: { ...instrumentCard.market_status!, is_fresh: false },
@@ -130,7 +132,9 @@ describe('InstrumentCard', () => {
     const staleStatus = stale.querySelector('.status');
     expect(staleStatus?.textContent).toContain('Stale');
     expect(staleStatus?.getAttribute('aria-label')).toBe('Market data stale');
+  });
 
+  it('renders absent market evidence as unavailable instead of stale', async () => {
     const unavailable = await render({ ...instrumentCard, market_status: null });
     const unavailableStatus = unavailable.querySelector('.status');
     expect(unavailableStatus?.textContent).toContain('Unavailable');
