@@ -145,15 +145,6 @@ export class EquityHistoryChart implements AfterViewInit, OnDestroy {
       maxTime - minTime >= 86_400_000;
     const xTickCount = this.layoutWidth() < 600 ? 2 : this.layoutWidth() < 760 ? 3 : 5;
     const xTicks = timeTicks(minTime, maxTime, xTickCount, crossesDays);
-    const lastPoint = points.at(-1)!;
-    const previousPoint = points.at(-2);
-    const labelBelow =
-      lastPoint.y <= PLOT_TOP + 22 || (previousPoint?.y ?? lastPoint.y) < lastPoint.y;
-    const latestLabelY = Math.min(
-      PLOT_TOP + drawableHeight - 8,
-      Math.max(PLOT_TOP + 14, lastPoint.y + (labelBelow ? 18 : -12)),
-    );
-
     return {
       points,
       yTicks,
@@ -161,12 +152,6 @@ export class EquityHistoryChart implements AfterViewInit, OnDestroy {
       domainMin,
       domainMax,
       baselineY: yCoordinate(Number(this.run().initial_cash)),
-      latestLabelX: Math.min(
-        PLOT_LEFT + drawableWidth - 9,
-        Math.max(PLOT_LEFT + 100, lastPoint.x - 9),
-      ),
-      latestLabelY,
-      latestLabelAnchor: 'end' as const,
     };
   });
 
@@ -183,9 +168,6 @@ export class EquityHistoryChart implements AfterViewInit, OnDestroy {
   protected readonly domainMin = computed(() => this.geometry().domainMin);
   protected readonly domainMax = computed(() => this.geometry().domainMax);
   protected readonly baselineY = computed(() => this.geometry().baselineY);
-  protected readonly latestLabelX = computed(() => this.geometry().latestLabelX);
-  protected readonly latestLabelY = computed(() => this.geometry().latestLabelY);
-  protected readonly latestLabelAnchor = computed(() => this.geometry().latestLabelAnchor);
   protected readonly decimalValueTone = decimalValueTone;
 
   protected formatMoney(value: string): string {

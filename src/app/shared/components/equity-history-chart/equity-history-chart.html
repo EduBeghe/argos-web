@@ -84,14 +84,6 @@
     @if (latestSnapshot()) {
       @let last = lastPoint();
       <circle class="endpoint" [attr.cx]="last.x" [attr.cy]="last.y" r="4" />
-      <text
-        class="latest-label"
-        [attr.x]="latestLabelX()"
-        [attr.y]="latestLabelY()"
-        [attr.text-anchor]="latestLabelAnchor()"
-      >
-        {{ formatMoney(last.equity) }}
-      </text>
     }
   </svg>
 
