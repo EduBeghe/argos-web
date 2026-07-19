@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 
 import { instrumentCard } from '../../../features/dashboard/dashboard.fixture';
 import {
@@ -100,7 +99,6 @@ describe('InstrumentCard', () => {
   async function render(card: MarketInstrumentCard = instrumentCard): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
       imports: [InstrumentCard],
-      providers: [provideRouter([])],
     }).compileComponents();
     const fixture = TestBed.createComponent(InstrumentCard);
     fixture.componentRef.setInput('card', card);
@@ -218,7 +216,6 @@ describe('independent instrument disclosures', () => {
   it('opens one instrument without expanding another', async () => {
     await TestBed.configureTestingModule({
       imports: [TwoInstrumentCardsHost],
-      providers: [provideRouter([])],
     }).compileComponents();
     const fixture = TestBed.createComponent(TwoInstrumentCardsHost);
     fixture.detectChanges();

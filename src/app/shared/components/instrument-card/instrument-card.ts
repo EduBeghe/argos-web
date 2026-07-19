@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import {
   MarketInstrumentCard,
@@ -18,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-instrument-card',
-  imports: [DatePipe, MetricHelp, RouterLink],
+  imports: [DatePipe, MetricHelp],
   templateUrl: './instrument-card.html',
   styleUrl: './instrument-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,14 +48,15 @@ export class InstrumentCard {
     ].join(' · ');
   }
 
-  protected detailQuery(): Record<string, string> {
+  protected detailHref(): string {
     const instrument = this.card().instrument;
-    return {
+    const query = new URLSearchParams({
       asset: instrument.asset,
       provider: instrument.provider,
       market_type: instrument.market_type,
       interval: instrument.interval,
       range: '24h',
-    };
+    });
+    return `/instruments/detail?${query.toString()}`;
   }
 }
