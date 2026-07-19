@@ -264,13 +264,25 @@
             <dt>Return</dt>
             <dd>{{ signedPercentage(data.benchmark.total_return) }}</dd>
           </div>
+          <div>
+            <dt>Absolute P&amp;L</dt>
+            <dd>{{ signedMoney(data.benchmark.absolute_pnl) }}</dd>
+          </div>
+          <div>
+            <dt>Entry fees</dt>
+            <dd>{{ money(data.benchmark.entry_fees) }}</dd>
+          </div>
+          <div>
+            <dt>Entry slippage cost</dt>
+            <dd>{{ money(data.benchmark.entry_slippage_cost) }}</dd>
+          </div>
         </dl>
       }
       @for (
         item of data.benchmark.instruments;
         track item.asset + item.provider + item.market_type + item.interval
       ) {
-        <article class="instrument">
+        <article class="instrument benchmark-instrument">
           <h3>{{ item.asset }}</h3>
           <p class="identity">
             {{ item.provider }} · {{ marketTypeLabel(item.market_type) }} · {{ item.interval }}
@@ -307,6 +319,12 @@
                 <dt>Ending mark / value</dt>
                 <dd>{{ money(item.ending_mark_price) }} / {{ money(item.ending_market_value) }}</dd>
               </div>
+              @if (item.ending_candle_open_time !== null) {
+                <div>
+                  <dt>Ending candle</dt>
+                  <dd>{{ item.ending_candle_open_time | date: 'medium' : 'UTC' }} UTC</dd>
+                </div>
+              }
               <div>
                 <dt>P&amp;L / return</dt>
                 <dd>
@@ -324,7 +342,7 @@
         item of data.instruments;
         track item.asset + item.provider + item.market_type + item.interval
       ) {
-        <article class="instrument">
+        <article class="instrument strategy-instrument">
           <h3>{{ item.asset }}</h3>
           <p class="identity">
             {{ item.provider }} · {{ marketTypeLabel(item.market_type) }} · {{ item.interval }}
@@ -351,8 +369,9 @@
             Fees {{ money(item.fees_paid) }} · Slippage {{ money(item.estimated_slippage_cost) }}
           </p>
           <p>
-            Open {{ item.open_position_count }} · Closed {{ item.closed_position_count }} · Net
-            realized {{ signedMoney(item.realized_net_pnl) }} · Unrealized
+            Open {{ item.open_position_count }} · Closed {{ item.closed_position_count }} · Gross
+            realized {{ signedMoney(item.realized_gross_pnl) }} · Net realized
+            {{ signedMoney(item.realized_net_pnl) }} · Unrealized
             {{ signedMoney(item.unrealized_pnl) }}
           </p>
         </article>

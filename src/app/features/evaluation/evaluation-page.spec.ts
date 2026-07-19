@@ -37,6 +37,17 @@ describe('EvaluationPage', () => {
     expect(text).toContain('Future action');
     expect(text).toContain('Future side');
     expect(fixture.nativeElement.querySelector('app-return-comparison-chart')).not.toBeNull();
+    const benchmarkDetails = [...fixture.nativeElement.querySelectorAll('details')].find(
+      (item: HTMLDetailsElement) =>
+        item.querySelector('summary')?.textContent.includes('Benchmark'),
+    ) as HTMLDetailsElement;
+    expect(benchmarkDetails.textContent).toContain('Absolute P&L +45.00 USD');
+    expect(benchmarkDetails.textContent).toContain('Entry fees 3.00 USD');
+    expect(benchmarkDetails.textContent).toContain('Entry slippage cost 2.00 USD');
+    expect(benchmarkDetails.textContent).toContain('Ending candle Jul 19, 2026, 1:00:00 PM UTC');
+    const strategyInstruments = fixture.nativeElement.querySelectorAll('.strategy-instrument');
+    expect(strategyInstruments[1].textContent).toContain('Gross realized +5.00 USD');
+    expect(strategyInstruments[1].textContent).toContain('Net realized +4.00 USD');
   });
 
   it('treats 404 as a normal no-active-run state', () => {
@@ -95,6 +106,11 @@ describe('EvaluationPage', () => {
             ...evaluationFixture.benchmark.instruments[0],
             status: 'unavailable',
             unavailable_reason: 'missing_compatible_candle',
+            ending_candle_open_time: null,
+            ending_mark_price: null,
+            ending_market_value: null,
+            absolute_pnl: null,
+            total_return: null,
           },
         ],
       },
@@ -115,6 +131,10 @@ describe('EvaluationPage', () => {
       'Compatible closed-candle evidence is missing',
     );
     expect(fixture.nativeElement.textContent).not.toContain('Infinity');
+    const unavailableInstrument = fixture.nativeElement.querySelector('.benchmark-instrument');
+    expect(unavailableInstrument.textContent).not.toContain('Ending candle');
+    expect(unavailableInstrument.textContent).not.toContain('Ending mark');
+    expect(unavailableInstrument.textContent).not.toContain('P&L / return');
   });
 
   it('keeps all progressive disclosure sections independent and collapsed', () => {
