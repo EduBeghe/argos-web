@@ -472,6 +472,45 @@ export const METRIC_DEFINITIONS = {
     'It makes results traceable to a specific set of configured values.',
     'Different versions may not be directly comparable.',
   ),
+  confirmedCandidate: definition(
+    'confirmedCandidate',
+    'Confirmed Candidate',
+    'A frozen strategy candidate that passed the implemented validation and isolated walk-forward test criteria.',
+    undefined,
+    'It is historical evidence, not a prediction or guarantee.',
+  ),
+  segmentTotalReturn: definition(
+    'segmentTotalReturn',
+    'Total return',
+    'Percentage change in simulated equity over the segment.',
+    'Percentage',
+    undefined,
+    'Historical simulated return does not guarantee future performance.',
+  ),
+  segmentDrawdown: definition(
+    'segmentDrawdown',
+    'Maximum drawdown',
+    'Largest historical decline from a previous equity peak during the segment.',
+    'Percentage',
+  ),
+  differenceVsProduction: definition(
+    'differenceVsProduction',
+    'Difference vs production',
+    'Candidate return minus the current production strategy return over the same segment.',
+    'Percentage points',
+  ),
+  differenceVsBuyHold: definition(
+    'differenceVsBuyHold',
+    'Difference vs buy and hold',
+    'Candidate return minus buying once and holding over the same segment.',
+    'Percentage points',
+  ),
+  segmentFees: definition(
+    'segmentFees',
+    'Fees paid',
+    'Simulated transaction costs. Slippage is incorporated into execution prices.',
+    'Account currency',
+  ),
 } as const satisfies Record<string, MetricDefinition>;
 
 export type MetricKey = keyof typeof METRIC_DEFINITIONS;

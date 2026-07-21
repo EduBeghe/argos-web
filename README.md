@@ -140,6 +140,19 @@ strings to numbers only for dependency-free SVG geometry.
 The evaluation page intentionally excludes mutations, polling, WebSockets, backtesting, strategy
 editing, Risk Engine functionality, and backend changes.
 
+## Strategy Research
+
+The `/strategies` route provides a read-only view of persisted edge-guided historical evaluations.
+It summarizes evaluation runs, filters candidates by their complete instrument identity and
+evidence attributes, and loads detailed walk-forward evidence only when requested. Validation and
+isolated-test differences from the production strategy are shown per window; missing test evidence
+remains an explicit gap rather than an inferred result.
+
+All candidate metrics, explanations, parameters, and classifications come from the optimization
+API. The frontend formats Decimal strings for display but does not recompute financial evidence,
+run historical simulations, promote candidates, or imply that historical confirmation guarantees
+future performance.
+
 ## Current limitations
 
 This PR intentionally excludes authentication, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, and backtesting.
