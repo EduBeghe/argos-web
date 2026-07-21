@@ -39,12 +39,18 @@ describe('StrategyResearchPage', () => {
       of(runPage([run('run-1', 'ALPHA/USD', 4, 1, 2, 1), run('run-101', 'OMEGA/USD', 5, 2, 1, 2)])),
     );
     const fixture = createPage();
-    const text = normalizedText(fixture.nativeElement);
-
-    expect(text).toContain('Evaluation Runs 2');
-    expect(text).toContain('Candidates Evaluated 9');
-    expect(text).toContain('Confirmed Candidates 3');
-    expect(text).toContain('Rejected Candidates 6');
+    const summary = [...fixture.nativeElement.querySelectorAll('.summary article')].map(
+      (item: HTMLElement) => ({
+        label: item.querySelector('span')?.textContent.trim(),
+        value: item.querySelector('strong')?.textContent.trim(),
+      }),
+    );
+    expect(summary).toEqual([
+      { label: 'Evaluation Runs', value: '2' },
+      { label: 'Candidates Evaluated', value: '9' },
+      { label: 'Confirmed Candidates', value: '3' },
+      { label: 'Rejected Candidates', value: '6' },
+    ]);
     const instrumentOptions = [...fixture.nativeElement.querySelectorAll('select')[0].options].map(
       (option: HTMLOptionElement) => option.textContent,
     );
