@@ -32,6 +32,27 @@ describe('StrategyResearchApiService', () => {
     request.flush({ items: [], total: 0, limit: 100, offset: 0 });
   });
 
+  it('loads every run page sequentially', () => {
+    let resultCount = 0;
+    service.getRuns().subscribe((value) => (resultCount = value.items.length));
+
+    const first = http.expectOne(
+      'https://api.example.test/optimization/edge-guided/runs?limit=100&offset=0',
+    );
+    first.flush({
+      items: Array.from({ length: 100 }, (_, index) => run(`run-${index}`)),
+      total: 101,
+      limit: 100,
+      offset: 0,
+    });
+    const second = http.expectOne(
+      'https://api.example.test/optimization/edge-guided/runs?limit=100&offset=100',
+    );
+    second.flush({ items: [run('run-100')], total: 101, limit: 100, offset: 100 });
+
+    expect(resultCount).toBe(101);
+  });
+
   it('sends complete instrument identity and all candidate filters', () => {
     service
       .getCandidates(
@@ -78,3 +99,16 @@ describe('StrategyResearchApiService', () => {
     request.flush({});
   });
 });
+
+function run(id: string) {
+  return {
+    id,
+    instrument: { asset: id, provider: 'provider', market_type: 'spot', interval: '5m' },
+    evaluated_count: 1,
+    candidate_status_counts: {
+      confirmed_candidate: 1,
+      rejected_validation: 0,
+      rejected_test: 0,
+    },
+  };
+}

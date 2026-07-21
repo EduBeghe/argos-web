@@ -32,7 +32,11 @@
       <button type="button" (click)="clearFilters()">Clear filters</button>
     </div>
     <label
-      >Instrument<select #instrument (change)="selectInstrument(instrument.value)">
+      >Instrument<select
+        #instrument
+        [value]="filters().instrument ? instrumentKey(filters().instrument!) : ''"
+        (change)="selectInstrument(instrument.value)"
+      >
         <option value="">All instruments</option>
         @for (item of instruments(); track instrumentKey(item)) {
           <option [value]="instrumentKey(item)">{{ instrumentLabel(item) }}</option>
@@ -40,7 +44,7 @@
       </select></label
     >
     <label
-      >Status<select #status (change)="selectStatus(status.value)">
+      >Status<select #status [value]="filters().status ?? ''" (change)="selectStatus(status.value)">
         <option value="">All</option>
         <option value="confirmed_candidate">Confirmed</option>
         <option value="rejected_validation">Rejected in validation</option>
@@ -48,24 +52,28 @@
       </select></label
     >
     <label
-      >Action<select #action (change)="selectAction(action.value)">
+      >Action<select #action [value]="filters().action ?? ''" (change)="selectAction(action.value)">
         <option value="">All</option>
         <option value="long_entry">Long entry</option>
         <option value="exit_or_avoid">Exit or avoid</option>
       </select></label
     >
     <label
-      >Predictor<select #predictor (change)="applyFilter('predictor', predictor.value)">
-        <option value="">All</option>
-        @for (item of predictors(); track item) {
-          <option [value]="item">{{ human(item) }}</option>
-        }
-      </select></label
-    >
+      >Predictor<input
+        #predictor
+        type="text"
+        [value]="filters().predictor"
+        placeholder="All predictors"
+        (change)="applyFilter('predictor', predictor.value.trim())"
+    /></label>
     <label
-      >Condition<select #condition (change)="applyFilter('condition', condition.value)">
+      >Condition<select
+        #condition
+        [value]="filters().condition"
+        (change)="applyFilter('condition', condition.value)"
+      >
         <option value="">All</option>
-        @for (item of conditions(); track item) {
+        @for (item of conditions; track item) {
           <option [value]="item">{{ human(item) }}</option>
         }
       </select></label

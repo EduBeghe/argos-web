@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { EMPTY, expand, Observable, reduce } from 'rxjs';
 
 import { API_BASE_URL } from '../../core/config/api-config';
 import {
@@ -16,9 +16,23 @@ export class StrategyResearchApiService {
   private readonly baseUrl = inject(API_BASE_URL);
 
   getRuns(): Observable<RunPage> {
-    return this.http.get<RunPage>(`${this.baseUrl}/optimization/edge-guided/runs`, {
-      params: new HttpParams().set('limit', 100).set('offset', 0),
-    });
+    return this.getRunPage(0).pipe(
+      expand((page) => {
+        const nextOffset = page.offset + page.items.length;
+        return page.items.length > 0 && nextOffset < page.total
+          ? this.getRunPage(nextOffset)
+          : EMPTY;
+      }),
+      reduce(
+        (all, page) => ({
+          items: [...all.items, ...page.items],
+          total: page.total,
+          limit: page.limit,
+          offset: 0,
+        }),
+        { items: [], total: 0, limit: 100, offset: 0 } as RunPage,
+      ),
+    );
   }
 
   getCandidates(filters: CandidateFilters, offset: number, limit = 50): Observable<CandidatePage> {
@@ -43,5 +57,11 @@ export class StrategyResearchApiService {
     return this.http.get<CandidateDetail>(
       `${this.baseUrl}/optimization/edge-guided/candidates/${encodeURIComponent(id)}`,
     );
+  }
+
+  private getRunPage(offset: number): Observable<RunPage> {
+    return this.http.get<RunPage>(`${this.baseUrl}/optimization/edge-guided/runs`, {
+      params: new HttpParams().set('limit', 100).set('offset', offset),
+    });
   }
 }

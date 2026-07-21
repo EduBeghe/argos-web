@@ -17,8 +17,18 @@ interface Point {
       <desc id="edge-chart-desc">
         Validation and isolated test return differences. Missing test evidence is shown as a gap.
       </desc>
-      <line class="zero" x1="52" [attr.y1]="zeroY()" x2="662" [attr.y2]="zeroY()" />
-      <text x="8" [attr.y]="zeroY() + 4">0%</text>
+      @for (tick of yTicks(); track tick.value) {
+        <line
+          [attr.class]="tick.value === 0 ? 'grid zero' : 'grid'"
+          x1="52"
+          [attr.y1]="tick.y"
+          x2="662"
+          [attr.y2]="tick.y"
+        />
+        <text class="axis y-label" x="45" [attr.y]="tick.y + 4" text-anchor="end">
+          {{ percent(tick.value.toString()) }}
+        </text>
+      }
       <polyline class="validation" [attr.points]="points(validationPoints())" />
       @for (segment of testSegments(); track $index) {
         <polyline class="test" [attr.points]="points(segment)" />
@@ -54,6 +64,15 @@ interface Point {
     }
     line.zero {
       stroke: #71808a;
+      stroke-dasharray: 5 5;
+    }
+    line.grid {
+      stroke: #34414a;
+      stroke-width: 1;
+    }
+    line.grid.zero {
+      stroke: #71808a;
+      stroke-width: 1.4;
       stroke-dasharray: 5 5;
     }
     polyline {
@@ -108,6 +127,10 @@ export class EdgeEvidenceChart {
     return segments;
   });
   readonly zeroY = computed(() => this.y(0));
+  readonly yTicks = computed(() => {
+    const [min, max] = this.domain();
+    return [max, 0, min].map((value) => ({ value, y: this.y(value) }));
+  });
   readonly firstOrdinal = computed(() => this.windows()[0]?.window_ordinal ?? 0);
   readonly lastOrdinal = computed(() => this.windows().at(-1)?.window_ordinal ?? 0);
 

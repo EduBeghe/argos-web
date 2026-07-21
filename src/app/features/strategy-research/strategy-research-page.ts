@@ -36,6 +36,14 @@ const EMPTY_FILTERS: CandidateFilters = {
   condition: '',
 };
 
+const CONDITIONS = [
+  'all',
+  'ema20_above_ema50',
+  'ema20_below_ema50',
+  'high_volatility',
+  'normal_volatility',
+] as const;
+
 @Component({
   selector: 'app-strategy-research-page',
   imports: [DatePipe, RouterLink, MetricHelp, EdgeEvidenceChart],
@@ -57,6 +65,7 @@ export class StrategyResearchPage implements OnDestroy {
   readonly detail = signal<CandidateDetail | null>(null);
   readonly detailLoading = signal(false);
   readonly detailError = signal(false);
+  readonly conditions = CONDITIONS;
   readonly summary = computed(() =>
     this.runs().reduce(
       (value, run) => ({
@@ -76,12 +85,6 @@ export class StrategyResearchPage implements OnDestroy {
     for (const run of this.runs()) values.set(this.instrumentKey(run.instrument), run.instrument);
     return [...values.values()];
   });
-  readonly predictors = computed(() =>
-    [...new Set(this.page()?.items.map((item) => item.predictor_name) ?? [])].sort(),
-  );
-  readonly conditions = computed(() =>
-    [...new Set(this.page()?.items.map((item) => item.condition) ?? [])].sort(),
-  );
 
   constructor() {
     this.load();

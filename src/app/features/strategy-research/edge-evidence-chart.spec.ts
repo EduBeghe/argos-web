@@ -45,6 +45,13 @@ describe('EdgeEvidenceChart', () => {
     expect(text).not.toContain('Window 2 test');
     expect(fixture.nativeElement.querySelectorAll('circle.validation')).toHaveLength(2);
     expect(fixture.nativeElement.querySelectorAll('circle.test')).toHaveLength(1);
+    const labels = [...fixture.nativeElement.querySelectorAll('.y-label')].map(
+      (item: SVGTextElement) => item.textContent?.trim(),
+    );
+    expect(labels).toHaveLength(3);
+    expect(labels).toContain('0%');
+    expect(fixture.nativeElement.querySelectorAll('line.grid')).toHaveLength(3);
+    expect(fixture.nativeElement.querySelectorAll('line.grid.zero')).toHaveLength(1);
     expect(fixture.nativeElement.querySelector('svg').innerHTML).not.toMatch(/NaN|Infinity/);
   });
 });
