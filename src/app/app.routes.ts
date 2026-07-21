@@ -2,6 +2,13 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
+    path: 'strategies',
+    loadComponent: () =>
+      import('./features/strategy-research/strategy-research-page').then(
+        (module) => module.StrategyResearchPage,
+      ),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./features/dashboard/dashboard-page').then((module) => module.DashboardPage),
