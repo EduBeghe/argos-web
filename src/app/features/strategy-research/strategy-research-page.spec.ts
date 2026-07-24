@@ -75,7 +75,9 @@ describe('StrategyResearchPage workspace', () => {
 
   it('ignores stale panel responses after selecting another run', () => {
     const delayed = new Subject<ReturnType<typeof diagnostics>>();
-    api.getDiagnostics.mockReturnValueOnce(delayed);
+    api.getDiagnostics
+      .mockReturnValueOnce(delayed)
+      .mockReturnValueOnce(of({ ...diagnostics(), strongest_observed_signal: 'new run' }));
     const fixture = render(
       runPage([run('run-1', 'ALPHA/USD', '2026-02-01'), run('run-2', 'ALPHA/USD', '2026-01-01')]),
     );
@@ -83,7 +85,7 @@ describe('StrategyResearchPage workspace', () => {
     fixture.componentInstance.selectRun('run-2');
     delayed.next(diagnostics());
     delayed.complete();
-    expect(fixture.componentInstance.diagnostics()).toBeNull();
+    expect(fixture.componentInstance.diagnostics()?.strongest_observed_signal).toBe('new run');
   });
 
   it('treats targeted 404 as an unavailable legacy state', () => {
@@ -129,8 +131,11 @@ describe('StrategyResearchPage workspace', () => {
     fixture.componentInstance.selectTab('targeted');
     fixture.detectChanges();
     const content = text(fixture);
-    expect(content).toContain('Configurations 4');
-    expect(content).toContain('Validation retained 0');
+    expect(
+      [...fixture.nativeElement.querySelectorAll('.funnel strong')].map((item: Element) =>
+        item.textContent?.trim(),
+      ),
+    ).toEqual(['4', '2', '0', '0', '0']);
     expect(content).toContain('Not evaluated');
     for (const status of [
       'Rejected training',
@@ -178,8 +183,8 @@ describe('StrategyResearchPage workspace', () => {
     expect(tabs[0].getAttribute('aria-selected')).toBe('true');
   });
 
-  function render(page = runPage()) {
-    api.getRuns.mockReturnValue(of(page));
+  function render(page?: RunPage) {
+    if (page) api.getRuns.mockReturnValue(of(page));
     const fixture = TestBed.createComponent(StrategyResearchPage);
     fixture.detectChanges();
     return fixture;
