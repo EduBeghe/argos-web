@@ -254,7 +254,7 @@
               <details>
                 <summary>Regime-conditioned stage counters</summary>
                 <div class="table-wrap">
-                  <table>
+                  <table class="regime-stage-table">
                     <thead>
                       <tr>
                         <th>Stage</th>
@@ -379,11 +379,13 @@
                       <tr>
                         <td>{{ item.rank }}</td>
                         <td>
-                          {{ statusLabel(item.directional_predictor ?? item.predictor_name)
-                          }}<small
-                            >{{ item.context_predictor ?? 'Not available' }} ·
-                            {{ item.context_regime ?? 'Not available' }}</small
-                          >
+                          {{ statusLabel(item.directional_predictor ?? item.predictor_name) }}
+                          @if (item.context_predictor || item.context_regime) {
+                            <small
+                              >{{ item.context_predictor ?? 'Not available' }} ·
+                              {{ item.context_regime ?? 'Not available' }}</small
+                            >
+                          }
                         </td>
                         <td>
                           {{ duration(item.cadence_seconds) }} /

@@ -142,12 +142,18 @@ describe('StrategyResearchPage workspace', () => {
     expect(text(fixture)).toContain('Insufficient observations');
     expect(text(fixture)).toContain('High volatility');
     expect(text(fixture)).toContain('Keep neutral');
-    expect(text(fixture)).toContain('Validation windows');
-    expect(text(fixture)).toContain('0');
     for (const stage of ['A1', 'A2', 'A3', 'Validation', 'Test'])
       expect(text(fixture)).toContain(stage);
-    expect(text(fixture)).toContain('4128');
-    expect(text(fixture)).toContain('60');
+    const rows = [...fixture.nativeElement.querySelectorAll('.regime-stage-table tbody tr')].map(
+      (row: Element) => row.textContent?.replace(/\s+/g, ''),
+    );
+    expect(rows).toEqual([
+      'A1164128024',
+      'A253005',
+      'A31921152060',
+      'Test0000',
+      'Validation4024000',
+    ]);
   });
 
   it('renders near-miss margins and threshold sensitivity', () => {
