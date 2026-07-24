@@ -166,14 +166,14 @@ describe('StrategyResearchPage workspace', () => {
     expect(content).toContain('relative_volume_20');
     expect(content).toContain('atr_14');
     expect(content).toContain('High volatility');
-    expect(content).toContain('Horizon 12 hours');
-    expect(content).toContain('Decision interval 6 hours');
-    expect(content).toContain('Cadence 4 hours');
-    expect(content).toContain('Minimum holding period 2 hours');
-    expect(content).toContain('Maximum holding period 8 hours');
-    expect(content).toContain('Cooldown 1 hour');
-    expect(content).toContain('Fee rate 0.10%');
-    expect(content).toContain('Slippage rate 0.05%');
+    expect(content).toContain('Horizon12h');
+    expect(content).toContain('Decision interval6h');
+    expect(content).toContain('Cadence4h');
+    expect(content).toContain('Minimum holding period2h');
+    expect(content).toContain('Maximum holding period8h');
+    expect(content).toContain('Cooldown1h');
+    expect(content).toContain('Fee rate0.10%');
+    expect(content).toContain('Slippage rate0.05%');
   });
 
   it('keeps historical nullable test evidence visible as Not evaluated', () => {
