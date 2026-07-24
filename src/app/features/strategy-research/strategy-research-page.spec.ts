@@ -113,6 +113,10 @@ describe('StrategyResearchPage workspace', () => {
     expect(text(fixture)).toContain('Near misses found');
     expect(text(fixture)).toContain('Validation');
     expect(text(fixture)).toContain('Insufficient observations');
+    expect(text(fixture)).toContain('High volatility');
+    expect(text(fixture)).toContain('Keep neutral');
+    expect(text(fixture)).toContain('Validation windows');
+    expect(text(fixture)).toContain('0');
   });
 
   it('renders near-miss margins and threshold sensitivity', () => {
@@ -157,6 +161,19 @@ describe('StrategyResearchPage workspace', () => {
     );
     fixture.componentInstance.openTargetedCandidate('target-1');
     expect(api.getTargetedCandidate).toHaveBeenCalledWith('predictive-run-1', 'target-1');
+    fixture.detectChanges();
+    const content = text(fixture);
+    expect(content).toContain('relative_volume_20');
+    expect(content).toContain('atr_14');
+    expect(content).toContain('High volatility');
+    expect(content).toContain('Horizon 12 hours');
+    expect(content).toContain('Decision interval 6 hours');
+    expect(content).toContain('Cadence 4 hours');
+    expect(content).toContain('Minimum holding period 2 hours');
+    expect(content).toContain('Maximum holding period 8 hours');
+    expect(content).toContain('Cooldown 1 hour');
+    expect(content).toContain('Fee rate 0.10%');
+    expect(content).toContain('Slippage rate 0.05%');
   });
 
   it('keeps historical nullable test evidence visible as Not evaluated', () => {
@@ -225,6 +242,8 @@ function diagnostics() {
     rejection_counts_by_predictor: {},
     rejection_counts_by_horizon: {},
     rejection_counts_by_cadence: {},
+    rejection_counts_by_condition: { high_volatility: 0 },
+    rejection_counts_by_neutral_policy: { keep_neutral: 2 },
     strongest_observed_signal: 'rsi',
     bottleneck_stage: 'validation',
     diagnostic_conclusion: 'near_misses_found',
@@ -233,7 +252,7 @@ function diagnostics() {
     computed_counts: {},
     reused_counts: {},
     regime_conditioned_conclusion: null,
-    regime_conditioned_stage_counters: null,
+    regime_conditioned_stage_counters: { validation_windows: 0 },
   };
 }
 function targetedSummary() {
@@ -261,11 +280,7 @@ function targetedPage(): TargetedCandidatePage {
         seed_fingerprint: 'seed',
         status: status as TargetedCandidatePage['items'][number]['status'],
         normalized_distance: '0.1',
-        configuration: {
-          directional_predictor: 'rsi',
-          cadence_seconds: 14400,
-          horizon_seconds: 43200,
-        },
+        configuration: targetedConfiguration(),
         training_metrics: index === 0 ? null : metric('training'),
         validation_metrics: index < 2 ? null : metric('validation'),
         test_metrics: index < 3 ? null : metric('test'),
@@ -278,6 +293,22 @@ function targetedPage(): TargetedCandidatePage {
     total: 4,
     next_cursor: null,
     has_more: false,
+  };
+}
+
+function targetedConfiguration() {
+  return {
+    predictor_name: 'relative_volume_20',
+    context_predictor_name: 'atr_14',
+    context_regime: 'high_volatility',
+    horizon: 43200,
+    decision_interval: 21600,
+    cadence: 14400,
+    minimum_holding_period: 7200,
+    maximum_holding_period: 28800,
+    cooldown: 3600,
+    fee_rate: '0.001',
+    slippage_rate: '0.0005',
   };
 }
 

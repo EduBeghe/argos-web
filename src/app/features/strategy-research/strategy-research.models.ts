@@ -143,6 +143,8 @@ export interface PredictiveDiagnostics {
   rejection_counts_by_predictor: Record<string, number>;
   rejection_counts_by_horizon: Record<string, number>;
   rejection_counts_by_cadence: Record<string, number>;
+  rejection_counts_by_condition: Record<string, number>;
+  rejection_counts_by_neutral_policy: Record<string, number>;
   strongest_observed_signal: string | null;
   bottleneck_stage: string;
   diagnostic_conclusion: string;
@@ -151,7 +153,7 @@ export interface PredictiveDiagnostics {
   computed_counts: Record<string, number>;
   reused_counts: Record<string, number>;
   regime_conditioned_conclusion: string | null;
-  regime_conditioned_stage_counters: Record<string, unknown> | null;
+  regime_conditioned_stage_counters: Record<string, number> | null;
 }
 
 export interface RequirementMargin {
@@ -236,17 +238,17 @@ export interface TargetedRefinementSummary {
 }
 
 export interface TargetedConfiguration {
-  cadence_seconds?: number;
-  decision_interval_seconds?: number;
-  horizon_seconds?: number;
-  holding_period_seconds?: number;
-  predictor_name?: string;
-  directional_predictor?: string;
-  context_predictor?: string;
-  context_regime?: string;
-  fee_rate?: string;
-  slippage_rate?: string;
-  [key: string]: unknown;
+  predictor_name: string;
+  context_predictor_name: string;
+  context_regime: string;
+  horizon: number;
+  decision_interval: number;
+  cadence: number;
+  minimum_holding_period: number;
+  maximum_holding_period: number;
+  cooldown: number;
+  fee_rate: string;
+  slippage_rate: string;
 }
 
 export interface TargetedCandidate {

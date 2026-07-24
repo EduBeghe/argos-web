@@ -231,6 +231,8 @@
                     { label: 'Predictor', values: data.rejection_counts_by_predictor },
                     { label: 'Horizon', values: data.rejection_counts_by_horizon },
                     { label: 'Cadence', values: data.rejection_counts_by_cadence },
+                    { label: 'Condition', values: data.rejection_counts_by_condition },
+                    { label: 'Neutral policy', values: data.rejection_counts_by_neutral_policy },
                   ];
                   track group.label
                 ) {
@@ -248,6 +250,22 @@
                 }
               </div>
             </details>
+            @if (data.regime_conditioned_stage_counters) {
+              <details>
+                <summary>Regime-conditioned stage counters</summary>
+                <dl>
+                  @for (
+                    entry of sortedCounts(data.regime_conditioned_stage_counters);
+                    track entry[0]
+                  ) {
+                    <div>
+                      <dt>{{ statusLabel(entry[0]) }}</dt>
+                      <dd>{{ entry[1] }}</dd>
+                    </div>
+                  }
+                </dl>
+              </details>
+            }
             <details>
               <summary>Technical details</summary>
               <p>Contract version {{ data.contract_version }}</p>
@@ -522,29 +540,16 @@
                           >
                         </td>
                         <td>
-                          {{
-                            item.configuration.directional_predictor ??
-                              item.configuration.predictor_name ??
-                              'Not available'
+                          {{ item.configuration.predictor_name
                           }}<small
-                            >{{ item.configuration.context_predictor ?? 'Not available' }} ·
+                            >{{ item.configuration.context_predictor_name }} ·
                             {{ item.configuration.context_regime ?? 'Not available' }}</small
                           >
                         </td>
                         <td>
-                          {{
-                            duration(
-                              item.configuration.cadence_seconds ??
-                                item.configuration.decision_interval_seconds
-                            )
-                          }}
+                          {{ duration(item.configuration.cadence) }}
                           /
-                          {{
-                            duration(
-                              item.configuration.horizon_seconds ??
-                                item.configuration.holding_period_seconds
-                            )
-                          }}
+                          {{ duration(item.configuration.horizon) }}
                         </td>
                         <td>
                           {{
@@ -867,6 +872,52 @@
       <p>
         <strong>{{ statusLabel(item.status) }}</strong> · distance {{ item.normalized_distance }}
       </p>
+      <h3>Candidate configuration</h3>
+      <dl class="configuration-grid">
+        <div>
+          <dt>Predictor</dt>
+          <dd>{{ item.configuration.predictor_name }}</dd>
+        </div>
+        <div>
+          <dt>Context predictor</dt>
+          <dd>
+            {{ item.configuration.context_predictor_name }} ·
+            {{ statusLabel(item.configuration.context_regime) }}
+          </dd>
+        </div>
+        <div>
+          <dt>Horizon</dt>
+          <dd>{{ duration(item.configuration.horizon) }}</dd>
+        </div>
+        <div>
+          <dt>Decision interval</dt>
+          <dd>{{ duration(item.configuration.decision_interval) }}</dd>
+        </div>
+        <div>
+          <dt>Cadence</dt>
+          <dd>{{ duration(item.configuration.cadence) }}</dd>
+        </div>
+        <div>
+          <dt>Minimum holding period</dt>
+          <dd>{{ duration(item.configuration.minimum_holding_period) }}</dd>
+        </div>
+        <div>
+          <dt>Maximum holding period</dt>
+          <dd>{{ duration(item.configuration.maximum_holding_period) }}</dd>
+        </div>
+        <div>
+          <dt>Cooldown</dt>
+          <dd>{{ duration(item.configuration.cooldown) }}</dd>
+        </div>
+        <div>
+          <dt>Fee rate</dt>
+          <dd>{{ percentage(item.configuration.fee_rate) }}</dd>
+        </div>
+        <div>
+          <dt>Slippage rate</dt>
+          <dd>{{ percentage(item.configuration.slippage_rate) }}</dd>
+        </div>
+      </dl>
       <div class="requirements">
         <article>
           <h3>Passed requirements</h3>
