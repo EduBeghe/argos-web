@@ -106,6 +106,33 @@ describe('StrategyResearchPage workspace', () => {
     expect(api.getNearMisses).toHaveBeenLastCalledWith('predictive-run-1', 'diagnostic', null);
   });
 
+  it('renders a v4 predictor_name when directional and context predictors are absent', () => {
+    api.getNearMisses.mockReturnValue(
+      of({
+        items: [
+          {
+            ...nearMissDetail().near_miss,
+            id: 'near-v4',
+            engine: 'v4',
+            predictor_name: 'trend_component',
+            directional_predictor: null,
+            context_predictor: null,
+            context_regime: null,
+          },
+        ],
+        next_cursor: null,
+        has_more: false,
+      }),
+    );
+    const fixture = render();
+    fixture.componentInstance.selectTab('near-misses');
+    fixture.detectChanges();
+    const predictorCell = fixture.nativeElement.querySelector('tbody tr td:nth-child(2)');
+    expect(predictorCell.textContent).toContain('Trend component');
+    expect(predictorCell.textContent).not.toContain('Not available');
+    expect(text(fixture)).toContain('Trend component');
+  });
+
   it('renders diagnostic bottleneck, conclusion and rejection counts', () => {
     const fixture = render();
     fixture.componentInstance.selectTab('predictive');
@@ -117,6 +144,10 @@ describe('StrategyResearchPage workspace', () => {
     expect(text(fixture)).toContain('Keep neutral');
     expect(text(fixture)).toContain('Validation windows');
     expect(text(fixture)).toContain('0');
+    for (const stage of ['A1', 'A2', 'A3', 'Validation', 'Test'])
+      expect(text(fixture)).toContain(stage);
+    expect(text(fixture)).toContain('4128');
+    expect(text(fixture)).toContain('60');
   });
 
   it('renders near-miss margins and threshold sensitivity', () => {
@@ -127,6 +158,7 @@ describe('StrategyResearchPage workspace', () => {
     expect(text(fixture)).toContain('0.48');
     expect(text(fixture)).toContain('0.55');
     expect(text(fixture)).toContain('Threshold sensitivity');
+    expect(text(fixture)).toContain('Predictor: Rsi · Atr');
   });
 
   it('renders exact targeted funnel zeros, all statuses and nullable stages', () => {
@@ -252,7 +284,13 @@ function diagnostics() {
     computed_counts: {},
     reused_counts: {},
     regime_conditioned_conclusion: null,
-    regime_conditioned_stage_counters: { validation_windows: 0 },
+    regime_conditioned_stage_counters: {
+      a1: { generated: 16, computed: 4128, reused: 0, retained: 24 },
+      a2: { generated: 5, computed: 30, reused: 0, retained: 5 },
+      a3: { generated: 192, computed: 1152, reused: 0, retained: 60 },
+      validation: { generated: 40, computed: 240, reused: 0, retained: 0 },
+      test: { generated: 0, computed: 0, reused: 0, retained: 0 },
+    },
   };
 }
 function targetedSummary() {
@@ -320,6 +358,7 @@ function nearMissDetail() {
       engine: 'v4.1',
       engine_contract_version: 5,
       kind: 'actionable',
+      predictor_name: 'rsi',
       directional_predictor: 'rsi',
       context_predictor: 'atr',
       context_regime: 'high',

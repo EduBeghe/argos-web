@@ -153,7 +153,14 @@ export interface PredictiveDiagnostics {
   computed_counts: Record<string, number>;
   reused_counts: Record<string, number>;
   regime_conditioned_conclusion: string | null;
-  regime_conditioned_stage_counters: Record<string, number> | null;
+  regime_conditioned_stage_counters: Record<string, RegimeConditionedStageCounters> | null;
+}
+
+export interface RegimeConditionedStageCounters {
+  generated: number;
+  computed: number;
+  reused: number;
+  retained: number;
 }
 
 export interface RequirementMargin {
@@ -186,6 +193,7 @@ export interface NearMiss {
   engine: string;
   engine_contract_version: number;
   kind: string;
+  predictor_name: string;
   directional_predictor: string | null;
   context_predictor: string | null;
   context_regime: string | null;

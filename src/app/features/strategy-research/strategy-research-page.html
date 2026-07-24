@@ -253,17 +253,33 @@
             @if (data.regime_conditioned_stage_counters) {
               <details>
                 <summary>Regime-conditioned stage counters</summary>
-                <dl>
-                  @for (
-                    entry of sortedCounts(data.regime_conditioned_stage_counters);
-                    track entry[0]
-                  ) {
-                    <div>
-                      <dt>{{ statusLabel(entry[0]) }}</dt>
-                      <dd>{{ entry[1] }}</dd>
-                    </div>
-                  }
-                </dl>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Stage</th>
+                        <th>Generated</th>
+                        <th>Computed</th>
+                        <th>Reused</th>
+                        <th>Retained</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (
+                        entry of keyValueEntries(data.regime_conditioned_stage_counters);
+                        track entry[0]
+                      ) {
+                        <tr>
+                          <td>{{ statusLabel(entry[0]) }}</td>
+                          <td>{{ entry[1].generated }}</td>
+                          <td>{{ entry[1].computed }}</td>
+                          <td>{{ entry[1].reused }}</td>
+                          <td>{{ entry[1].retained }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               </details>
             }
             <details>
@@ -363,7 +379,7 @@
                       <tr>
                         <td>{{ item.rank }}</td>
                         <td>
-                          {{ item.directional_predictor ?? 'Not available'
+                          {{ statusLabel(item.directional_predictor ?? item.predictor_name)
                           }}<small
                             >{{ item.context_predictor ?? 'Not available' }} ·
                             {{ item.context_regime ?? 'Not available' }}</small
@@ -399,7 +415,7 @@
                   <article>
                     <strong
                       >#{{ item.rank }} ·
-                      {{ item.directional_predictor ?? 'Not available' }}</strong
+                      {{ statusLabel(item.directional_predictor ?? item.predictor_name) }}</strong
                     ><span>{{ statusLabel(item.primary_rejection_reason) }}</span
                     ><span>Distance: {{ item.normalized_missing_distance }}</span
                     ><button type="button" (click)="openNearMiss(item.id)">Details</button>
@@ -803,6 +819,14 @@
         <h2 id="near-detail-title">Near miss #{{ detail.near_miss.rank }}</h2>
         <button type="button" (click)="closeDetails()">Close</button>
       </header>
+      <p>
+        <strong>Predictor:</strong>
+        {{ statusLabel(detail.near_miss.directional_predictor ?? detail.near_miss.predictor_name) }}
+        @if (detail.near_miss.context_predictor) {
+          · {{ statusLabel(detail.near_miss.context_predictor) }} ·
+          {{ statusLabel(detail.near_miss.context_regime ?? 'Not available') }}
+        }
+      </p>
       <p>{{ marginExplanation(detail.near_miss) }}</p>
       <div class="requirements">
         <article>

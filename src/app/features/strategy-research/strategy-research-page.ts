@@ -469,6 +469,9 @@ export class StrategyResearchPage implements OnDestroy {
   protected sortedCounts(values: Record<string, number>): [string, number][] {
     return Object.entries(values).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   }
+  protected keyValueEntries<T>(values: Record<string, T>): [string, T][] {
+    return Object.entries(values).sort(([left], [right]) => left.localeCompare(right));
+  }
   protected maxCount(values: Record<string, number>): number {
     return Math.max(1, ...Object.values(values));
   }
