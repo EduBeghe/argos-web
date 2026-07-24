@@ -1,425 +1,380 @@
 <main>
   <header class="page-header">
     <div>
-      <a routerLink="/">← Back to overview</a>
+      <a class="nav-button" routerLink="/">← Dashboard</a>
       <p class="eyebrow">Historical research</p>
       <h1>Strategy Research</h1>
     </div>
-    <button type="button" (click)="load()" [disabled]="loading()">Refresh</button>
+    <button type="button" (click)="loadRuns()" [disabled]="runsState() === 'loading'">
+      Refresh runs
+    </button>
   </header>
   <p class="intro">
-    Explore historically evaluated strategy candidates. Historical confirmation does not guarantee
-    future performance.
+    Inspect persisted research evidence. Historical confirmation does not guarantee future returns.
   </p>
-  <section class="summary" aria-label="Strategy research summary">
-    <article>
-      <span>Evaluation Runs</span><strong>{{ summary().runs }}</strong>
-    </article>
-    <article>
-      <span>Candidates Evaluated</span><strong>{{ summary().evaluated }}</strong>
-    </article>
-    <article>
-      <span>Confirmed Candidates <app-metric-help metric="confirmedCandidate" /></span
-      ><strong>{{ summary().confirmed }}</strong>
-    </article>
-    <article>
-      <span>Rejected Candidates</span><strong>{{ summary().rejected }}</strong>
-    </article>
-  </section>
-  <section class="filters" aria-labelledby="filters-title">
-    <div class="section-heading">
-      <h2 id="filters-title">Filters</h2>
-      <button type="button" (click)="clearFilters()">Clear filters</button>
-    </div>
-    <label
-      >Instrument<select
-        #instrument
-        [value]="filters().instrument ? instrumentKey(filters().instrument!) : ''"
-        (change)="selectInstrument(instrument.value)"
-      >
-        <option value="">All instruments</option>
-        @for (item of instruments(); track instrumentKey(item)) {
-          <option [value]="instrumentKey(item)">{{ instrumentLabel(item) }}</option>
-        }
-      </select></label
-    >
-    <label
-      >Status<select #status [value]="filters().status ?? ''" (change)="selectStatus(status.value)">
-        <option value="">All</option>
-        <option value="confirmed_candidate">Confirmed</option>
-        <option value="rejected_validation">Rejected in validation</option>
-        <option value="rejected_test">Rejected in test</option>
-      </select></label
-    >
-    <label
-      >Action<select #action [value]="filters().action ?? ''" (change)="selectAction(action.value)">
-        <option value="">All</option>
-        <option value="long_entry">Long entry</option>
-        <option value="exit_or_avoid">Exit or avoid</option>
-      </select></label
-    >
-    <label
-      >Predictor<input
-        #predictor
-        type="text"
-        [value]="filters().predictor"
-        placeholder="All predictors"
-        (change)="applyFilter('predictor', predictor.value.trim())"
-    /></label>
-    <label
-      >Condition<select
-        #condition
-        [value]="filters().condition"
-        (change)="applyFilter('condition', condition.value)"
-      >
-        <option value="">All</option>
-        @for (item of conditions; track item) {
-          <option [value]="item">{{ human(item) }}</option>
-        }
-      </select></label
-    >
-  </section>
-  @if (loading() && !page()) {
-    <section class="skeleton" aria-live="polite">
-      <span></span><span></span><span></span>Loading strategy research…
-    </section>
+
+  @if (runsState() === 'loading' && !runs().length) {
+    <section class="notice" aria-live="polite">Loading research runs…</section>
   }
-  @if (error()) {
+  @if (runsState() === 'error') {
     <section class="notice error" role="alert">
-      Strategy research data could not be loaded.<button type="button" (click)="load()">
-        Retry
-      </button>
+      Research runs are unavailable.<button type="button" (click)="loadRuns()">Retry</button>
     </section>
   }
-  @if (page(); as data) {
-    <section aria-labelledby="candidates-title">
-      <h2 id="candidates-title">Candidate list</h2>
-      @if (!data.items.length) {
-        <div class="empty">
-          {{
-            filters().instrument ||
-            filters().status ||
-            filters().action ||
-            filters().predictor ||
-            filters().condition
-              ? 'No candidates match the selected filters.'
-              : 'No strategy candidates are available yet. Run and persist an edge-guided historical evaluation first.'
-          }}
-        </div>
-      }
-      @if (data.items.length) {
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Instrument</th>
-                <th>Predictor</th>
-                <th>Condition</th>
-                <th>Action</th>
-                <th>Horizon</th>
-                <th>Status</th>
-                <th>Validation return</th>
-                <th>Test return</th>
-                <th>Test vs production</th>
-                <th>Confirmed windows</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of data.items; track item.candidate_evaluation_id) {
-                <tr>
-                  <td>
-                    {{ item.asset }} · {{ item.provider }} {{ item.market_type }} ·
-                    {{ item.interval }}
-                  </td>
-                  <td>{{ human(item.predictor_name) }}</td>
-                  <td>{{ human(item.condition) }}</td>
-                  <td>{{ actionLabel(item.suggested_action) }}</td>
-                  <td>{{ horizon(item.horizon_seconds) }}</td>
-                  <td>
-                    <span class="status" [class.confirmed]="item.status === 'confirmed_candidate'"
-                      >{{ item.status === 'confirmed_candidate' ? '●' : '○' }}
-                      {{ statusLabel(item.status) }}</span
-                    >
-                  </td>
-                  <td>{{ signedPercentage(item.validation_metrics.total_return) }}</td>
-                  <td>{{ signedPercentage(item.test_metrics.total_return) }}</td>
-                  <td>
-                    {{ signedPercentage(item.test_metrics.return_difference_from_production) }}
-                  </td>
-                  <td>{{ item.confirmed_window_count }} / {{ item.valid_window_count }}</td>
-                  <td>
-                    <button type="button" (click)="openDetail(item.candidate_evaluation_id)">
-                      Details
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="cards">
-          @for (item of data.items; track item.candidate_evaluation_id) {
-            <article>
-              <strong>{{ item.asset }} · {{ human(item.predictor_name) }}</strong
-              ><span
-                >{{ statusLabel(item.status) }} · {{ actionLabel(item.suggested_action) }} ·
-                {{ horizon(item.horizon_seconds) }}</span
-              ><span
-                >Test vs production:
-                {{ signedPercentage(item.test_metrics.return_difference_from_production) }}</span
-              ><button type="button" (click)="openDetail(item.candidate_evaluation_id)">
-                Details
-              </button>
-            </article>
+  @if (runsState() === 'ready' && !runs().length) {
+    <section class="notice">No persisted research runs are available.</section>
+  }
+
+  @if (runs().length) {
+    <section class="selectors" aria-label="Research selection">
+      <label
+        >Instrument<select
+          #instrument
+          [value]="selectedInstrumentKey()"
+          (change)="selectInstrument(instrument.value)"
+        >
+          @for (item of instruments(); track instrumentKey(item)) {
+            <option [value]="instrumentKey(item)">{{ instrumentLabel(item) }}</option>
           }
-        </div>
-        <nav class="pagination" aria-label="Candidate pages">
-          <button type="button" (click)="previous()" [disabled]="offset() === 0">Previous</button
+        </select></label
+      >
+      <label
+        >Research run<select #run [value]="selectedRunId()" (change)="selectRun(run.value)">
+          @for (item of instrumentRuns(); track item.id) {
+            <option [value]="item.id">
+              {{
+                item.completed_at
+                  ? (item.completed_at | date: 'medium' : 'UTC') + ' UTC'
+                  : statusLabel(item.status)
+              }}
+              · {{ item.id.slice(0, 8) }}
+            </option>
+          }
+        </select></label
+      >
+      @if (selectedRun(); as selected) {
+        <p>
+          <strong>{{ instrumentLabel(selected.instrument) }}</strong
           ><span
-            >Showing {{ offset() + 1 }}–{{ Math.min(offset() + data.items.length, data.total) }} of
-            {{ data.total }}</span
-          ><button
-            type="button"
-            (click)="next()"
-            [disabled]="offset() + data.items.length >= data.total"
+            >{{ selected.range_start | date: 'medium' : 'UTC' }} UTC →
+            {{ selected.range_end | date: 'medium' : 'UTC' }} UTC</span
           >
-            Next
-          </button>
-        </nav>
+        </p>
       }
     </section>
-  }
-  @if (detailLoading()) {
-    <aside class="detail-panel" aria-live="polite">Loading candidate detail…</aside>
-  }
-  @if (detailError()) {
-    <aside class="detail-panel error" role="alert">
-      Candidate detail could not be loaded.<button type="button" (click)="closeDetail()">
-        Close
-      </button>
-    </aside>
-  }
-  @if (detail(); as item) {
-    <aside class="detail-panel" aria-labelledby="detail-title">
-      <header>
-        <div>
-          <p class="eyebrow">{{ instrumentLabel(item) }}</p>
-          <h2 id="detail-title">
-            {{ statusLabel(item.status) }} · {{ human(item.predictor_name) }}
-          </h2>
-          <p>
-            {{ human(item.condition) }} · {{ actionLabel(item.suggested_action) }} ·
-            {{ horizon(item.horizon_seconds) }}
-          </p>
-        </div>
-        <button type="button" (click)="closeDetail()" aria-label="Close candidate detail">
-          Close
+
+    <nav class="workspace-nav" aria-label="Strategy Research sections" role="tablist">
+      @for (
+        tab of [
+          { id: 'overview', label: 'Overview' },
+          { id: 'predictive', label: 'Predictive Evidence' },
+          { id: 'near-misses', label: 'Near Misses' },
+          { id: 'targeted', label: 'Targeted Refinement' },
+          { id: 'historical', label: 'Historical Candidates' },
+        ];
+        track tab.id
+      ) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === tab.id"
+          [class.active]="activeTab() === tab.id"
+          (click)="selectTab($any(tab.id))"
+        >
+          {{ tab.label }}
         </button>
-      </header>
-      <details open>
-        <summary>Why this candidate exists</summary>
-        <p>{{ item.explanation }}</p>
-        <dl>
-          <div>
-            <dt>Predictor</dt>
-            <dd>{{ human(item.predictor_name) }}</dd>
+      }
+    </nav>
+
+    @if (selectedRun(); as selected) {
+      @if (activeTab() === 'overview') {
+        <section aria-labelledby="overview-title">
+          <h2 id="overview-title">Run overview</h2>
+          <div class="metric-grid">
+            <article>
+              <span>Status</span><strong>{{ statusLabel(selected.status) }}</strong>
+            </article>
+            <article>
+              <span>Research outcome</span
+              ><strong>{{
+                selected.research_outcome ? statusLabel(selected.research_outcome) : 'Not available'
+              }}</strong>
+            </article>
+            <article>
+              <span>Generated strategies</span><strong>{{ selected.generated_count }}</strong>
+            </article>
+            <article>
+              <span>Evaluated strategies</span><strong>{{ selected.evaluated_count }}</strong>
+            </article>
+            <article>
+              <span>Confirmed candidates <app-metric-help metric="confirmedCandidate" /></span
+              ><strong>{{ selected.candidate_status_counts.confirmed_candidate }}</strong>
+            </article>
+            <article>
+              <span>Validation rejections</span
+              ><strong>{{ selected.candidate_status_counts.rejected_validation }}</strong>
+            </article>
+            <article>
+              <span>Test rejections</span
+              ><strong>{{ selected.candidate_status_counts.rejected_test }}</strong>
+            </article>
+            <article>
+              <span>Windows available</span><strong>{{ selected.windows_available }}</strong>
+            </article>
+            <article>
+              <span>Fee rate</span><strong>{{ percentage(selected.fee_rate) }}</strong>
+            </article>
+            <article>
+              <span>Slippage rate</span><strong>{{ percentage(selected.slippage_rate) }}</strong>
+            </article>
+            <article>
+              <span>Total runtime</span
+              ><strong>{{ selected.timings?.['total'] ?? 'Not available' }}</strong>
+            </article>
+            <article>
+              <span>Evidence contract</span
+              ><strong>{{ selected.legacy ? 'Legacy' : 'Current' }}</strong>
+            </article>
           </div>
-          <div>
-            <dt>Bin</dt>
-            <dd>{{ bin(item) }}</dd>
-          </div>
-          <div>
-            <dt>Condition</dt>
-            <dd>{{ human(item.condition) }}</dd>
-          </div>
-          <div>
-            <dt>Direction mapping</dt>
-            <dd>{{ human(item.direction_mapping) }}</dd>
-          </div>
-          <div>
-            <dt>Source hypothesis</dt>
-            <dd>
-              <code>{{ item.source_hypothesis_id.slice(0, 12) }}…</code>
+          <p class="explanation">
+            {{ selected.outcome_explanation ?? 'No outcome explanation was persisted.' }}
+          </p>
+        </section>
+      }
+
+      @if (activeTab() === 'predictive') {
+        <section aria-labelledby="predictive-title">
+          <h2 id="predictive-title">
+            Predictive Evidence <app-metric-help metric="predictiveEdge" />
+          </h2>
+          @if (diagnosticsState() === 'loading' && !diagnostics()) {
+            <p class="notice">Loading predictive diagnostics…</p>
+          }
+          @if (diagnosticsState() === 'unavailable') {
+            <p class="notice">Predictive diagnostics are not available for this legacy run.</p>
+          }
+          @if (diagnosticsState() === 'error') {
+            <p class="notice error">
+              Predictive diagnostics could not be loaded.<button
+                type="button"
+                (click)="retryActivePanel()"
+              >
+                Retry this panel
+              </button>
+            </p>
+          }
+          @if (diagnostics(); as data) {
+            <div class="metric-grid">
+              <article>
+                <span>Conclusion</span
+                ><strong>{{ statusLabel(data.diagnostic_conclusion) }}</strong>
+              </article>
+              <article>
+                <span>Bottleneck stage <app-metric-help metric="bottleneckStage" /></span
+                ><strong>{{ statusLabel(data.bottleneck_stage) }}</strong>
+              </article>
+              <article>
+                <span>Strongest observed signal</span
+                ><strong>{{ data.strongest_observed_signal ?? 'Not available' }}</strong>
+              </article>
+              <article>
+                <span>Regime-conditioned conclusion</span
+                ><strong>{{
+                  data.regime_conditioned_conclusion
+                    ? statusLabel(data.regime_conditioned_conclusion)
+                    : 'Not available'
+                }}</strong>
+              </article>
+            </div>
+            <p class="explanation">{{ data.outcome_explanation }}</p>
+            <div class="diagnostic-grid">
+              <article>
+                <h3>Rejections by reason</h3>
+                @for (entry of sortedCounts(data.rejection_counts_by_reason); track entry[0]) {
+                  <div class="bar-row">
+                    <span>{{ statusLabel(entry[0]) }}</span
+                    ><span
+                      class="bar"
+                      [style.--size.%]="
+                        (entry[1] / maxCount(data.rejection_counts_by_reason)) * 100
+                      "
+                    ></span
+                    ><strong>{{ entry[1] }}</strong>
+                  </div>
+                } @empty {
+                  <p>Not available</p>
+                }
+              </article>
+              <article>
+                <h3>Computed and reused</h3>
+                <dl>
+                  @for (entry of sortedCounts(data.computed_counts); track entry[0]) {
+                    <div>
+                      <dt>{{ statusLabel(entry[0]) }} computed</dt>
+                      <dd>{{ entry[1] }}</dd>
+                    </div>
+                  }
+                  @for (entry of sortedCounts(data.reused_counts); track entry[0]) {
+                    <div>
+                      <dt>{{ statusLabel(entry[0]) }} reused</dt>
+                      <dd>{{ entry[1] }}</dd>
+                    </div>
+                  }
+                </dl>
+              </article>
+            </div>
+            <details>
+              <summary>Additional rejection evidence</summary>
+              <div class="diagnostic-grid">
+                @for (
+                  group of [
+                    { label: 'Predictor', values: data.rejection_counts_by_predictor },
+                    { label: 'Horizon', values: data.rejection_counts_by_horizon },
+                    { label: 'Cadence', values: data.rejection_counts_by_cadence },
+                  ];
+                  track group.label
+                ) {
+                  <article>
+                    <h3>{{ group.label }}</h3>
+                    <dl>
+                      @for (entry of sortedCounts(group.values); track entry[0]) {
+                        <div>
+                          <dt>{{ statusLabel(entry[0]) }}</dt>
+                          <dd>{{ entry[1] }}</dd>
+                        </div>
+                      }
+                    </dl>
+                  </article>
+                }
+              </div>
+            </details>
+            <details>
+              <summary>Technical details</summary>
+              <p>Contract version {{ data.contract_version }}</p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th>Source</th>
+                    <th>Rationale</th>
+                    <th>Contract</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of data.effective_parameters; track item.name) {
+                    <tr>
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.value }}</td>
+                      <td>{{ item.source }}</td>
+                      <td>{{ item.rationale }}</td>
+                      <td>{{ item.contract_version }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              <h3>Stage timings</h3>
+              <dl>
+                @for (entry of sortedCounts($any(data.stage_timings)); track entry[0]) {
+                  <div>
+                    <dt>{{ statusLabel(entry[0]) }}</dt>
+                    <dd>{{ entry[1] }}</dd>
+                  </div>
+                }
+              </dl>
+            </details>
+          }
+        </section>
+      }
+
+      @if (activeTab() === 'near-misses') {
+        <section aria-labelledby="near-title">
+          <div class="section-heading">
+            <h2 id="near-title">Near Misses <app-metric-help metric="nearMiss" /></h2>
+            <div class="subtabs" role="tablist">
               <button
                 type="button"
-                (click)="copy(item.source_hypothesis_id)"
-                aria-label="Copy source hypothesis ID"
+                role="tab"
+                [attr.aria-selected]="nearMissKind() === 'actionable'"
+                (click)="selectNearMissKind('actionable')"
               >
-                Copy
+                Actionable</button
+              ><button
+                type="button"
+                role="tab"
+                [attr.aria-selected]="nearMissKind() === 'diagnostic'"
+                (click)="selectNearMissKind('diagnostic')"
+              >
+                Diagnostic
               </button>
-            </dd>
+            </div>
           </div>
-        </dl>
-      </details>
-      <details open>
-        <summary>Historical comparison</summary>
-        <table class="metrics">
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>Training</th>
-              <th>Validation</th>
-              <th>Test</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>Total return <app-metric-help metric="segmentTotalReturn" /></th>
-              <td>{{ signedPercentage(item.training_metrics.total_return) }}</td>
-              <td>{{ signedPercentage(item.validation_metrics.total_return) }}</td>
-              <td>{{ signedPercentage(item.test_metrics.total_return) }}</td>
-            </tr>
-            <tr>
-              <th>Maximum drawdown <app-metric-help metric="segmentDrawdown" /></th>
-              <td>{{ percentage(item.training_metrics.max_drawdown) }}</td>
-              <td>{{ percentage(item.validation_metrics.max_drawdown) }}</td>
-              <td>{{ percentage(item.test_metrics.max_drawdown) }}</td>
-            </tr>
-            <tr>
-              <th>Trades</th>
-              <td>{{ item.training_metrics.trade_count }}</td>
-              <td>{{ item.validation_metrics.trade_count }}</td>
-              <td>{{ item.test_metrics.trade_count }}</td>
-            </tr>
-            <tr>
-              <th>Fees paid <app-metric-help metric="segmentFees" /></th>
-              <td>{{ money(item.training_metrics.fees_paid, item.account_currency) }}</td>
-              <td>{{ money(item.validation_metrics.fees_paid, item.account_currency) }}</td>
-              <td>{{ money(item.test_metrics.fees_paid, item.account_currency) }}</td>
-            </tr>
-            <tr>
-              <th>Difference vs production <app-metric-help metric="differenceVsProduction" /></th>
-              <td>
-                {{ signedPercentage(item.training_metrics.return_difference_from_production) }}
-              </td>
-              <td>
-                {{ signedPercentage(item.validation_metrics.return_difference_from_production) }}
-              </td>
-              <td>{{ signedPercentage(item.test_metrics.return_difference_from_production) }}</td>
-            </tr>
-            <tr>
-              <th>Difference vs buy and hold <app-metric-help metric="differenceVsBuyHold" /></th>
-              <td>
-                {{ signedPercentage(item.training_metrics.return_difference_from_buy_and_hold) }}
-              </td>
-              <td>
-                {{ signedPercentage(item.validation_metrics.return_difference_from_buy_and_hold) }}
-              </td>
-              <td>{{ signedPercentage(item.test_metrics.return_difference_from_buy_and_hold) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </details>
-      <details open>
-        <summary>Walk-forward evidence</summary>
-        <div class="evidence-counts">
-          <span
-            >Valid windows <strong>{{ item.valid_window_count }}</strong></span
-          ><span
-            >Confirmed <strong>{{ item.confirmed_window_count }}</strong></span
-          ><span
-            >Validation rejections
-            <strong>{{ item.rejected_validation_window_count }}</strong></span
-          ><span
-            >Test rejections <strong>{{ item.rejected_test_window_count }}</strong></span
-          >
-        </div>
-        <app-edge-evidence-chart [windows]="item.windows" />
-        <details>
-          <summary>Window evidence table</summary>
-          <table>
-            <thead>
-              <tr>
-                <th>Window</th>
-                <th>Validation vs production</th>
-                <th>Test vs production</th>
-                <th>Validation passed</th>
-                <th>Test confirmed</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (window of item.windows; track window.window_ordinal) {
-                <tr>
-                  <td>{{ window.window_ordinal }}</td>
-                  <td>
-                    {{
-                      signedPercentage(window.validation_metrics.return_difference_from_production)
-                    }}
-                  </td>
-                  <td>
-                    {{
-                      window.test_metrics
-                        ? signedPercentage(window.test_metrics.return_difference_from_production)
-                        : 'Not evaluated'
-                    }}
-                  </td>
-                  <td>{{ window.validation_passed ? 'Yes' : 'No' }}</td>
-                  <td>
-                    {{
-                      window.test_metrics ? (window.test_confirmed ? 'Yes' : 'No') : 'Not evaluated'
-                    }}
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </details>
-      </details>
-      <details>
-        <summary>Configuration</summary>
-        <dl>
-          <div>
-            <dt>Score model</dt>
-            <dd>{{ item.score_model_name }} v{{ item.score_model_version }}</dd>
-          </div>
-          <div>
-            <dt>Strategy</dt>
-            <dd>
-              {{ item.strategy_name }} v{{ item.strategy_version }} · config
-              {{ item.strategy_configuration_version }}
-            </dd>
-          </div>
-          <div>
-            <dt>Decision interval</dt>
-            <dd>{{ horizon(item.decision_interval_seconds) }}</dd>
-          </div>
-          <div>
-            <dt>Fee rate</dt>
-            <dd>{{ percentage(item.fee_rate) }}</dd>
-          </div>
-          <div>
-            <dt>Slippage rate</dt>
-            <dd>{{ percentage(item.slippage_rate) }}</dd>
-          </div>
-          <div>
-            <dt>Historical range</dt>
-            <dd>
-              {{ item.range_start | date: 'medium' : 'UTC' }} UTC →
-              {{ item.range_end | date: 'medium' : 'UTC' }} UTC
-            </dd>
-          </div>
-        </dl>
-        @for (
-          value of [
-            { label: 'Candidate fingerprint', text: item.candidate_fingerprint },
-            { label: 'Source edge fingerprint', text: item.source_edge_fingerprint },
-            { label: 'Dataset fingerprint', text: item.dataset_fingerprint },
-          ];
-          track value.label
-        ) {
-          <p>
-            {{ value.label }}: <code>{{ value.text.slice(0, 12) }}…</code>
-            <button
-              type="button"
-              (click)="copy(value.text)"
-              [attr.aria-label]="'Copy ' + value.label"
-            >
-              Copy
-            </button>
-          </p>
-        }
-      </details>
-    </aside>
-  }
-</main>
+          @if (nearMissState() === 'loading' && !nearMissPage()) {
+            <p class="notice">Loading {{ nearMissKind() }} near misses…</p>
+          }
+          @if (nearMissState() === 'error') {
+            <p class="notice error">
+              Near misses could not be loaded.<button type="button" (click)="retryActivePanel()">
+                Retry this panel
+              </button>
+            </p>
+          }
+          @if (nearMissPage(); as data) {
+            @if (!data.items.length) {
+              <p class="notice">No {{ nearMissKind() }} near misses were persisted.</p>
+            } @else {
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Predictors</th>
+                      <th>Cadence / horizon</th>
+                      <th>Action</th>
+                      <th>Classification</th>
+                      <th>Reason</th>
+                      <th>Observations / windows</th>
+                      <th>Net movement</th>
+                      <th>Hit / benchmark improvement</th>
+                      <th>Distance</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of data.items; track item.id) {
+                      <tr>
+                        <td>{{ item.rank }}</td>
+                        <td>
+                          {{ item.directional_predictor ?? 'Not available'
+                          }}<small
+                            >{{ item.context_predictor ?? 'Not available' }} ·
+                            {{ item.context_regime ?? 'Not available' }}</small
+                          >
+                        </td>
+                        <td>
+                          {{ duration(item.cadence_seconds) }} /
+                          {{ duration(item.horizon_seconds) }}
+                        </td>
+                        <td>{{ actionLabel(item.suggested_action) }}</td>
+                        <td>{{ statusLabel(item.classification) }}</td>
+                        <td>{{ statusLabel(item.primary_rejection_reason) }}</td>
+                        <td>
+                          {{ item.usable_observations }} /
+                          {{ item.usable_window_count ?? 'Not available' }}
+                        </td>
+                        <td>{{ item.expected_net_movement ?? 'Not available' }}</td>
+                        <td>
+                          {{ item.directional_hit_rate ?? 'Not available' }} /
+                          {{ item.benchmark_improvement ?? 'Not available' }}
+                        </td>
+                        <td>{{ item.normalized_missing_distance }}</td>
+                        <td>
+                          <button type="button" (click)="openNearMiss(item.id)">Details</button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="cards">
+                @for (item of data.items

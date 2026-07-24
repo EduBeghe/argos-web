@@ -142,16 +142,28 @@ editing, Risk Engine functionality, and backend changes.
 
 ## Strategy Research
 
-The `/strategies` route provides a read-only view of persisted edge-guided historical evaluations.
-It summarizes evaluation runs, filters candidates by their complete instrument identity and
-evidence attributes, and loads detailed walk-forward evidence only when requested. Validation and
-isolated-test differences from the production strategy are shown per window; missing test evidence
-remains an explicit gap rather than an inferred result.
+The lazy `/strategies` route is a read-only research workspace with five sections: **Overview**,
+**Predictive Evidence**, **Near Misses**, **Targeted Refinement**, and **Historical Candidates**.
+Its instrument selector uses the complete persisted identity and defaults to the newest completed
+run; when several runs exist, the user can select the exact historical run and range.
+
+Only run metadata loads initially. Diagnostics, actionable or diagnostic near misses, targeted
+refinement, and candidate details load when their section or detail is opened. Panel failures remain
+isolated and retries preserve other successful evidence. A 404 for predictive diagnostics or
+targeted refinement is a normal legacy/unavailable state. Predictive and targeted requests use the
+selected run's `predictive_edge_run_id`; historical candidate identity continues to use the separate
+edge-guided run ID.
+
+Targeted refinement presents the persisted qualification funnel from generated configurations
+through training, validation, isolated test, and confirmation with exact counts. Historical
+candidates retain their existing filters, pagination, chart, and details. Nullable validation or
+test evidence is displayed as **Not evaluated**, never inferred as zero or success.
 
 All candidate metrics, explanations, parameters, and classifications come from the optimization
 API. The frontend formats Decimal strings for display but does not recompute financial evidence,
-run historical simulations, promote candidates, or imply that historical confirmation guarantees
-future performance.
+run historical simulations, promote or activate candidates, or imply that historical confirmation
+guarantees future performance. Strategy activation and adaptive multifeature discovery are outside
+this frontend PR.
 
 ## Current limitations
 

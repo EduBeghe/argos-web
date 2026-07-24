@@ -42,6 +42,20 @@ describe('DashboardPage', () => {
     expect(TestBed.inject(Router).url).toBe('/evaluation');
   });
 
+  it('presents research and evaluation routes as keyboard-focusable navigation buttons', () => {
+    api.getOverview.mockReturnValue(of(dashboardWithPaper));
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    const links = [
+      ...fixture.nativeElement.querySelectorAll('a.secondary-action'),
+    ] as HTMLAnchorElement[];
+    expect(links.map((link) => link.getAttribute('routerLink'))).toEqual([
+      '/strategies',
+      '/evaluation',
+    ]);
+    expect(links.every((link) => link.tabIndex === 0)).toBe(true);
+  });
+
   it('shows initial loading and then a data-driven instrument with no active run', () => {
     const response = new Subject<DashboardOverview>();
     api.getOverview.mockReturnValue(response);

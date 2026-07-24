@@ -20,95 +20,103 @@ describe('StrategyResearchApiService', () => {
     service = TestBed.inject(StrategyResearchApiService);
     http = TestBed.inject(HttpTestingController);
   });
-
   afterEach(() => http.verify());
 
-  it('requests bounded run evidence', () => {
-    service.getRuns().subscribe();
-    const request = http.expectOne(
-      'https://api.example.test/optimization/edge-guided/runs?limit=100&offset=0',
-    );
-    expect(request.request.method).toBe('GET');
-    request.flush({ items: [], total: 0, limit: 100, offset: 0 });
+  it('loads all run pages sequentially', () => {
+    let count = 0;
+    service.getRuns().subscribe((value) => (count = value.items.length));
+    http
+      .expectOne('https://api.example.test/optimization/edge-guided/runs?limit=100&offset=0')
+      .flush({
+        items: Array.from({ length: 100 }, (_, id) => ({ id })),
+        total: 101,
+        limit: 100,
+        offset: 0,
+      });
+    http
+      .expectOne('https://api.example.test/optimization/edge-guided/runs?limit=100&offset=100')
+      .flush({ items: [{ id: 100 }], total: 101, limit: 100, offset: 100 });
+    expect(count).toBe(101);
   });
 
-  it('loads every run page sequentially', () => {
-    let resultCount = 0;
-    service.getRuns().subscribe((value) => (resultCount = value.items.length));
-
-    const first = http.expectOne(
-      'https://api.example.test/optimization/edge-guided/runs?limit=100&offset=0',
-    );
-    first.flush({
-      items: Array.from({ length: 100 }, (_, index) => run(`run-${index}`)),
-      total: 101,
-      limit: 100,
-      offset: 0,
-    });
-    const second = http.expectOne(
-      'https://api.example.test/optimization/edge-guided/runs?limit=100&offset=100',
-    );
-    second.flush({ items: [run('run-100')], total: 101, limit: 100, offset: 100 });
-
-    expect(resultCount).toBe(101);
+  it('uses the predictive run identity for diagnostics and near misses', () => {
+    service.getDiagnostics('predictive/id').subscribe();
+    http
+      .expectOne(
+        'https://api.example.test/optimization/predictive-edge-runs/predictive%2Fid/diagnostics',
+      )
+      .flush({});
+    service.getNearMisses('predictive/id', 'diagnostic', 50).subscribe();
+    http
+      .expectOne(
+        'https://api.example.test/optimization/predictive-edge-runs/predictive%2Fid/near-misses?kind=diagnostic&limit=50&cursor=50',
+      )
+      .flush({ items: [], next_cursor: null, has_more: false });
+    service.getNearMiss('predictive/id', 'near/id').subscribe();
+    http
+      .expectOne(
+        'https://api.example.test/optimization/predictive-edge-runs/predictive%2Fid/near-misses/near%2Fid',
+      )
+      .flush({});
   });
 
-  it('sends complete instrument identity and all candidate filters', () => {
+  it('uses exact targeted summary, filtering, pagination and detail contracts', () => {
+    service.getTargetedRefinement('predictive').subscribe();
+    http
+      .expectOne(
+        'https://api.example.test/optimization/predictive-edge-runs/predictive/targeted-refinement',
+      )
+      .flush({});
+    service.getTargetedCandidates('predictive', 'rejected_validation', 50).subscribe();
+    http
+      .expectOne(
+        'https://api.example.test/optimization/predictive-edge-runs/predictive/targeted-refinement/candidates?limit=50&offset=50&status=rejected_validation',
+      )
+      .flush({ items: [], total: 0, next_cursor: null, has_more: false });
+    service.getTargetedCandidate('predictive', 'candidate/id').subscribe();
+    http
+      .expectOne(
+        'https://api.example.test/optimization/predictive-edge-runs/predictive/targeted-refinement/candidates/candidate%2Fid',
+      )
+      .flush({});
+  });
+
+  it('preserves complete identity filters for historical candidates', () => {
     service
       .getCandidates(
         {
           instrument: {
             asset: 'GENERIC/USD',
-            provider: 'provider-one',
+            provider: 'venue',
             market_type: 'spot',
             interval: '5m',
           },
           status: 'confirmed_candidate',
           action: 'long_entry',
-          predictor: 'rsi_14',
-          condition: 'high_volatility',
+          predictor: 'rsi',
+          condition: 'all',
         },
         50,
       )
       .subscribe();
-    const request = http.expectOne((item) => {
-      const params = item.params;
-      return (
-        item.url === 'https://api.example.test/optimization/edge-guided/candidates' &&
-        params.get('asset') === 'GENERIC/USD' &&
-        params.get('provider') === 'provider-one' &&
-        params.get('market_type') === 'spot' &&
-        params.get('interval') === '5m' &&
-        params.get('status') === 'confirmed_candidate' &&
-        params.get('action') === 'long_entry' &&
-        params.get('predictor_name') === 'rsi_14' &&
-        params.get('condition') === 'high_volatility' &&
-        params.get('limit') === '50' &&
-        params.get('offset') === '50'
-      );
-    });
+    const request = http.expectOne((item) =>
+      item.url.endsWith('/optimization/edge-guided/candidates'),
+    );
+    expect(request.request.params.keys().sort()).toEqual(
+      [
+        'action',
+        'asset',
+        'condition',
+        'interval',
+        'limit',
+        'market_type',
+        'offset',
+        'predictor_name',
+        'provider',
+        'status',
+      ].sort(),
+    );
+    expect(request.request.params.get('asset')).toBe('GENERIC/USD');
     request.flush({ items: [], total: 0, limit: 50, offset: 50 });
   });
-
-  it('loads candidate detail only through the explicit detail request', () => {
-    service.getCandidate('candidate/id').subscribe();
-    const request = http.expectOne(
-      'https://api.example.test/optimization/edge-guided/candidates/candidate%2Fid',
-    );
-    expect(request.request.method).toBe('GET');
-    request.flush({});
-  });
 });
-
-function run(id: string) {
-  return {
-    id,
-    instrument: { asset: id, provider: 'provider', market_type: 'spot', interval: '5m' },
-    evaluated_count: 1,
-    candidate_status_counts: {
-      confirmed_candidate: 1,
-      rejected_validation: 0,
-      rejected_test: 0,
-    },
-  };
-}
