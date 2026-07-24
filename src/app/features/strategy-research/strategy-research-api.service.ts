@@ -7,7 +7,15 @@ import {
   CandidateDetail,
   CandidateFilters,
   CandidatePage,
+  NearMissDetail,
+  NearMissKind,
+  NearMissPage,
+  PredictiveDiagnostics,
   RunPage,
+  TargetedCandidateDetail,
+  TargetedCandidatePage,
+  TargetedCandidateStatus,
+  TargetedRefinementSummary,
 } from './strategy-research.models';
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +43,60 @@ export class StrategyResearchApiService {
     );
   }
 
+  getDiagnostics(predictiveRunId: string): Observable<PredictiveDiagnostics> {
+    return this.http.get<PredictiveDiagnostics>(
+      `${this.predictiveRunUrl(predictiveRunId)}/diagnostics`,
+    );
+  }
+
+  getNearMisses(
+    predictiveRunId: string,
+    kind: NearMissKind,
+    cursor: number | null = null,
+    limit = 50,
+  ): Observable<NearMissPage> {
+    let params = new HttpParams().set('kind', kind).set('limit', limit);
+    if (cursor !== null) params = params.set('cursor', cursor);
+    return this.http.get<NearMissPage>(`${this.predictiveRunUrl(predictiveRunId)}/near-misses`, {
+      params,
+    });
+  }
+
+  getNearMiss(predictiveRunId: string, nearMissId: string): Observable<NearMissDetail> {
+    return this.http.get<NearMissDetail>(
+      `${this.predictiveRunUrl(predictiveRunId)}/near-misses/${encodeURIComponent(nearMissId)}`,
+    );
+  }
+
+  getTargetedRefinement(predictiveRunId: string): Observable<TargetedRefinementSummary> {
+    return this.http.get<TargetedRefinementSummary>(
+      `${this.predictiveRunUrl(predictiveRunId)}/targeted-refinement`,
+    );
+  }
+
+  getTargetedCandidates(
+    predictiveRunId: string,
+    status: TargetedCandidateStatus | null,
+    offset: number,
+    limit = 50,
+  ): Observable<TargetedCandidatePage> {
+    let params = new HttpParams().set('limit', limit).set('offset', offset);
+    if (status) params = params.set('status', status);
+    return this.http.get<TargetedCandidatePage>(
+      `${this.predictiveRunUrl(predictiveRunId)}/targeted-refinement/candidates`,
+      { params },
+    );
+  }
+
+  getTargetedCandidate(
+    predictiveRunId: string,
+    candidateId: string,
+  ): Observable<TargetedCandidateDetail> {
+    return this.http.get<TargetedCandidateDetail>(
+      `${this.predictiveRunUrl(predictiveRunId)}/targeted-refinement/candidates/${encodeURIComponent(candidateId)}`,
+    );
+  }
+
   getCandidates(filters: CandidateFilters, offset: number, limit = 50): Observable<CandidatePage> {
     let params = new HttpParams().set('limit', limit).set('offset', offset);
     if (filters.instrument) {
@@ -57,6 +119,10 @@ export class StrategyResearchApiService {
     return this.http.get<CandidateDetail>(
       `${this.baseUrl}/optimization/edge-guided/candidates/${encodeURIComponent(id)}`,
     );
+  }
+
+  private predictiveRunUrl(id: string): string {
+    return `${this.baseUrl}/optimization/predictive-edge-runs/${encodeURIComponent(id)}`;
   }
 
   private getRunPage(offset: number): Observable<RunPage> {
