@@ -377,4 +377,618 @@
                 </table>
               </div>
               <div class="cards">
-                @for (item of data.items
+                @for (item of data.items; track item.id) {
+                  <article>
+                    <strong
+                      >#{{ item.rank }} ·
+                      {{ item.directional_predictor ?? 'Not available' }}</strong
+                    ><span>{{ statusLabel(item.primary_rejection_reason) }}</span
+                    ><span>Distance: {{ item.normalized_missing_distance }}</span
+                    ><button type="button" (click)="openNearMiss(item.id)">Details</button>
+                  </article>
+                }
+              </div>
+              <nav class="pagination" aria-label="Near miss pages">
+                <button
+                  type="button"
+                  (click)="nearMissPrevious()"
+                  [disabled]="!nearMissCursorHistory().length"
+                >
+                  Previous
+                </button>
+                <button type="button" (click)="nearMissNext()" [disabled]="!data.has_more">
+                  Next
+                </button>
+              </nav>
+            }
+          }
+        </section>
+      }
+
+      @if (activeTab() === 'targeted') {
+        <section aria-labelledby="targeted-title">
+          <h2 id="targeted-title">
+            Targeted Refinement <app-metric-help metric="targetedRefinement" />
+          </h2>
+          @if (targetedState() === 'loading' && !targetedSummary()) {
+            <p class="notice">Loading targeted refinement…</p>
+          }
+          @if (targetedState() === 'unavailable') {
+            <p class="notice">
+              Targeted refinement is not available for this legacy or pre-refinement run.
+            </p>
+          }
+          @if (targetedState() === 'error') {
+            <p class="notice error">
+              Targeted refinement could not be loaded.<button
+                type="button"
+                (click)="retryActivePanel()"
+              >
+                Retry this panel
+              </button>
+            </p>
+          }
+          @if (targetedSummary(); as data) {
+            <p class="outcome">
+              <strong>{{ statusLabel(data.conclusion) }}</strong
+              ><span>Best candidate: {{ data.best_targeted_candidate ?? 'Not available' }}</span>
+            </p>
+            <ol
+              class="funnel"
+              aria-label="Qualification funnel: configurations, training retained, validation retained, test evaluated, confirmed"
+            >
+              <li>
+                <span>Configurations</span
+                ><strong>{{ count(data, 'configurations_generated') ?? 'Not available' }}</strong>
+              </li>
+              <li>
+                <span>Training retained</span
+                ><strong>{{ count(data, 'training_retained') ?? 'Not available' }}</strong>
+              </li>
+              <li>
+                <span>Validation retained</span
+                ><strong>{{ count(data, 'validation_retained') ?? 'Not available' }}</strong>
+              </li>
+              <li>
+                <span>Test evaluated</span
+                ><strong>{{ count(data, 'test_evaluated') ?? 'Not available' }}</strong>
+              </li>
+              <li>
+                <span>Confirmed</span><strong>{{ data.confirmed_candidate_count }}</strong>
+              </li>
+            </ol>
+            <div class="metric-grid">
+              @for (
+                item of [
+                  { label: 'Seeds selected', key: 'seeds_selected' },
+                  { label: 'Duplicates removed', key: 'duplicates_removed' },
+                  { label: 'Training evaluated', key: 'training_evaluated' },
+                  { label: 'Validation evaluated', key: 'validation_evaluated' },
+                  { label: 'Evaluations computed', key: 'evaluations_computed' },
+                  { label: 'Evaluations reused', key: 'evaluations_reused' },
+                  { label: 'Elapsed seconds', key: 'elapsed_seconds' },
+                ];
+                track item.key
+              ) {
+                <article>
+                  <span>{{ item.label }}</span
+                  ><strong>{{ count(data, item.key) ?? 'Not available' }}</strong>
+                </article>
+              }
+            </div>
+            <div class="filters">
+              <label
+                >Status<select
+                  #targetStatus
+                  [value]="targetedStatus() ?? ''"
+                  (change)="selectTargetedStatus(targetStatus.value)"
+                >
+                  <option value="">All statuses</option>
+                  <option value="rejected_training">Rejected in training</option>
+                  <option value="rejected_validation">Rejected in validation</option>
+                  <option value="rejected_test">Rejected in test</option>
+                  <option value="confirmed_candidate">Confirmed candidate</option>
+                </select></label
+              >
+            </div>
+            @if (targetedPage(); as candidates) {
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Predictor / context</th>
+                      <th>Cadence / horizon</th>
+                      <th>Training</th>
+                      <th>Validation</th>
+                      <th>Test</th>
+                      <th>Distance</th>
+                      <th>Reason</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of candidates.items; track item.id) {
+                      <tr>
+                        <td>
+                          <span
+                            class="status"
+                            [class.confirmed]="item.status === 'confirmed_candidate'"
+                            >{{
+                              item.status === 'confirmed_candidate'
+                                ? '● Confirmed'
+                                : statusLabel(item.status)
+                            }}</span
+                          >
+                        </td>
+                        <td>
+                          {{
+                            item.configuration.directional_predictor ??
+                              item.configuration.predictor_name ??
+                              'Not available'
+                          }}<small
+                            >{{ item.configuration.context_predictor ?? 'Not available' }} ·
+                            {{ item.configuration.context_regime ?? 'Not available' }}</small
+                          >
+                        </td>
+                        <td>
+                          {{
+                            duration(
+                              item.configuration.cadence_seconds ??
+                                item.configuration.decision_interval_seconds
+                            )
+                          }}
+                          /
+                          {{
+                            duration(
+                              item.configuration.horizon_seconds ??
+                                item.configuration.holding_period_seconds
+                            )
+                          }}
+                        </td>
+                        <td>
+                          {{
+                            item.training_metrics
+                              ? signedPercentage(item.training_metrics.total_return)
+                              : 'Not evaluated'
+                          }}<small>{{
+                            item.training_metrics
+                              ? percentage(item.training_metrics.max_drawdown) +
+                                ' drawdown · ' +
+                                item.training_metrics.trade_count +
+                                ' trades'
+                              : ''
+                          }}</small>
+                        </td>
+                        <td>
+                          {{
+                            item.validation_metrics
+                              ? signedPercentage(item.validation_metrics.total_return)
+                              : 'Not evaluated'
+                          }}<small>{{
+                            item.validation_metrics
+                              ? percentage(item.validation_metrics.max_drawdown) + ' drawdown'
+                              : ''
+                          }}</small>
+                        </td>
+                        <td>
+                          {{
+                            item.test_metrics
+                              ? signedPercentage(item.test_metrics.total_return)
+                              : 'Not evaluated'
+                          }}<small>{{
+                            item.test_metrics
+                              ? percentage(item.test_metrics.max_drawdown) + ' drawdown'
+                              : ''
+                          }}</small>
+                        </td>
+                        <td>{{ item.normalized_distance }}</td>
+                        <td>
+                          {{
+                            item.rejection_reason
+                              ? statusLabel(item.rejection_reason)
+                              : 'Not available'
+                          }}
+                        </td>
+                        <td>
+                          <button type="button" (click)="openTargetedCandidate(item.id)">
+                            Details
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="cards">
+                @for (item of candidates.items; track item.id) {
+                  <article>
+                    <strong>{{ statusLabel(item.status) }}</strong
+                    ><span
+                      >Training:
+                      {{
+                        item.training_metrics
+                          ? signedPercentage(item.training_metrics.total_return)
+                          : 'Not evaluated'
+                      }}</span
+                    ><span
+                      >Validation:
+                      {{
+                        item.validation_metrics
+                          ? signedPercentage(item.validation_metrics.total_return)
+                          : 'Not evaluated'
+                      }}</span
+                    ><span
+                      >Test:
+                      {{
+                        item.test_metrics
+                          ? signedPercentage(item.test_metrics.total_return)
+                          : 'Not evaluated'
+                      }}</span
+                    ><button type="button" (click)="openTargetedCandidate(item.id)">Details</button>
+                  </article>
+                }
+              </div>
+              <nav class="pagination" aria-label="Targeted candidate pages">
+                <button
+                  type="button"
+                  (click)="targetedPrevious()"
+                  [disabled]="targetedOffset() === 0"
+                >
+                  Previous</button
+                ><span
+                  >{{ targetedOffset() + 1 }}–{{ targetedOffset() + candidates.items.length }} of
+                  {{ candidates.total }}</span
+                ><button type="button" (click)="targetedNext()" [disabled]="!candidates.has_more">
+                  Next
+                </button>
+              </nav>
+            }
+          }
+        </section>
+      }
+
+      @if (activeTab() === 'historical') {
+        <section aria-labelledby="historical-title">
+          <h2 id="historical-title">Historical Candidates</h2>
+          <div class="filters">
+            <button type="button" (click)="clearFilters()">Clear filters</button
+            ><label
+              >Instrument<select
+                #historicalInstrument
+                [value]="filters().instrument ? instrumentKey(filters().instrument!) : ''"
+                (change)="selectHistoricalInstrument(historicalInstrument.value)"
+              >
+                <option value="">All instruments</option>
+                @for (item of instruments(); track instrumentKey(item)) {
+                  <option [value]="instrumentKey(item)">{{ instrumentLabel(item) }}</option>
+                }
+              </select></label
+            ><label
+              >Status<select
+                #status
+                [value]="filters().status ?? ''"
+                (change)="selectStatus(status.value)"
+              >
+                <option value="">All statuses</option>
+                <option value="confirmed_candidate">Confirmed</option>
+                <option value="rejected_validation">Rejected in validation</option>
+                <option value="rejected_test">Rejected in test</option>
+              </select></label
+            ><label
+              >Action<select
+                #action
+                [value]="filters().action ?? ''"
+                (change)="selectAction(action.value)"
+              >
+                <option value="">All actions</option>
+                <option value="long_entry">Long entry</option>
+                <option value="exit_or_avoid">Exit or avoid</option>
+              </select></label
+            ><label
+              >Predictor<input
+                #predictor
+                [value]="filters().predictor"
+                (change)="applyFilter('predictor', predictor.value.trim())" /></label
+            ><label
+              >Condition<select
+                #condition
+                [value]="filters().condition"
+                (change)="applyFilter('condition', condition.value)"
+              >
+                <option value="">All</option>
+                @for (item of conditions; track item) {
+                  <option [value]="item">{{ statusLabel(item) }}</option>
+                }
+              </select></label
+            >
+          </div>
+          @if (historicalState() === 'loading' && !page()) {
+            <p class="notice">Loading historical candidates…</p>
+          }
+          @if (historicalState() === 'error') {
+            <p class="notice error">
+              Historical candidates could not be loaded.<button
+                type="button"
+                (click)="retryActivePanel()"
+              >
+                Retry this panel
+              </button>
+            </p>
+          }
+          @if (page(); as data) {
+            @if (!data.items.length) {
+              <p class="notice">No historical candidates match these filters.</p>
+            } @else {
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Instrument</th>
+                      <th>Predictor</th>
+                      <th>Action</th>
+                      <th>Status</th>
+                      <th>Validation return</th>
+                      <th>Test return</th>
+                      <th>Test vs production</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of data.items; track item.candidate_evaluation_id) {
+                      <tr>
+                        <td>
+                          {{ item.asset }} · {{ item.provider }} {{ item.market_type }} ·
+                          {{ item.interval }}
+                        </td>
+                        <td>{{ statusLabel(item.predictor_name) }}</td>
+                        <td>{{ actionLabel(item.suggested_action) }}</td>
+                        <td>{{ statusLabel(item.status) }}</td>
+                        <td>{{ signedPercentage(item.validation_metrics.total_return) }}</td>
+                        <td>
+                          {{
+                            item.test_metrics
+                              ? signedPercentage(item.test_metrics.total_return)
+                              : 'Not evaluated'
+                          }}
+                        </td>
+                        <td>
+                          {{
+                            item.test_metrics
+                              ? signedPercentage(
+                                  item.test_metrics.return_difference_from_production
+                                )
+                              : 'Not evaluated'
+                          }}
+                        </td>
+                        <td>
+                          <button type="button" (click)="openDetail(item.candidate_evaluation_id)">
+                            Details
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <nav class="pagination" aria-label="Historical candidate pages">
+                <button type="button" (click)="previous()" [disabled]="offset() === 0">
+                  Previous</button
+                ><span
+                  >{{ offset() + 1 }}–{{ Math.min(offset() + data.items.length, data.total) }} of
+                  {{ data.total }}</span
+                ><button
+                  type="button"
+                  (click)="next()"
+                  [disabled]="offset() + data.items.length >= data.total"
+                >
+                  Next
+                </button>
+              </nav>
+            }
+          }
+        </section>
+      }
+    }
+  }
+
+  @if (nearMissDetail(); as detail) {
+    <aside class="detail-panel" aria-labelledby="near-detail-title">
+      <header>
+        <h2 id="near-detail-title">Near miss #{{ detail.near_miss.rank }}</h2>
+        <button type="button" (click)="closeDetails()">Close</button>
+      </header>
+      <p>{{ marginExplanation(detail.near_miss) }}</p>
+      <div class="requirements">
+        <article>
+          <h3>Passed requirements</h3>
+          <ul>
+            @for (item of detail.near_miss.passed_requirements; track item) {
+              <li>{{ statusLabel(item) }}</li>
+            } @empty {
+              <li>None recorded</li>
+            }
+          </ul>
+        </article>
+        <article>
+          <h3>Failed requirements</h3>
+          <ul>
+            @for (item of detail.near_miss.failed_requirements; track item) {
+              <li>{{ statusLabel(item) }}</li>
+            } @empty {
+              <li>None</li>
+            }
+          </ul>
+        </article>
+      </div>
+      <h3>Requirement margins</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Requirement</th>
+            <th>Observed</th>
+            <th>Required</th>
+            <th>Absolute margin</th>
+            <th>Relative margin</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of detail.near_miss.requirement_margins; track item.requirement) {
+            <tr>
+              <td>{{ statusLabel(item.requirement) }}</td>
+              <td>{{ item.observed_value }}</td>
+              <td>{{ item.required_value }}</td>
+              <td>{{ item.absolute_margin }}</td>
+              <td>{{ item.relative_margin ?? 'Not available' }}</td>
+              <td>{{ item.passed ? 'Passed' : 'Failed' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <h3>Threshold sensitivity</h3>
+      @for (item of detail.sensitivity; track item.threshold_name) {
+        <p>
+          {{ statusLabel(item.threshold_name) }}: {{ item.current_value }} →
+          {{ item.nearest_passing_value }} ·
+          {{ item.candidate_would_advance ? 'Would advance' : 'Other requirements remain' }}
+        </p>
+      } @empty {
+        <p>Not available</p>
+      }
+    </aside>
+  }
+  @if (targetedDetail(); as item) {
+    <aside class="detail-panel" aria-labelledby="target-detail-title">
+      <header>
+        <h2 id="target-detail-title">Targeted candidate</h2>
+        <button type="button" (click)="closeDetails()">Close</button>
+      </header>
+      <p>
+        <strong>{{ statusLabel(item.status) }}</strong> · distance {{ item.normalized_distance }}
+      </p>
+      <div class="requirements">
+        <article>
+          <h3>Passed requirements</h3>
+          <ul>
+            @for (value of item.passed_requirements; track value) {
+              <li>{{ statusLabel(value) }}</li>
+            }
+          </ul>
+        </article>
+        <article>
+          <h3>Failed requirements</h3>
+          <ul>
+            @for (value of item.failed_requirements; track value) {
+              <li>{{ statusLabel(value) }}</li>
+            }
+          </ul>
+        </article>
+      </div>
+      <h3>Stage evidence</h3>
+      <div class="metric-grid">
+        @for (name of ['training', 'validation', 'test']; track name) {
+          <article>
+            <span>{{ statusLabel(name) }}</span>
+            @if (stage(item, $any(name)); as metric) {
+              <strong>{{ signedPercentage(metric.total_return) }}</strong
+              ><small
+                >{{ percentage(metric.max_drawdown) }} drawdown ·
+                {{ metric.trade_count }} trades</small
+              >
+            } @else {
+              <strong>Not evaluated</strong>
+            }
+          </article>
+        }
+      </div>
+      <h3>Requirement margins</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Requirement</th>
+            <th>Observed</th>
+            <th>Required</th>
+            <th>Margin</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (margin of item.requirement_margins; track margin.requirement) {
+            <tr>
+              <td>{{ statusLabel(margin.requirement) }}</td>
+              <td>{{ margin.observed_value }}</td>
+              <td>{{ margin.required_value }}</td>
+              <td>{{ margin.absolute_margin }}</td>
+              <td>{{ margin.passed ? 'Passed' : 'Failed' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <details>
+        <summary>Technical details</summary>
+        <pre>{{ item.configuration | json }}</pre>
+        @for (
+          value of [
+            { label: 'Candidate ID', text: item.id },
+            { label: 'Candidate fingerprint', text: item.candidate_fingerprint },
+            { label: 'Seed fingerprint', text: item.seed_fingerprint },
+          ];
+          track value.label
+        ) {
+          <p>
+            {{ value.label }}: <code>{{ value.text }}</code
+            ><button type="button" (click)="copy(value.text)">Copy</button>
+          </p>
+        }
+      </details>
+    </aside>
+  }
+  @if (detail(); as item) {
+    <aside class="detail-panel">
+      <header>
+        <h2>{{ statusLabel(item.status) }} · {{ statusLabel(item.predictor_name) }}</h2>
+        <button type="button" (click)="closeDetails()">Close</button>
+      </header>
+      <app-edge-evidence-chart [windows]="item.windows" />
+      <table>
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Return</th>
+            <th>Drawdown</th>
+            <th>Trades</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Training</td>
+            <td>{{ signedPercentage(item.training_metrics.total_return) }}</td>
+            <td>{{ percentage(item.training_metrics.max_drawdown) }}</td>
+            <td>{{ item.training_metrics.trade_count }}</td>
+          </tr>
+          <tr>
+            <td>Validation</td>
+            <td>{{ signedPercentage(item.validation_metrics.total_return) }}</td>
+            <td>{{ percentage(item.validation_metrics.max_drawdown) }}</td>
+            <td>{{ item.validation_metrics.trade_count }}</td>
+          </tr>
+          <tr>
+            <td>Test</td>
+            <td>
+              {{
+                item.test_metrics
+                  ? signedPercentage(item.test_metrics.total_return)
+                  : 'Not evaluated'
+              }}
+            </td>
+            <td>
+              {{ item.test_metrics ? percentage(item.test_metrics.max_drawdown) : 'Not evaluated' }}
+            </td>
+            <td>{{ item.test_metrics?.trade_count ?? 'Not evaluated' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </aside>
+  }
+</main>
