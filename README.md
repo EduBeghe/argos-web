@@ -25,6 +25,38 @@ configuration.
 
 Do not place the Railway URL inside components or services.
 
+## Authentication and browser sessions
+
+`/login` is the only unauthenticated SPA route. The dashboard, evaluation, Strategy
+Research, and generic instrument-detail routes are activated only after one shared
+credentialed `GET /auth/me` restoration request succeeds. The authenticated shell shows
+the configured administrator identity and provides logout on every private route.
+
+Login sends only `username` and `password`, reads the exposed `X-CSRF-Token` response
+header, and verifies the browser session immediately through `/auth/me`. The public
+principal and CSRF proof live only in process memory. The frontend never reads API
+cookies and never stores the JWT, CSRF proof, credentials, or private API responses in
+local storage, session storage, IndexedDB, URLs, or logs. A full reload intentionally
+restores identity and a fresh in-memory proof from `/auth/me`.
+
+A `401` restoration result means there is no active session and shows the normal login
+form. Network, server, malformed-response, or missing-CSRF failures are treated as an
+unavailable authentication service instead; the login page shows an explicit warning and
+a **Retry session** action without issuing duplicate restoration requests.
+
+The shared HTTP interceptor sends credentials to the exact configured API origin on
+every request and adds the current CSRF proof to authenticated POST, PUT, PATCH, and
+DELETE requests. It never credentials static assets, frontend-origin requests, or URLs
+that merely share a string prefix with the API origin. Backend enforcement remains the
+authoritative security boundary; guarded routes prevent private UI construction and
+data loading but do not replace API authentication.
+
+Railway's separate `argos-web` and `argos-api` hosts are cross-site. Production therefore
+depends on the API's host-only `Secure; SameSite=None` cookies and on browser support for
+cross-site cookies. Browsers configured to block third-party cookies may prevent session
+establishment; the login page reports that condition explicitly. Local HTTP uses the
+backend's `SameSite=Lax` development policy.
+
 ## Railway deployment
 
 1. Create a Railway service from `EduBeghe/argos-web`. Railway detects the repository's
@@ -167,4 +199,5 @@ this frontend PR.
 
 ## Current limitations
 
-This PR intentionally excludes authentication, polling, WebSockets, Paper Trading mutations, strategy editing, catalog administration, SPY, Alpaca, and backtesting.
+Current limitations include polling, WebSockets, Paper Trading mutations, strategy editing,
+catalog administration, SPY, Alpaca, and backtesting.
