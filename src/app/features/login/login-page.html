@@ -4,6 +4,15 @@
     <h1 id="login-title">Sign in to Argos</h1>
     <p class="intro">Use the configured administrator credentials.</p>
 
+    @if (session.restorationUnavailable()) {
+      <div class="session-warning" role="alert">
+        <p>Argos authentication is unavailable. Try again.</p>
+        <button type="button" [disabled]="pending()" (click)="retrySession()">
+          {{ pending() ? 'Retrying session…' : 'Retry session' }}
+        </button>
+      </div>
+    }
+
     <form [formGroup]="form" (ngSubmit)="submit()">
       <label for="username">Username</label>
       <input
@@ -25,7 +34,7 @@
       />
 
       <button type="submit" [disabled]="pending() || form.invalid">
-        {{ pending() ? 'Signing inâ€¦' : 'Sign in' }}
+        {{ pending() ? 'Signing in…' : 'Sign in' }}
       </button>
     </form>
 

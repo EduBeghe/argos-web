@@ -5,6 +5,7 @@ export interface AuthPrincipal {
 }
 
 export type SessionLifecycle = 'checking' | 'authenticated' | 'unauthenticated';
+export type RestorationOutcome = 'authenticated' | 'unauthenticated' | 'unavailable';
 
 export type LoginErrorCode =
   'invalid_credentials' | 'not_configured' | 'session_not_established' | 'unavailable';

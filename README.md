@@ -39,6 +39,11 @@ cookies and never stores the JWT, CSRF proof, credentials, or private API respon
 local storage, session storage, IndexedDB, URLs, or logs. A full reload intentionally
 restores identity and a fresh in-memory proof from `/auth/me`.
 
+A `401` restoration result means there is no active session and shows the normal login
+form. Network, server, malformed-response, or missing-CSRF failures are treated as an
+unavailable authentication service instead; the login page shows an explicit warning and
+a **Retry session** action without issuing duplicate restoration requests.
+
 The shared HTTP interceptor sends credentials to the exact configured API origin on
 every request and adds the current CSRF proof to authenticated POST, PUT, PATCH, and
 DELETE requests. It never credentials static assets, frontend-origin requests, or URLs
@@ -136,7 +141,7 @@ and continues rendering its previously loaded data while exposing a refresh erro
 Decision Snapshots are immutable strategy conclusions; Paper Trades are simulated executions. The
 frontend never reconstructs one from another, and a `NO_ACTION` Decision does not create a Trade
 marker. The price chart is a dependency-free close-price line with Decision and Trade markers. The
-Score chart uses the authoritative `overall_score` on a fixed âˆ’1 to +1 domain. Current position P&L
+Score chart uses the authoritative `overall_score` on a fixed −1 to +1 domain. Current position P&L
 and valuation come only from the dashboard's authoritative portfolio response.
 
 Current detail-page limitations are a line price chart rather than candlesticks, the three fixed

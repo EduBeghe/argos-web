@@ -41,23 +41,40 @@ describe('AuthService', () => {
     const second = firstValueFrom(service.ensureRestored());
     const request = http.expectOne(`${API}/auth/me`);
     request.flush(PRINCIPAL, { headers: { 'X-CSRF-Token': 'proof' } });
-    expect(await first).toBe(true);
-    expect(await second).toBe(true);
+    expect(await first).toBe('authenticated');
+    expect(await second).toBe('authenticated');
     expect(store.principal()).toEqual(PRINCIPAL);
     expect(store.csrfToken()).toBe('proof');
   });
 
   it.each([
-    [401, PRINCIPAL, { 'X-CSRF-Token': 'proof' }],
-    [500, null, {}],
-    [200, { role: 'admin', expires_at: PRINCIPAL.expires_at }, { 'X-CSRF-Token': 'proof' }],
-    [200, PRINCIPAL, { 'X-CSRF-Token': ' ' }],
-  ])('fails restoration closed for invalid response %#', async (status, body, headers) => {
+    [401, PRINCIPAL, { 'X-CSRF-Token': 'proof' }, 'unauthenticated'],
+    [0, null, {}, 'unavailable'],
+    [500, null, {}, 'unavailable'],
+    [
+      200,
+      { role: 'admin', expires_at: PRINCIPAL.expires_at },
+      { 'X-CSRF-Token': 'proof' },
+      'unavailable',
+    ],
+    [200, PRINCIPAL, {}, 'unavailable'],
+    [200, PRINCIPAL, { 'X-CSRF-Token': ' ' }, 'unavailable'],
+  ])('classifies restoration failure %#', async (status, body, headers, outcome) => {
     const result = firstValueFrom(service.ensureRestored());
     http.expectOne(`${API}/auth/me`).flush(body, { status, statusText: 'response', headers });
-    expect(await result).toBe(false);
+    expect(await result).toBe(outcome);
     expect(store.lifecycle()).toBe('unauthenticated');
     expect(store.csrfToken()).toBeNull();
+    expect(store.restorationUnavailable()).toBe(outcome === 'unavailable');
+  });
+
+  it('starts a fresh retry after unavailable and can become authenticated', async () => {
+    const first = firstValueFrom(service.ensureRestored());
+    http.expectOne(`${API}/auth/me`).flush(null, { status: 500, statusText: 'Unavailable' });
+    expect(await first).toBe('unavailable');
+    const retry = firstValueFrom(service.retryRestore());
+    http.expectOne(`${API}/auth/me`).flush(PRINCIPAL, { headers: { 'X-CSRF-Token': 'proof' } });
+    expect(await retry).toBe('authenticated');
   });
 
   it('verifies login with auth/me before authenticating', async () => {

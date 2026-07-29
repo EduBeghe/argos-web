@@ -13,7 +13,7 @@ import { SessionStore } from './session.store';
         >Signed in as <strong>{{ store.principal()?.username }}</strong></span
       >
       <button type="button" [disabled]="loggingOut()" (click)="logOut()">
-        {{ loggingOut() ? 'Logging outâ€¦' : 'Log out' }}
+        {{ loggingOut() ? 'Logging out…' : 'Log out' }}
       </button>
     </header>
     @if (logoutError()) {

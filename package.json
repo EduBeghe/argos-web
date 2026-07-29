@@ -8,7 +8,7 @@
     "lint": "ng lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:environment": "node --test scripts/generate-production-environment.test.mjs",
+    "test:environment": "node --test scripts/*.test.mjs",
     "typecheck": "ngc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

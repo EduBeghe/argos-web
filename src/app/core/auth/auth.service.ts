@@ -13,7 +13,7 @@ import {
 } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api-config';
-import { AuthPrincipal, LoginError, LoginErrorCode } from './auth.models';
+import { AuthPrincipal, LoginError, LoginErrorCode, RestorationOutcome } from './auth.models';
 import { SessionStore } from './session.store';
 
 const CSRF_HEADER = 'X-CSRF-Token';
@@ -23,18 +23,25 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly apiBaseUrl = inject(API_BASE_URL);
   private readonly store = inject(SessionStore);
-  private restoration$: Observable<boolean> | null = null;
+  private restoration$: Observable<RestorationOutcome> | null = null;
 
-  ensureRestored(): Observable<boolean> {
+  ensureRestored(): Observable<RestorationOutcome> {
     if (this.store.lifecycle() !== 'checking') {
-      return of(this.store.isAuthenticated());
+      return of(
+        this.store.isAuthenticated()
+          ? 'authenticated'
+          : this.store.restorationUnavailable()
+            ? 'unavailable'
+            : 'unauthenticated',
+      );
     }
     if (!this.restoration$) {
       this.restoration$ = this.fetchSession().pipe(
-        map(() => true),
-        catchError(() => {
-          this.store.clear();
-          return of(false);
+        map(() => 'authenticated' as const),
+        catchError((error: unknown) => {
+          const unauthenticated = error instanceof HttpErrorResponse && error.status === 401;
+          this.store.clear({ restorationUnavailable: !unauthenticated });
+          return of(unauthenticated ? ('unauthenticated' as const) : ('unavailable' as const));
         }),
         finalize(() => (this.restoration$ = null)),
         shareReplay({ bufferSize: 1, refCount: false }),
@@ -43,7 +50,7 @@ export class AuthService {
     return this.restoration$;
   }
 
-  retryRestore(): Observable<boolean> {
+  retryRestore(): Observable<RestorationOutcome> {
     this.store.checking();
     return this.ensureRestored();
   }

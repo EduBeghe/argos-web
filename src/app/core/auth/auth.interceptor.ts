@@ -20,14 +20,14 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     withCredentials: true,
     setHeaders: UNSAFE_METHODS.has(request.method) && csrf ? { 'X-CSRF-Token': csrf } : {},
   });
-  const isLogin = request.url === `${apiBaseUrl}/auth/login`;
+  const isAuthenticationEndpoint = request.url.startsWith(`${apiBaseUrl}/auth/`);
 
   return next(outgoing).pipe(
     catchError((error: unknown) => {
       if (
         error instanceof HttpErrorResponse &&
-        ((!isLogin && error.status === 401) ||
-          (UNSAFE_METHODS.has(request.method) && error.status === 403))
+        !isAuthenticationEndpoint &&
+        (error.status === 401 || (UNSAFE_METHODS.has(request.method) && error.status === 403))
       ) {
         store.clear();
         void router.navigateByUrl('/login');

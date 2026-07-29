@@ -9,7 +9,7 @@ export const authenticatedGuard: CanActivateFn = () => {
   const router = inject(Router);
   return auth
     .ensureRestored()
-    .pipe(map((authenticated) => authenticated || router.createUrlTree(['/login'])));
+    .pipe(map((outcome) => outcome === 'authenticated' || router.createUrlTree(['/login'])));
 };
 
 export const loginGuard: CanActivateFn = () => {
@@ -17,5 +17,5 @@ export const loginGuard: CanActivateFn = () => {
   const router = inject(Router);
   return auth
     .ensureRestored()
-    .pipe(map((authenticated) => (authenticated ? router.createUrlTree(['/']) : true)));
+    .pipe(map((outcome) => (outcome === 'authenticated' ? router.createUrlTree(['/']) : true)));
 };

@@ -5,6 +5,7 @@ import { finalize } from 'rxjs';
 
 import { LoginError, LoginErrorCode } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
+import { SessionStore } from '../../core/auth/session.store';
 
 const ERROR_COPY: Record<LoginErrorCode, string> = {
   invalid_credentials: 'Invalid username or password.',
@@ -23,6 +24,7 @@ const ERROR_COPY: Record<LoginErrorCode, string> = {
 export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  readonly session = inject(SessionStore);
   private readonly passwordInput = viewChild<ElementRef<HTMLInputElement>>('passwordInput');
   readonly pending = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -56,6 +58,24 @@ export class LoginPage {
           this.form.controls.password.reset('');
           queueMicrotask(() => this.passwordInput()?.nativeElement.focus());
         },
+      });
+  }
+
+  retrySession(): void {
+    if (this.pending()) return;
+    this.pending.set(true);
+    this.errorMessage.set(null);
+    this.form.disable();
+    this.auth
+      .retryRestore()
+      .pipe(
+        finalize(() => {
+          this.pending.set(false);
+          this.form.enable();
+        }),
+      )
+      .subscribe((outcome) => {
+        if (outcome === 'authenticated') void this.router.navigateByUrl('/');
       });
   }
 }

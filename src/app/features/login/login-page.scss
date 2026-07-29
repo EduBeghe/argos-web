@@ -28,6 +28,20 @@ h1 {
   margin: 0.55rem 0 1.5rem;
   color: #9dafc3;
 }
+.session-warning {
+  margin: 0 0 1rem;
+  padding: 0.85rem;
+  border: 1px solid #6f5656;
+  border-radius: 0.45rem;
+  color: #ddb1ae;
+  background: #21181d;
+}
+.session-warning p {
+  margin: 0 0 0.7rem;
+}
+.session-warning button {
+  margin: 0;
+}
 form {
   display: grid;
   gap: 0.55rem;
