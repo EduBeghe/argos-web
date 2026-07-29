@@ -74,6 +74,7 @@ describe('LoginPage', () => {
     fixture.componentInstance.retrySession();
     expect(auth.retryRestore).toHaveBeenCalledOnce();
     expect(fixture.componentInstance.pending()).toBe(true);
+    session.clear();
     retry.next('unauthenticated');
     retry.complete();
     fixture.detectChanges();
