@@ -151,6 +151,24 @@ Missing Scores, Decisions, positions, candles, or an active Paper Run are normal
 
 Decimal strings are converted only inside pure display formatters. The original values are never reinterpreted as frontend financial calculations.
 
+## ML Refinement
+
+The authenticated lazy route `/ml-refinement` provides a manual-first workspace for configuring
+bounded ML refinement from persisted screening evidence. It reads the authoritative contract from
+`GET /optimization/ml-refinement-contract`, screening runs/results, durable refinement runs, and
+paginated evaluation evidence. Mutations use the existing authenticated `HttpClient` pipeline to
+enqueue, cancel, or retry refinement runs.
+
+Queued work depends on the separately deployed backend refinement worker. The page polls a selected
+queued/running run while visible, stops at terminal state, and preserves server-reported progress,
+reuse, omission, budget, failure, and cancellation evidence. Evaluation classifications are research
+evidence only: even `promising_for_strategy_simulation` permits later simulation but does not approve
+or activate a Strategy.
+
+The workflow does not expose protected final-test evidence, activate Strategies, create wallets, or
+modify Paper Trading. Supported engines, objectives, durations, variables, validation limits, costs,
+and seed defaults come from the backend contract rather than a frontend registry.
+
 ## Strategy evaluation
 
 The `/evaluation` route loads the authoritative read-only `GET /paper/evaluation` response and
