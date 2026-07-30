@@ -390,52 +390,385 @@ export const METRIC_DEFINITIONS = {
     'Measures recent price movement relative to the instrumentâ€™s price using ATR.',
     'Ratio',
     'Higher values generally mean wider and faster recent price changes.',
-    'It measures movement ß«h‘éì¶»§q«^tØÛÜ™IËˆ	Ñ\™Xİ[Û˜[ØÛÜ™IËˆ	ÕHÛÛXš[™Y\™Xİ[Û˜[ÛÛšX][Ûˆ™Y›Ü™H›Û[YHÛÛ™š\›X][Ûˆ\È\YY‰Ëˆ[™Yš[™Yˆ	Ò]ÈÚYÛˆ[™XØ]\ÈH\™Xİ[ÛˆÙˆH[Ù[8 &\ÈYÙÜ™YØ]Y]šY[˜ÙK‰Ëˆ	Ò]\È[Ù[İ]]›İš[˜[˜ÚX[YšXÙHÜˆHİX\˜[YYİ]ÛÛYK‰Ëˆ
-KˆœÚPÛÛšX][ÛˆYš[š][ÛŠˆ	ÜœÚPÛÛšX][Û‰Ëˆ	Ô”ÒHÛÛšX][Û‰Ëˆ	ÕH\ÙˆH\™Xİ[Û˜[ØÛÜ™HÛÛšX]YHH”ÒKX˜\ÙY[ÛY[[H]šY[˜ÙK‰Ëˆ[™Yš[™Yˆ	Ò]ÚİÜÈİÈ”ÒHY™™XİYH\œÚ\İYØÛÜ™K‰Ëˆ	Ô”ÒHØ[ˆ™[XZ[ˆ[]˜]YÜˆ\™\ÜÙY[™Úİ[›İ™H™X]Y\ÈHÙ\Z[K‰Ëˆ
-Kˆ™]\›ŒPÛÛšX][ÛˆYš[š][ÛŠˆ	Ü™]\›ŒPÛÛšX][Û‰Ëˆ	Ô™]\›ˆHÛÛšX][Û‰Ëˆ	ÕHÛÛšX][Ûˆœ›ÛHH[Üİ™XÙ[Û™KXØ[™HšXÙH™]\›‹‰Ëˆ[™Yš[™Yˆ	Ò]Ø\\™\È™\H™XÙ[\™Xİ[Û˜[[İ™[Y[[ˆHØÛÜ™K‰Ëˆ	ÓÛ™HØ[™H\È[Z]Y]šY[˜ÙH[™Ø[ˆ™H›Ú\ŞK‰Ëˆ
-Kˆ™]\›ŒLÛÛšX][ÛˆYš[š][ÛŠˆ	Ü™]\›ŒLÛÛšX][Û‰Ëˆ	Ô™]\›ˆLˆÛÛšX][Û‰Ëˆ	ÕHÛÛšX][Ûˆœ›ÛHšXÙH[İ™[Y[XÜ›ÜÜÈH]\İÙ[™KXØ[™HÚ[™İË‰Ëˆ[™Yš[™Yˆ	Ò]YÈHœ›ØY\ˆ™XÙ[\™]\›ˆšY]ÈÈH\™Xİ[Û˜[ØÛÜ™K‰Ëˆ	Ò\İÜšXØ[[İ™[Y[Ù\È›İİX\˜[YHÛÛ[X][Û‹‰Ëˆ
-Kˆ]\İXÚ\Ú[ÛˆYš[š][ÛŠˆ	Û]\İXÚ\Ú[Û‰Ëˆ	Ó]\İXÚ\Ú[Û‰Ëˆ	ÕH[Üİ™XÙ[[[]]X›HXİ[ÛˆÙ[XİYHHÛÛ™šYİ\™Y\™ÛÜÈİ˜]YŞK‰Ëˆ[™Yš[™Yˆ	Ò]™XÛÜ™ÈÚ]Hİ˜]YŞHÛÛ˜ÛYYœ›ÛH\œÚ\İY]šY[˜ÙH]]›İ[™\K‰Ëˆ	Ò]\ÈH\\ˆ˜Y[™ÈXÚ\Ú[Û‹›İš[˜[˜ÚX[YšXÙHÜˆH™X[[[Û™^HÜ™\‹‰Ëˆ
-Kˆ™\]Y\İY\™Ù]Ü›Û[Ô\˜Ù[YÙNˆYš[š][ÛŠˆ	Ü™\]Y\İY\™Ù]Ü›Û[Ô\˜Ù[YÙIËˆ	Ô™\]Y\İY\™Ù]Ü›Û[È\˜Ù[YÙIËˆ	ÕHÜ›Û[ÈÚ\™HHİ˜]YŞH™\]Y\İY›Üˆ[ˆÜ[š[™ÈÜˆY\İYÜÚ][Û‹‰Ëˆ	Ô\˜Ù[YÙIËˆ	Ò]^™\ÜÙ\Èİ˜]YŞHÚ^š[™È[[]HXÚ\Ú[Ûˆ›İ[™\K‰Ëˆ	Ñ^Xİ][ÛˆÛÛœİ˜Z[È[™XØÛİ[İ]HØ[ˆY™™XİHÚ[][]Y™\İ[‰Ëˆ
-Kˆ™\]Y\İYÜÚ][Û”\˜Ù[YÙNˆYš[š][ÛŠˆ	Ü™\]Y\İYÜÚ][Û”\˜Ù[YÙIËˆ	Ô™\]Y\İYÜÚ][Ûˆ\˜Ù[YÙIËˆ	ÕHÚ\™HÙˆ[ˆ^\İ[™ÈÜÚ][ÛˆHİ˜]YŞH™\]Y\İYÈÙ[‰Ëˆ	Ô\˜Ù[YÙIËˆ	Ò]^™\ÜÙ\ÈHXÚ\Ú[Û¸ &\È[[™Y™YXİ[Û‹‰Ëˆ	Ò]\ØÜšX™\ÈÚ[][]Yİ˜]YŞH[[›İH™X[Ü™\‹‰Ëˆ
-KˆÜÚ][Û”İ]\ÎˆYš[š][ÛŠˆ	ÜÜÚ][Û”İ]\ÉËˆ	ÔÜÚ][Ûˆİ]\ÉËˆ	ÕÚ]\ˆH\\ˆ˜Y[™ÈÜÚ][Ûˆ\Èİ\œ™[HÜ[ˆÜˆÛÜÙY‰Ëˆ[™Yš[™Yˆ	Ğ[ˆÜ[ˆÜÚ][Ûˆİ[Ú[™Ù\ÈÚ]]ÈX\šÎÈHÛÜÙYÜÚ][Ûˆ›ÈÛ™Ù\ˆ\ÈX\šÙ]^Üİ\™K‰Ëˆ	ÕHİ]\È\Y\ÈÛ›HÈH\™ÛÜÈÚ[][][Û‹‰Ëˆ
-Kˆİ˜]YŞNˆYš[š][ÛŠˆ	Üİ˜]YŞIËˆ	Ôİ˜]YŞIËˆ	ÕH˜[YY™\œÚ[Û™Y[HÙ]]Ù[™\˜]YH\œÚ\İYXÚ\Ú[Û‹‰Ëˆ[™Yš[™Yˆ	Ò]Y[YšY\ÈÚXÚ™Z]š[Üˆ›ÙXÙYH™\İ[‰Ëˆ	ĞHİ˜]YŞH˜[YHÜˆ™\œÚ[ÛˆÙ\È›İ[\H›Ùš]Xš[]K‰Ëˆ
-KˆÛÛ™šYİ\˜][Û•™\œÚ[ÛˆYš[š][ÛŠˆ	ØÛÛ™šYİ\˜][Û•™\œÚ[Û‰Ëˆ	ĞÛÛ™šYİ\˜][Ûˆ™\œÚ[Û‰Ëˆ	ÕH[[]]X›HÛÛ™šYİ\˜][Ûˆ™]š\Ú[Ûˆ\ÙY›ÜˆH[ˆÜˆXÚ\Ú[Û‹‰Ëˆ	Õ™\œÚ[Û‰Ëˆ	Ò]XZÙ\È™\İ[È˜XÙXX›HÈHÜXÚYšXÈÙ]ÙˆÛÛ™šYİ\™Y˜[Y\Ë‰Ëˆ	ÑY™™\™[™\œÚ[ÛœÈX^H›İ™H\™XİHÛÛ\\˜X›K‰Ëˆ
-KˆÛÛ™š\›YYØ[™Y]NˆYš[š][ÛŠˆ	ØÛÛ™š\›YYØ[™Y]IËˆ	ĞÛÛ™š\›YYØ[™Y]IËˆ	ĞHœ›Ş™[ˆİ˜]YŞHØ[™Y]H]\ÜÙYH[\[Y[Y˜[Y][Ûˆ[™\ÛÛ]YØ[ËY›ÜØ\™\İÜš]\šXK‰Ëˆ[™Yš[™Yˆ	Ò]\È\İÜšXØ[]šY[˜ÙK›İH™YXİ[ÛˆÜˆİX\˜[YK‰Ëˆ
-Kˆ™YXİ]™QYÙNˆYš[š][ÛŠˆ	Ü™YXİ]™QYÙIËˆ	Ô™YXİ]™HYÙIËˆ	Ô\œÚ\İYİ]\İXØ[]šY[˜ÙH]Hœ›Ş™[ˆX\šÙ]ÛÛ™][ÛˆØ\È\ÜÛØÚX]YÚ]H]\ˆšXÙH[İ™[Y[‰Ëˆ[™Yš[™Yˆ	Ò]\È™\ÙX\˜Ú]šY[˜ÙK›İH˜Y[™È[œİXİ[Û‹‰Ëˆ	Ò\İÜšXØ[™[][ÛœÚ\ÈX^H›İ\œÚ\İ‰Ëˆ
-Kˆ™X\“Z\ÜÎˆYš[š][ÛŠˆ	Û™X\“Z\ÜÉËˆ	Ó™X\ˆZ\ÜÉËˆ	ĞH™\ÙX\˜ÚÛÛ™šYİ\˜][Ûˆ]\›ØXÚY]Y›İØ]\ÙK]™\HY˜[˜Ù[Y[™\]Z\™[Y[‰Ëˆ[™Yš[™Yˆ	ĞXİ[Û˜X›H[™XYÛ›ÜİXÈ™X\ˆZ\ÜÙ\È]™HY™™\™[YX[š[™ÜË‰Ëˆ	ĞH™X\ˆZ\ÜÈ\È›İ[ˆ\›İ™Yİ˜]YŞK‰Ëˆ
-Kˆ›Ü›X[^™YZ\ÜÚ[™Ñ\İ[˜ÙNˆYš[š][ÛŠˆ	Û›Ü›X[^™YZ\ÜÚ[™Ñ\İ[˜ÙIËˆ	Ó›Ü›X[^™YZ\ÜÚ[™È\İ[˜ÙIËˆ	ÕHÛÛXš[™Y›Ü›X[^™YYšXÚ]XÜ›ÜÜÈ˜Z[Y™\ÙX\˜Ú™\]Z\™[Y[Ë‰Ëˆ	Ó›Û‹[™YØ]]™H\İ[˜ÙIËˆ	ÔÛX[\ˆ˜[Y\È\™HÛÜÙ\ˆÈHÛÛ™šYİ\™YØ]\Ë‰Ëˆ	Ò]\È›İH›Ø˜Xš[]HÙˆİXØÙ\ÜË‰Ëˆ
-Kˆ›İ[™XÚÔİYÙNˆYš[š][ÛŠˆ	Ø›İ[™XÚÔİYÙIËˆ	Ğ›İ[™XÚÈİYÙIËˆ	ÕH™\ÙX\˜ÚİYÙHÚ\™HHÜ™X]\İÛÛœİ˜Z[ÛˆY˜[˜Ù[Y[Ø\ÈØœÙ\™Y‰Ëˆ
-Kˆ\™Xİ[Û˜[]˜]NˆYš[š][ÛŠˆ	Ù\™Xİ[Û˜[]˜]IËˆ	Ñ\™Xİ[Û˜[]˜]IËˆ	ÕHÚ\™HÙˆ\ØX›HØœÙ\˜][ÛœÈÚÜÙH]\ˆ[İ™[Y[X]ÚYHœ›Ş™[ˆ\™Xİ[Û˜[[K‰Ëˆ	Ô\˜Ù[YÙIËˆ
-Kˆ™[˜ÚX\šÒ[\›İ™[Y[ˆYš[š][ÛŠˆ	Ø™[˜ÚX\šÒ[\›İ™[Y[	Ëˆ	Ğ™[˜ÚX\šÈ[\›İ™[Y[	Ëˆ	ÕH\™Xİ[Û˜[]\˜]H[\›İ™[Y[İ™\ˆH[˜ÛÛ™][Û˜[ÛÛ\\š\ÛÛˆ›ÜˆHØ[YH]šY[˜ÙHÛXÙK‰Ëˆ	Ô\˜Ù[YÙHÚ[ÉËˆ
-Kˆ\™Ù]Y™Yš[™[Y[ˆYš[š][ÛŠˆ	İ\™Ù]Y™Yš[™[Y[	Ëˆ	Õ\™Ù]Y™Yš[™[Y[	Ëˆ	ĞH›İ[™Y›ÛİË]\ÙX\˜Ú\›İ[™›ÛZ\Ú[™È\œÚ\İY™X\ˆZ\ÜÙ\Ë‰Ëˆ[™Yš[™Yˆ	Ò]™\Ù\™\ÈH^\İ[™ÈXÛÛ›ÛZXÈ[™˜[Y][ÛˆØ]\Ë‰Ëˆ	Ò]Ù\È›İXİ]˜]HHİ˜]YŞK‰Ëˆ
-Kˆ˜Z[š[™ÎˆYš[š][ÛŠˆ	İ˜Z[š[™ÉËˆ	Õ˜Z[š[™ÉËˆ	Ò\İÜšXØ[]šY[˜ÙH\ÙYÈœ™Y^™HØ[™Y]H[\È[™\˜[Y]\œË‰Ëˆ
-Kˆ˜[Y][ÛˆYš[š][ÛŠˆ	İ˜[Y][Û‰Ëˆ	Õ˜[Y][Û‰Ëˆ	ÔÙ\\˜]H\İÜšXØ[]šY[˜ÙH\ÙYÈXÚYHÚ]\ˆHœ›Ş™[ˆØ[™Y]HX^H™XXÚ\ÛÛ]Y\İ‰Ëˆ
-Kˆ\ÛÛ]Y\İˆYš[š][ÛŠˆ	Ú\ÛÛ]Y\İ	Ëˆ	Ò\ÛÛ]Y\İ	Ëˆ	Ò[[İ]]šY[˜ÙH]˜[X]YÛ›HY\ˆ˜[Y][Ûˆ\ÜÙ\Ë‰Ëˆ[™Yš[™Yˆ[™Yš[™Yˆ	Õ\İ]šY[˜ÙH™]™\ˆ[™\ÈHØ[™Y]K‰Ëˆ
-Kˆ\İ[˜ÙUÔ\ÜÎˆYš[š][ÛŠˆ	Ù\İ[˜ÙUÔ\ÜÉËˆ	Ñ\İ[˜ÙHÈ\ÜÉËˆ	ÕH™XÛÜ™Y›Ü›X[^™YYšXÚ]™[XZ[š[™È™Y›Ü™H[\XØX›H™\]Z\™[Y[È\ÜË‰Ëˆ	Ó›Û‹[™YØ]]™H\İ[˜ÙIËˆ[™Yš[™Yˆ	Ò]\È›İH›Ü™XØ\İ‰Ëˆ
-KˆÙYÛY[İ[™]\›ˆYš[š][ÛŠˆ	ÜÙYÛY[İ[™]\›‰Ëˆ	Õİ[™]\›‰Ëˆ	Ô\˜Ù[YÙHÚ[™ÙH[ˆÚ[][]Y\]Z]Hİ™\ˆHÙYÛY[‰Ëˆ	Ô\˜Ù[YÙIËˆ[™Yš[™Yˆ	Ò\İÜšXØ[Ú[][]Y™]\›ˆÙ\È›İİX\˜[YH]\™H\™›Ü›X[˜ÙK‰Ëˆ
-KˆÙYÛY[˜]ÙİÛˆYš[š][ÛŠˆ	ÜÙYÛY[˜]ÙİÛ‰Ëˆ	ÓX^[][H˜]ÙİÛ‰Ëˆ	Ó\™Ù\İ\İÜšXØ[XÛ[™Hœ›ÛHH™]š[İ\È\]Z]HXZÈ\š[™ÈHÙYÛY[‰Ëˆ	Ô\˜Ù[YÙIËˆ
-KˆY™™\™[˜ÙUœÔ›ÙXİ[ÛˆYš[š][ÛŠˆ	ÙY™™\™[˜ÙUœÔ›ÙXİ[Û‰Ëˆ	ÑY™™\™[˜ÙHœÈ›ÙXİ[Û‰Ëˆ	ĞØ[™Y]H™]\›ˆZ[\ÈHİ\œ™[›ÙXİ[Ûˆİ˜]YŞH™]\›ˆİ™\ˆHØ[YHÙYÛY[‰Ëˆ	Ô\˜Ù[YÙHÚ[ÉËˆ
-KˆY™™\™[˜ÙUœĞ^RÛˆYš[š][ÛŠˆ	ÙY™™\™[˜ÙUœĞ^RÛ	Ëˆ	ÑY™™\™[˜ÙHœÈ^H[™Û	Ëˆ	ĞØ[™Y]H™]\›ˆZ[\È^Z[™ÈÛ˜ÙH[™Û[™Èİ™\ˆHØ[YHÙYÛY[‰Ëˆ	Ô\˜Ù[YÙHÚ[ÉËˆ
-KˆÙYÛY[™Y\ÎˆYš[š][ÛŠˆ	ÜÙYÛY[™Y\ÉËˆ	Ñ™Y\ÈZY	Ëˆ	ÔÚ[][]Y˜[œØXİ[ÛˆÛÜİËˆÛ\YÙH\È[˜ÛÜœÜ˜]Y[È^Xİ][ÛˆšXÙ\Ë‰Ëˆ	ĞXØÛİ[İ\œ™[˜ŞIËˆ
-Kˆ[ØÜ™Y[š[™ĞÛ\ÜÚYšXØ][ÛˆYš[š][ÛŠˆ	Û[ØÜ™Y[š[™ĞÛ\ÜÚYšXØ][Û‰Ëˆ	ÔØÜ™Y[š[™È]šY[˜ÙHÛ\ÜÚYšXØ][Û‰Ëˆ	ÕH˜XÚÙ[™8 &\È™\œÚ[Û™Yİ[[X\HÙˆİÈ\œÚ\İYØÜ™Y[š[™È]šY[˜ÙHY]]Èİ]\İXØ[[\Ë‰Ëˆ[™Yš[™Yˆ	Ò][È\İ[™İZ\Ú]šY[˜ÙH]Ø\œ˜[È[Ü™H™\ÙX\˜Úœ›ÛH]šY[˜ÙH]Y›İ\ÜË‰Ëˆ	Ò]\È›İİ˜]YŞH\›İ˜[[™Ù\È›İ™YXİ›Ùš]Xš[]K‰Ëˆ
-Kˆ[\™]Ô™][[ÛˆYš[š][ÛŠˆ	Û[\™]Ô™][[Û‰Ëˆ	Ô\™]È™][[Û‰Ëˆ	ÕÚ]\ˆHØÜ™Y[š[™È™\İ[™[XZ[™Y›Û‹YÛZ[˜]YXÜ›ÜÜÈH˜XÚÙ[™8 &\ÈÙ[XİYÛÛ\\š\ÛÛˆY]šXÜË‰Ëˆ	ÖY\ÈÜˆ›ÉËˆ	Ô™]Z[™Y™\İ[È™\™\Ù[˜YK[Ù™œÈ]Ù\™H›İ[šY›Ü›[HÛÜœÙH[ˆ[›İ\ˆ™\İ[‰Ëˆ	Ô™][[Ûˆ\È›İ›ÛÙˆÙˆXÛÛ›ÛZXÈ˜[YHÜˆ]\™H\™›Ü›X[˜ÙK‰Ëˆ
-Kˆ[™Yš[™[Y[ˆYš[š][ÛŠˆ	Û[™Yš[™[Y[	Ëˆ	ÓS™Yš[™[Y[	Ëˆ	ĞH›İ[™Y›ÛİË]\^\š[Y[İ™\ˆ\œÚ\İYØÜ™Y[š[™È]šY[˜ÙKÙ[XİY˜\šXX›\ËØš™Xİ]™\Ë[™[Ù[\˜[Y]\œË‰Ëˆ[™Yš[™Yˆ	Ò]\İÈÜXÚYšXÈÛÛ™šYİ\˜][ÛœÈ[™\ˆH\˜X›K™\›ÙXÚX›H˜XÚÙ[™ÛÛ˜Xİ‰Ëˆ	Ô™Yš[™[Y[™[XZ[œÈ™\ÙX\˜Ú[™Ø[››İXİ]˜]HHİ˜]YŞK‰Ëˆ
-Kˆ[™YXİ[Û“Øš™Xİ]™NˆYš[š][ÛŠˆ	Û[™YXİ[Û“Øš™Xİ]™IËˆ	Ô™YXİ[ÛˆØš™Xİ]™IËˆ	ÕH\™Ù]]Y\İ[Ûˆ\ÙYÈ]˜[X]HH[Ù[İXÚ\È]\™H™]\›ˆÜˆ]\™H\™Xİ[Û‹‰Ëˆ[™Yš[™Yˆ	ÑY™™\™[Øš™Xİ]™\È\İY™™\™[›Ü›\ÈÙˆ™YXİ]™H]šY[˜ÙK‰Ëˆ	Ğ[ˆØš™Xİ]™HÙ\È›İ[\H]]Èİ]]\ÈXİ[Û˜X›HÜˆ›Ùš]X›K‰Ëˆ
-Kˆ[ÛÛ™šY[˜ÙPXÚÙ]ˆYš[š][ÛŠˆ	Û[ÛÛ™šY[˜ÙPXÚÙ]	Ëˆ	ĞÛÛ™šY[˜ÙHXÚÙ]	Ëˆ	ĞH™\]Y\İYœ˜Xİ[Ûˆ\ÙYÈÜ›İ\™YXİ[ÛœÈH[Ù[\™\ÜYİ™[™İ‰Ëˆ	Ñœ˜Xİ[Ûˆœ›ÛHÈIËˆ	Ò][È[œÜXİÚ]\ˆİ›Û™Ù\ˆ[Ù[İ]]È™Z]™YY™™\™[K‰Ëˆ	Ó[Ù[ÛÛ™šY[˜ÙH\È›İHØ[Xœ˜]Y›Ø˜Xš[]HÙˆ›Ùš]‰Ëˆ
-Kˆ[šX[YÙ]ˆYš[š][ÛŠˆ	Û[šX[YÙ]	Ëˆ	ÕšX[YÙ]	Ëˆ	ÕHX^[][H[X™\ˆÙˆ™Yš[™[Y[ÛÛ™šYİ\˜][ÛœÈH˜XÚÙ[™X^HÙ[Xİ›Üˆ]˜[X][Û‹‰Ëˆ	ĞÛİ[	Ëˆ	Ò]›İ[™ÈÛÛ\]][Û˜[ÛÜšÈ[™XZÙ\È^\š[Y[ÈÜ\˜][Û˜[H™YXİX›K‰Ëˆ	ĞH\™Ù\ˆYÙ]Ù\È›İİX\˜[YH™]\ˆ]šY[˜ÙK‰Ëˆ
-Kˆ[[[YPYÙ]ˆYš[š][ÛŠˆ	Û[[[YPYÙ]	Ëˆ	Ô[[YHYÙ]	Ëˆ	ÕHX^[][HØ[XÛØÚÈ[YH[İÙY›ÜˆH™Yš[™[Y[[‹‰Ëˆ	Ñ\˜][Û‰Ëˆ	Ò]™]™[ÈÛ™H^\š[Y[œ›ÛHÛÛœİ[Z[™È[›[Z]YÛÜšÙ\ˆ[YK‰Ëˆ	Õ\›Z[˜][Ûˆ]HYÙ]Ø[ˆX]™Hİ\Ú\ÙH˜[YÛÜšÈ[™]˜[X]Y‰Ëˆ
-Kˆ[›ÙÜ™\ÜÎˆYš[š][ÛŠˆ	Û[›ÙÜ™\ÜÉËˆ	Ô›ÙÜ™\ÜÉËˆ	ĞÛÛ\]YÛÛ\]YÜˆ™]\ÙY]˜[X][ÛœÈ]šYYHH˜XÚÙ[™\Ù[XİY]˜[X][ÛˆÛİ[‰Ëˆ	Ñœ˜Xİ[Û‰Ëˆ	Ò]\ØÜšX™\È\˜X›H]Y]YHÛÜšÈÛÛ\]YÛÈ˜\‹‰Ëˆ	Ò]\È[˜]˜Z[X›H™Y›Ü™HHÙ[XİYÛÜšÈÛİ[^\İÈ[™Ù\È›İYX\İ\™H]šY[˜ÙH]X[]K‰Ëˆ
-Kˆ[ÛÛ\]Y]˜[X][ÛˆYš[š][ÛŠˆ	Û[ÛÛ\]Y]˜[X][Û‰Ëˆ	ĞÛÛ\]Y]˜[X][Û‰Ëˆ	Ğ[ˆ]˜[X][Ûˆ™]ÛHØ[İ[]YHH™Yš[™[Y[ÛÜšÙ\ˆ›Üˆ\È[‹‰Ëˆ	ĞÛİ[	Ëˆ	Ò]\İ[™İZ\Ú\È™]ÈÛÜšÈœ›ÛH™]\ÙY]šY[˜ÙK‰Ëˆ	ĞÛÛ\]][Ûˆ[Û™HÙ\È›İYX[ˆH]šY[˜ÙH\ÜÙY‰Ëˆ
-Kˆ[™]\ÙY]˜[X][ÛˆYš[š][ÛŠˆ	Û[™]\ÙY]˜[X][Û‰Ëˆ	Ô™]\ÙY]˜[X][Û‰Ëˆ	ĞÛÛ\]X›HÛÛ\]Y]šY[˜ÙH™]\ÙY[™\ˆH˜XÚÙ[™8 &\È^\š[Y[Y[]H[\Ë‰Ëˆ	ĞÛİ[	Ëˆ	Ô™]\ÙH]›ÚYÈ™\X][™È\]Z]˜[[[Ù[ÛÜšË‰Ëˆ	Ô™]\ÙH™[XZ[œÈ˜[YÛ›H›ÜˆH^XİÛÛ\]Xš[]HÛÛ˜Xİ[™]\Ù]]šY[˜ÙK‰Ëˆ
-Kˆ[ÛZ]Y]˜[X][ÛˆYš[š][ÛŠˆ	Û[ÛZ]Y]˜[X][Û‰Ëˆ	ÓÛZ]Y]˜[X][Û‰Ëˆ	ĞH[›™YÛÛXš[˜][ÛˆH˜XÚÙ[™Y›İÙ[XİÜˆÛÛ\]HÚ][ˆH›İ[™Y^\š[Y[‰Ëˆ	ĞÛİ[	Ëˆ	Ò]^Z[œÈHY™™\™[˜ÙH™]ÙY[ˆHØ\\ÚX[ˆ[ˆ[™]˜[X]YÛÜšË‰Ëˆ	ÓÛZ]YÛÛ™šYİ\˜][ÛœÈ]™H›È™\İ[[™]\İ›İ™H[\œ™]Y\È˜Z[\™\Ë‰Ëˆ
-Kˆ[YÙ]^]\İ[ÛˆYš[š][ÛŠˆ	Û[YÙ]^]\İ[Û‰Ëˆ	ĞYÙ]^]\İ[Û‰Ëˆ	ÕÚ]\ˆHÛÛ™šYİ\™YšX[Üˆ[[YH[Z]™]™[YY][Û˜[[›™YÛÜšË‰Ëˆ	ÖY\ÈÜˆ›ÉËˆ	Ò]Y[YšY\È[ˆÜ\˜][Û˜[[Z]Ûˆ^\š[Y[Ûİ™\˜YÙK‰Ëˆ	Ò]Ù\È›İ\ØÜšX™HÚ]\ˆÛÛ\]Y]šY[˜ÙH\ÈÛÛÙÜˆ˜Y‰Ëˆ
-Kˆ[›ÛZ\Ú[™ÎˆYš[š][ÛŠˆ	Û[›ÛZ\Ú[™ÉËˆ	Ô›ÛZ\Ú[™È›Üˆİ˜]YŞHÚ[][][Û‰Ëˆ	Ñ]šY[˜ÙH]\ÜÙYH˜XÚÙ[™8 &\È™Yš[™[Y[[\È[™X^H›ØÙYYÈ]\ˆXÛÛ›ÛZXÈİ˜]YŞHÚ[][][Û‹‰Ëˆ[™Yš[™Yˆ	Ò]Y[YšY\ÈHØ[™Y]H›ÜˆH™^\ÛÛ]Y™\ÙX\˜ÚİYÙK‰Ëˆ	Ò]\È›İİ˜]YŞH\›İ˜[Xİ]˜][Û‹ÜˆH›Ùš]Xš[]HÛZ[K‰Ëˆ
-Kˆ[[œİY™šXÚY[ˆYš[š][ÛŠˆ	Û[[œİY™šXÚY[	Ëˆ	Ò[œİY™šXÚY[]šY[˜ÙIËˆ	Ñ]šY[˜ÙH]Y›İÛÛZ[ˆ[›İYÚİ\ÜÈØ]\ÙHHİ\œ™[Û\ÜÚYšXØ][ÛˆÛÛ˜Xİ‰Ëˆ[™Yš[™Yˆ	Ò]™]™[ÈÙXZÈØ[\\Èœ›ÛH™Z[™È™\Ù[Y\ÈÛÛ˜Û\Ú]™K‰Ëˆ	Ò[œİY™šXÚY[Ù\È›İ›İ™H]H™[][ÛœÚ\Ø[ˆ™]™\ˆ^\İ‰Ëˆ
-Kˆ[\ØØ\™YˆYš[š][ÛŠˆ	Û[\ØØ\™Y	Ëˆ	Ñ\ØØ\™Y	Ëˆ	Ñ]šY[˜ÙH]˜Z[YÛ™HÜˆ[Ü™H˜XÚÙ[™[\È[™\È›İ™]Z[™Y›ÜˆH™^™\ÙX\˜ÚİYÙK‰Ëˆ[™Yš[™Yˆ	Ò]™XÛÜ™ÈH[X™\˜]H™\ÙX\˜Ú™Z™Xİ[Û‹‰Ëˆ	ĞH\ØØ\™Y\İÜšXØ[ÛÛ™šYİ\˜][Ûˆ\È›İHİ][Y[X›İ]]™\H]\™H]\Ù]‰Ëˆ
-Kˆ[[˜ÛÛ\]NˆYš[š][ÛŠˆ	Û[[˜ÛÛ\]IËˆ	Ò[˜ÛÛ\]H]šY[˜ÙIËˆ	Ñ]šY[˜ÙHœ›ÛHH[ˆÜˆ]˜[X][Ûˆ]\È›İ™XXÚYHÛÛ\]H\›Z[˜[™\İ[‰Ëˆ[™Yš[™Yˆ	Ò]Ø\›œÈ\Ù\œÈ›İÈ™X]\X[ÛÜšÙ\ˆİ]]\Èš[˜[‰Ëˆ	ÓY]šXÜÈØ[ˆÚ[™ÙH[[H˜XÚÙ[™ÛÛ\]\ÈÜˆ\›Z[˜]\ÈH[‹‰Ëˆ
-Kˆ[\™Xİ[Û˜[XØİ\˜XŞNˆYš[š][ÛŠˆ	Û[\™Xİ[Û˜[XØİ\˜XŞIËˆ	Ñ\™Xİ[Û˜[XØİ\˜XŞIËˆ	ÕHÚ\™HÙˆ]˜[X]YØœÙ\˜][ÛœÈÚÜÙH™YXİY\™Xİ[ÛˆX]ÚYHØœÙ\™Y]\™H\™Xİ[Û‹‰Ëˆ	Ñœ˜Xİ[Û‰Ëˆ	Ò]YX\İ\™\È\™Xİ[Û˜[YÜ™Y[Y[XÜ›ÜÜÈ]šY[˜ÙK‰Ëˆ	Ò]YÛ›Ü™\È^[Ù™ˆÚ^™H[™Ù\È›İ\İX›\Ú›Ùš]Xš[]HY\ˆÛÜİË‰Ëˆ
-Kˆ[X\œÛÛÛÜœ™[][ÛˆYš[š][ÛŠˆ	Û[X\œÛÛÛÜœ™[][Û‰Ëˆ	ÔX\œÛÛˆÛÜœ™[][Û‰Ëˆ	ÕH[™X\ˆ\ÜÛØÚX][Ûˆ™]ÙY[ˆ[Ù[İ]][™ØœÙ\™Y]\™H˜[Y\Ë‰Ëˆ	ĞÛÜœ™[][Ûˆœ›ÛHLHÈIËˆ	Ò]ÈÚYÛˆ[™XYÛš]YH\ØÜšX™H[™X\ˆÛË[[İ™[Y[‰Ëˆ	ĞÛÜœ™[][Ûˆ\È›İØ]\Ø][Ûˆ[™Ø[ˆ™H[œİX›Hİ]ÙˆØ[\K‰Ëˆ
-Kˆ[ÜX\›X[ÛÜœ™[][ÛˆYš[š][ÛŠˆ	Û[ÜX\›X[ÛÜœ™[][Û‰Ëˆ	ÔÜX\›X[ˆ˜[šÈÛÜœ™[][Û‰Ëˆ	ÕH˜[šË[Ü™\ˆ\ÜÛØÚX][Ûˆ™]ÙY[ˆ[Ù[İ]][™ØœÙ\™Y]\™H˜[Y\Ë‰Ëˆ	ĞÛÜœ™[][Ûˆœ›ÛHLHÈIËˆ	Ò]\İÈÚ]\ˆYÚ\ˆ™YXİ[ÛœÈÙ[™\˜[H[YÛˆÚ]YÚ\ˆİ]ÛÛY\Ë‰Ëˆ	Ò]Ù\È›İYX\İ\™HXÛÛ›ÛZXÈ™]\›œÈÜˆ›İ™HHİX›HØ]\Ø[™[][ÛœÚ\‰Ëˆ
-Kˆ[XYR[\›İ™[Y[ˆYš[š][ÛŠˆ	Û[XYR[\›İ™[Y[	Ëˆ	ÓPQH[\›İ™[Y[İ™\ˆ™\›ÉËˆ	ÕH™YXİ[Ûˆ[ˆYX[ˆXœÛÛ]H™YXİ[Ûˆ\œ›Üˆ™[]]™HÈ[Ø^\È™YXİ[™È™\›Ë‰Ëˆ	Ô™[]]™H[\›İ™[Y[	Ëˆ	Ò]ÛÛ\\™\ÈH[Ù[Ú]HÚ[\H›Ë[[İ™[Y[™Y™\™[˜ÙK‰Ëˆ	ÓİÙ\ˆİ]\İXØ[\œ›ÜˆÙ\È›İ™XÙ\ÜØ\š[H›ÙXÙH\ÙY[˜Y[™ÈXÚ\Ú[ÛœË‰Ëˆ
-Kˆ[Ú›Û›ÛÙÚXØ[›ÛˆYš[š][ÛŠˆ	Û[Ú›Û›ÛÙÚXØ[›Û	Ëˆ	ĞÚ›Û›ÛÙÚXØ[›Û	Ëˆ	ÓÛ™H\ÛÛ]Y[YK[Ü™\™Y˜Z[š[™È[™˜[Y][Ûˆ]˜[X][Ûˆ[ˆH\œÚ\İY^\š[Y[‰Ëˆ	Ñ›Û	Ëˆ	Ó][\H›ÛÈ[\ÜÙ\ÜÈÚ]\ˆ]šY[˜ÙH™\X]ÈXÜ›ÜÜÈ\İÜšXØ[Ú[™İÜË‰Ëˆ	Ò\İÜšXØ[›ÛÈØ[››İİX\˜[YH\™›Ü›X[˜ÙH[ˆ[œÙY[ˆ]\™HX\šÙ]Ë‰Ëˆ
-KŸH\ÈÛÛœİØ]\ÙšY\È™XÛÜ™İš[™ËY]šXÑYš[š][ÛÂ‚™^Ü\HY]šXÒÙ^HHÙ^[Ùˆ\[ÙˆQU’P×ÑQ’S’USÓ”ÎÂ‚™^Ü[˜İ[ÛˆY]šXÑYš[š][ÛŠY]šXÎˆY]šXÒÙ^JNˆY]šXÑYš[š][ÛˆÂˆ™]\›ˆQU’P×ÑQ’S’USÓ”ÖÛY]šX×NÂŸB‚™[˜İ[ÛˆYš[š][ÛŠˆÙ^Nˆİš[™Ëˆ]Nˆİš[™Ëˆ^[˜][Ûˆİš[™Ëˆ˜[™ÙSÜ•[š]Îˆİš[™Ëˆ[\œ™]][ÛÎˆİš[™Ëˆ[Z]][ÛÎˆİš[™ËŠNˆY]šXÑYš[š][ÛˆÂˆ™]\›ˆÈÙ^K]K^[˜][Û‹˜[™ÙSÜ•[š][\œ™]][Û‹[Z]][ÛˆNÂŸB
+    'It measures movement size, not direction or future risk with certainty.',
+  ),
+  directionalScore: definition(
+    'directionalScore',
+    'Directional score',
+    'The combined directional contribution before volume confirmation is applied.',
+    undefined,
+    'Its sign indicates the direction of the modelâ€™s aggregated evidence.',
+    'It is model output, not financial advice or a guaranteed outcome.',
+  ),
+  rsiContribution: definition(
+    'rsiContribution',
+    'RSI contribution',
+    'The part of the directional score contributed by the RSI-based momentum evidence.',
+    undefined,
+    'It shows how RSI affected the persisted score.',
+    'RSI can remain elevated or depressed and should not be treated as a certainty.',
+  ),
+  return1Contribution: definition(
+    'return1Contribution',
+    'Return 1 contribution',
+    'The contribution from the most recent one-candle price return.',
+    undefined,
+    'It captures very recent directional movement in the score.',
+    'One candle is limited evidence and can be noisy.',
+  ),
+  return12Contribution: definition(
+    'return12Contribution',
+    'Return 12 contribution',
+    'The contribution from price movement across the latest twelve-candle window.',
+    undefined,
+    'It adds a broader recent-return view to the directional score.',
+    'Historical movement does not guarantee continuation.',
+  ),
+  latestDecision: definition(
+    'latestDecision',
+    'Latest decision',
+    'The most recent immutable action selected by the configured Argos strategy.',
+    undefined,
+    'It records what the strategy concluded from persisted evidence at that boundary.',
+    'It is a Paper Trading decision, not financial advice or a real-money order.',
+  ),
+  requestedTargetPortfolioPercentage: definition(
+    'requestedTargetPortfolioPercentage',
+    'Requested target portfolio percentage',
+    'The portfolio share the strategy requested for an opening or adjusted position.',
+    'Percentage',
+    'It expresses strategy sizing intent at the decision boundary.',
+    'Execution constraints and account state can affect the simulated result.',
+  ),
+  requestedPositionPercentage: definition(
+    'requestedPositionPercentage',
+    'Requested position percentage',
+    'The share of an existing position the strategy requested to sell.',
+    'Percentage',
+    'It expresses the decisionâ€™s intended reduction.',
+    'It describes simulated strategy intent, not a real order.',
+  ),
+  positionStatus: definition(
+    'positionStatus',
+    'Position status',
+    'Whether the Paper Trading position is currently open or closed.',
+    undefined,
+    'An open position still changes with its mark; a closed position no longer has market exposure.',
+    'The status applies only to the Argos simulation.',
+  ),
+  strategy: definition(
+    'strategy',
+    'Strategy',
+    'The named, versioned rule set that generated the persisted decision.',
+    undefined,
+    'It identifies which behavior produced the result.',
+    'A strategy name or version does not imply profitability.',
+  ),
+  configurationVersion: definition(
+    'configurationVersion',
+    'Configuration version',
+    'The immutable configuration revision used for the run or decision.',
+    'Version',
+    'It makes results traceable to a specific set of configured values.',
+    'Different versions may not be directly comparable.',
+  ),
+  confirmedCandidate: definition(
+    'confirmedCandidate',
+    'Confirmed Candidate',
+    'A frozen strategy candidate that passed the implemented validation and isolated walk-forward test criteria.',
+    undefined,
+    'It is historical evidence, not a prediction or guarantee.',
+  ),
+  predictiveEdge: definition(
+    'predictiveEdge',
+    'Predictive edge',
+    'Persisted statistical evidence that a frozen market condition was associated with a later price movement.',
+    undefined,
+    'It is research evidence, not a trading instruction.',
+    'Historical relationships may not persist.',
+  ),
+  nearMiss: definition(
+    'nearMiss',
+    'Near miss',
+    'A research configuration that approached, but did not satisfy, every advancement requirement.',
+    undefined,
+    'Actionable and diagnostic near misses have different meanings.',
+    'A near miss is not an approved Strategy.',
+  ),
+  normalizedMissingDistance: definition(
+    'normalizedMissingDistance',
+    'Normalized missing distance',
+    'The combined normalized deficit across failed research requirements.',
+    'Non-negative distance',
+    'Smaller values are closer to the configured gates.',
+    'It is not a probability of success.',
+  ),
+  bottleneckStage: definition(
+    'bottleneckStage',
+    'Bottleneck stage',
+    'The research stage where the greatest constraint on advancement was observed.',
+  ),
+  directionalHitRate: definition(
+    'directionalHitRate',
+    'Directional hit rate',
+    'The share of usable observations whose later movement matched the frozen directional rule.',
+    'Percentage',
+  ),
+  benchmarkImprovement: definition(
+    'benchmarkImprovement',
+    'Benchmark improvement',
+    'The directional hit-rate improvement over the unconditional comparison for the same evidence slice.',
+    'Percentage points',
+  ),
+  targetedRefinement: definition(
+    'targetedRefinement',
+    'Targeted refinement',
+    'A bounded follow-up search around promising persisted near misses.',
+    undefined,
+    'It preserves the existing economic and validation gates.',
+    'It does not activate a Strategy.',
+  ),
+  training: definition(
+    'training',
+    'Training',
+    'Historical evidence used to freeze candidate rules and parameters.',
+  ),
+  validation: definition(
+    'validation',
+    'Validation',
+    'Separate historical evidence used to decide whether a frozen candidate may reach isolated test.',
+  ),
+  isolatedTest: definition(
+    'isolatedTest',
+    'Isolated test',
+    'Held-out evidence evaluated only after validation passes.',
+    undefined,
+    undefined,
+    'Test evidence never tunes the candidate.',
+  ),
+  distanceToPass: definition(
+    'distanceToPass',
+    'Distance to pass',
+    'The recorded normalized deficit remaining before all applicable requirements pass.',
+    'Non-negative distance',
+    undefined,
+    'It is not a forecast.',
+  ),
+  segmentTotalReturn: definition(
+    'segmentTotalReturn',
+    'Total return',
+    'Percentage change in simulated equity over the segment.',
+    'Percentage',
+    undefined,
+    'Historical simulated return does not guarantee future performance.',
+  ),
+  segmentDrawdown: definition(
+    'segmentDrawdown',
+    'Maximum drawdown',
+    'Largest historical decline from a previous equity peak during the segment.',
+    'Percentage',
+  ),
+  differenceVsProduction: definition(
+    'differenceVsProduction',
+    'Difference vs production',
+    'Candidate return minus the current production strategy return over the same segment.',
+    'Percentage points',
+  ),
+  differenceVsBuyHold: definition(
+    'differenceVsBuyHold',
+    'Difference vs buy and hold',
+    'Candidate return minus buying once and holding over the same segment.',
+    'Percentage points',
+  ),
+  segmentFees: definition(
+    'segmentFees',
+    'Fees paid',
+    'Simulated transaction costs. Slippage is incorporated into execution prices.',
+    'Account currency',
+  ),
+  mlScreeningClassification: definition(
+    'mlScreeningClassification',
+    'Screening evidence classification',
+    'The backendâ€™s versioned summary of how persisted screening evidence met its statistical rules.',
+    undefined,
+    'It helps distinguish evidence that warrants more research from evidence that did not pass.',
+    'It is not Strategy approval and does not predict profitability.',
+  ),
+  mlParetoRetention: definition(
+    'mlParetoRetention',
+    'Pareto retention',
+    'Whether a screening result remained non-dominated across the backendâ€™s selected comparison metrics.',
+    'Yes or no',
+    'Retained results represent trade-offs that were not uniformly worse than another result.',
+    'Retention is not proof of economic value or future performance.',
+  ),
+  mlRefinement: definition(
+    'mlRefinement',
+    'ML refinement',
+    'A bounded follow-up experiment over persisted screening evidence, selected variables, objectives, and model parameters.',
+    undefined,
+    'It tests specific configurations under a durable, reproducible backend contract.',
+    'Refinement remains research and cannot activate a Strategy.',
+  ),
+  mlPredictionObjective: definition(
+    'mlPredictionObjective',
+    'Prediction objective',
+    'The target question used to evaluate a model, such as future return or future direction.',
+    undefined,
+    'Different objectives test different forms of predictive evidence.',
+    'An objective does not imply that its output is actionable or profitable.',
+  ),
+  mlConfidenceBucket: definition(
+    'mlConfidenceBucket',
+    'Confidence bucket',
+    'A requested fraction used to group predictions by model-reported strength.',
+    'Fraction from 0 to 1',
+    'It helps inspect whether stronger model outputs behaved differently.',
+    'Model confidence is not a calibrated probability of profit.',
+  ),
+  mlTrialBudget: definition(
+    'mlTrialBudget',
+    'Trial budget',
+    'The maximum number of refinement configurations the backend may select for evaluation.',
+    'Count',
+    'It bounds computational work and makes experiments operationally predictable.',
+    'A larger budget does not guarantee better evidence.',
+  ),
+  mlRuntimeBudget: definition(
+    'mlRuntimeBudget',
+    'Runtime budget',
+    'The maximum wall-clock time allowed for the refinement run.',
+    'Duration',
+    'It prevents one experiment from consuming unlimited worker time.',
+    'Termination at the budget can leave otherwise valid work unevaluated.',
+  ),
+  mlProgress: definition(
+    'mlProgress',
+    'Progress',
+    'Completed computed or reused evaluations divided by the backend-selected evaluation count.',
+    'Fraction',
+    'It describes durable queue work completed so far.',
+    'It is unavailable before a selected work count exists and does not measure evidence quality.',
+  ),
+  mlComputedEvaluation: definition(
+    'mlComputedEvaluation',
+    'Computed evaluation',
+    'An evaluation newly calculated by the refinement worker for this run.',
+    'Count',
+    'It distinguishes new work from reused evidence.',
+    'Computation alone does not mean the evidence passed.',
+  ),
+  mlReusedEvaluation: definition(
+    'mlReusedEvaluation',
+    'Reused evaluation',
+    'Compatible completed evidence reused under the backendâ€™s experiment identity rules.',
+    'Count',
+    'Reuse avoids repeating equivalent model work.',
+    'Reuse remains valid only for the exact compatibility contract and dataset evidence.',
+  ),
+  mlOmittedEvaluation: definition(
+    'mlOmittedEvaluation',
+    'Omitted evaluation',
+    'A planned combination the backend did not select or complete within the bounded experiment.',
+    'Count',
+    'It explains the difference between the Cartesian plan and evaluated work.',
+    'Omitted configurations have no result and must not be interpreted as failures.',
+  ),
+  mlBudgetExhaustion: definition(
+    'mlBudgetExhaustion',
+    'Budget exhaustion',
+    'Whether a configured trial or runtime limit prevented additional planned work.',
+    'Yes or no',
+    'It identifies an operational limit on experiment coverage.',
+    'It does not describe whether completed evidence is good or bad.',
+  ),
+  mlPromising: definition(
+    'mlPromising',
+    'Promising for Strategy simulation',
+    'Evidence that passed the backendâ€™s refinement rules and may proceed to later economic Strategy simulation.',
+    undefined,
+    'It identifies a candidate for the next isolated research stage.',
+    'It is not Strategy approval, activation, or a profitability claim.',
+  ),
+  mlInsufficient: definition(
+    'mlInsufficient',
+    'Insufficient evidence',
+    'Evidence that did not contain enough support to satisfy the current classification contract.',
+    undefined,
+    'It prevents weak samples from being presented as conclusive.',
+    'Insufficient does not prove that a relationship can never exist.',
+  ),
+  mlDiscarded: definition(
+    'mlDiscarded',
+    'Discarded',
+    'Evidence that failed one or more backend rules and is not retained for the next research stage.',
+    undefined,
+    'It records a deliberate research rejection.',
+    'A discarded historical configuration is not a statement about every future dataset.',
+  ),
+  mlIncomplete: definition(
+    'mlIncomplete',
+    'Incomplete evidence',
+    'Evidence from a run or evaluation that has not reached a complete terminal result.',
+    undefined,
+    'It warns users not to treat partial worker output as final.',
+    'Metrics can change until the backend completes or terminates the run.',
+  ),
+  mlDirectionalAccuracy: definition(
+    'mlDirectionalAccuracy',
+    'Directional accuracy',
+    'The share of evaluated observations whose predicted direction matched the observed future direction.',
+    'Fraction',
+    'It measures directional agreement across evidence.',
+    'It ignores payoff size and does not establish profitability after costs.',
+  ),
+  mlPearsonCorrelation: definition(
+    'mlPearsonCorrelation',
+    'Pearson correlation',
+    'The linear association between model output and observed future values.',
+    'Correlation from -1 to 1',
+    'Its sign and magnitude describe linear co-movement.',
+    'Correlation is not causation and can be unstable out of sample.',
+  ),
+  mlSpearmanCorrelation: definition(
+    'mlSpearmanCorrelation',
+    'Spearman rank correlation',
+    'The rank-order association between model output and observed future values.',
+    'Correlation from -1 to 1',
+    'It tests whether higher predictions generally align with higher outcomes.',
+    'It does not measure economic returns or prove a stable causal relationship.',
+  ),
+  mlMaeImprovement: definition(
+    'mlMaeImprovement',
+    'MAE improvement over zero',
+    'The reduction in mean absolute prediction error relative to always predicting zero.',
+    'Relative improvement',
+    'It compares the model with a simple no-movement reference.',
+    'Lower statistical error does not necessarily produce useful trading decisions.',
+  ),
+  mlChronologicalFold: definition(
+    'mlChronologicalFold',
+    'Chronological fold',
+    'One isolated time-ordered training and validation evaluation in the persisted experiment.',
+    'Fold',
+    'Multiple folds help assess whether evidence repeats across historical windows.',
+    'Historical folds cannot guarantee performance in unseen future markets.',
+  ),
+} as const satisfies Record<string, MetricDefinition>;
+
+export type MetricKey = keyof typeof METRIC_DEFINITIONS;
+
+export function metricDefinition(metric: MetricKey): MetricDefinition {
+  return METRIC_DEFINITIONS[metric];
+}
+
+function definition(
+  key: string,
+  title: string,
+  explanation: string,
+  rangeOrUnit?: string,
+  interpretation?: string,
+  limitation?: string,
+): MetricDefinition {
+  return { key, title, explanation, rangeOrUnit, interpretation, limitation };
+}

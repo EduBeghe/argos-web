@@ -397,7 +397,66 @@ export class MlRefinementPage implements OnInit {
       ? 'Higher values carry directional meaning.'
       : value === false
         ? 'Higher values are not treated as directional.'
-ëMm¢G§²ÚîÆ­yÒing, parameter: string): string | null {
+        : 'Direction is not applicable.';
+  }
+  toggleEngine(engine: string, checked: boolean): void {
+    const run = this.selectedSourceRun();
+    if (!run) return;
+    const without = this.engineDrafts().filter((item) => item.engine !== engine);
+    if (!checked) {
+      this.engineDrafts.set(without);
+      return;
+    }
+    const baseline = baselineEngineDraft(engine, run.configuration);
+    if (!baseline) {
+      this.error.set(
+        `The persisted screening configuration lacks required ${engine} baseline values.`,
+      );
+      return;
+    }
+    this.engineDrafts.set([...without, baseline]);
+  }
+  engineSelected(engine: string): boolean {
+    return this.engineDrafts().some((item) => item.engine === engine);
+  }
+  parameters(draft: EngineDraft): string[] {
+    return Object.keys(draft.parameters);
+  }
+  setParameterMode(engine: string, parameter: string, mode: ParameterMode): void {
+    this.updateDraft(engine, parameter, {
+      mode,
+      values: mode === 'values' ? '' : '',
+      minimum: '',
+      maximum: '',
+      step: '',
+    });
+  }
+  updateParameter(
+    engine: string,
+    parameter: string,
+    field: 'values' | 'minimum' | 'maximum' | 'step',
+    value: string,
+  ): void {
+    const current = this.engineDrafts().find((item) => item.engine === engine)?.parameters[
+      parameter
+    ];
+    if (!current) return;
+    this.updateDraft(engine, parameter, { ...current, [field]: value });
+  }
+  private updateDraft(
+    engine: string,
+    parameter: string,
+    value: EngineDraft['parameters'][string],
+  ): void {
+    this.engineDrafts.update((items) =>
+      items.map((item) =>
+        item.engine === engine
+          ? { ...item, parameters: { ...item.parameters, [parameter]: value } }
+          : item,
+      ),
+    );
+  }
+  parameterError(engine: string, parameter: string): string | null {
     const draft = this.engineDrafts().find((item) => item.engine === engine)?.parameters[parameter];
     return draft ? parseParameterGrid(engine, parameter, draft).error : 'Missing parameter.';
   }
