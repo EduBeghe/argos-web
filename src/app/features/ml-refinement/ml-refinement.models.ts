@@ -1,4 +1,11 @@
-export type RefinementStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+export const REFINEMENT_STATUSES = [
+  'queued',
+  'running',
+  'completed',
+  'failed',
+  'cancelled',
+] as const;
+export type RefinementStatus = (typeof REFINEMENT_STATUSES)[number];
 export type RefinementDisposition =
   | 'queued'
   | 'already_queued'
@@ -6,6 +13,8 @@ export type RefinementDisposition =
   | 'reused_completed'
   | 'requeued_failed'
   | 'requeued_cancelled';
+export type RefinementClassification =
+  'promising_for_strategy_simulation' | 'insufficient_evidence' | 'discarded' | 'incomplete';
 
 export interface RefinementVariable {
   name: string;
@@ -16,7 +25,6 @@ export interface RefinementVariable {
   calculation_version: number;
   higher_is_directional: boolean | null;
 }
-
 export interface RefinementContract {
   contract_version: number;
   classification_version: number;
@@ -33,7 +41,6 @@ export interface RefinementContract {
   };
   ui_defaults: { fee_rate: string; slippage_rate: string; deterministic_seed: number };
 }
-
 export interface ScreeningRun {
   id: string;
   status: string;
@@ -46,7 +53,6 @@ export interface ScreeningRun {
   configuration: Record<string, unknown>;
   completed_at: string | null;
 }
-
 export interface ScreeningResult {
   id: string;
   run_id: string;
@@ -61,7 +67,6 @@ export interface ScreeningResult {
   median_mae_improvement_over_zero: string;
   failed_classification_rules: string[];
 }
-
 export interface Page<T> {
   items: T[];
   total: number;
@@ -69,13 +74,12 @@ export interface Page<T> {
   offset: number;
   has_more: boolean;
 }
-
 export interface RefinementRun {
   id: string;
   experiment_key: string;
   source_screening_run_id: string;
   source_screening_result_id: string;
-  status: RefinementStatus;
+  status: RefinementStatus | string;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
@@ -95,7 +99,6 @@ export interface RefinementRun {
   normalized_configuration: Record<string, unknown>;
   worker_id: string | null;
 }
-
 export interface RefinementEvaluation {
   id: string;
   run_id: string;
@@ -103,37 +106,49 @@ export interface RefinementEvaluation {
   engine: string;
   future_duration_seconds: number;
   objective: string;
-  feature_policy: Record<string, unknown>;
+  feature_policy: FeaturePolicy;
   confidence_buckets: string[];
   aggregate_metrics: Record<string, unknown>;
-  classification: string;
+  classification: RefinementClassification | string;
   failed_rules: string[];
   elapsed_seconds: string;
 }
-
 export interface RefinementEvaluationDetail extends RefinementEvaluation {
   fold_evidence: Record<string, unknown>[];
 }
 
-export interface ParameterGrid {
-  values?: (boolean | number)[];
-  minimum?: number;
-  maximum?: number;
-  step?: number;
+export interface ValuesGrid {
+  values: (boolean | number)[];
 }
-
+export interface RangeGrid {
+  minimum: number;
+  maximum: number;
+  step: number;
+}
+export type ParameterGrid = ValuesGrid | RangeGrid;
 export interface EngineSearchSpace {
   engine: string;
   [parameter: string]: string | ParameterGrid;
 }
-
+export interface AllFeaturePolicy {
+  strategy: 'all';
+}
+export interface ExplicitFeaturePolicy {
+  strategy: 'explicit';
+  variables: string[];
+}
+export interface TopKFeaturePolicy {
+  strategy: 'top_k';
+  values: number[];
+}
+export type FeaturePolicy = AllFeaturePolicy | ExplicitFeaturePolicy | TopKFeaturePolicy;
 export interface RefinementRequest {
   source_screening_run_id: string;
   source_screening_result_id: string;
   engines: string[];
   future_durations_seconds: number[];
   search_space: EngineSearchSpace[];
-  feature_selection: { strategies: Record<string, unknown>[] };
+  feature_selection: { strategies: FeaturePolicy[] };
   prediction_objectives: string[];
   confidence_buckets: string[];
   fee_rate: string;
@@ -143,7 +158,6 @@ export interface RefinementRequest {
   deterministic_seed: number;
   notes: string | null;
 }
-
 export interface EnqueueResponse {
   disposition: RefinementDisposition;
   run: RefinementRun;

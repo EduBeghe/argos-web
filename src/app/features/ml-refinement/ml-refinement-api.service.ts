@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { EMPTY, expand, Observable, reduce } from 'rxjs';
+import { EMPTY, expand, map, Observable, reduce } from 'rxjs';
 
 import { API_BASE_URL } from '../../core/config/api-config';
 import {
@@ -87,12 +87,22 @@ export class MlRefinementApiService {
         ),
       });
     return page(0).pipe(
-      expand((response) =>
-        response.has_more || response.offset + response.items.length < response.total
-          ? page(response.offset + response.items.length)
-          : EMPTY,
-      ),
-      reduce((items, response) => [...items, ...response.items], [] as T[]),
+      map((response) => ({ response, requestedOffset: 0, seenOffsets: new Set([0]) })),
+      expand((state) => {
+        const { response, requestedOffset, seenOffsets } = state;
+        const nextOffset = requestedOffset + response.items.length;
+        const more = response.has_more || nextOffset < response.total;
+        if (!more || response.items.length === 0 || seenOffsets.has(nextOffset)) return EMPTY;
+        const nextSeen = new Set(seenOffsets).add(nextOffset);
+        return page(nextOffset).pipe(
+          map((nextResponse) => ({
+            response: nextResponse,
+            requestedOffset: nextOffset,
+            seenOffsets: nextSeen,
+          })),
+        );
+      }),
+      reduce((items, state) => [...items, ...state.response.items], [] as T[]),
     );
   }
 }

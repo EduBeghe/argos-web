@@ -94,4 +94,14 @@ describe('MlRefinementApiService', () => {
       .flush({ detail: 'Unavailable' }, { status: 503, statusText: 'Unavailable' });
     expect(status).toBe(503);
   });
+
+  it('terminates malformed pagination when a page is empty despite has_more', () => {
+    let result: unknown[] = [];
+    service.getRuns().subscribe((items) => (result = items));
+    http
+      .expectOne('https://api.example.test/optimization/ml-refinement-runs?limit=200&offset=0')
+      .flush({ items: [], total: 999, limit: 200, offset: 0, has_more: true });
+    expect(result).toEqual([]);
+    http.verify();
+  });
 });
