@@ -139,10 +139,12 @@ describe('MlRefinementPage', () => {
   }
 
   it('loads the authoritative contract and exposes a valid accessible tab set with MetricHelp', () => {
-    const { fixture } = create();
+    const { fixture, component } = create();
     const tabs = [...fixture.nativeElement.querySelectorAll('[role="tab"]')] as HTMLElement[];
     expect(tabs).toHaveLength(3);
     expect(tabs[0].getAttribute('aria-controls')).toBe('ml-refinement-panel-configure');
+    selectSource(component);
+    fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('app-metric-help').length).toBeGreaterThan(0);
     tabs[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     fixture.detectChanges();
