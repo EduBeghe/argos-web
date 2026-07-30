@@ -32,6 +32,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'ml-refinement',
+        loadComponent: () =>
+          import('./features/ml-refinement/ml-refinement-page').then(
+            (module) => module.MlRefinementPage,
+          ),
+      },
+      {
         path: 'instruments/detail',
         loadComponent: () =>
           import('./features/instrument-detail/instrument-detail-page').then(

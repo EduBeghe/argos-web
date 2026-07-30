@@ -9,6 +9,7 @@
         <p class="generated">Updated: {{ data.generated_at | date: 'medium' : 'UTC' }} UTC</p>
       }
       <a class="secondary-action" routerLink="/strategies">Strategy Research</a>
+      <a class="secondary-action" routerLink="/ml-refinement">ML Refinement</a>
     </div>
     <button class="refresh-button" type="button" (click)="refresh()" [disabled]="loading()">
       {{ loading() ? 'Refreshing…' : 'Refresh' }}

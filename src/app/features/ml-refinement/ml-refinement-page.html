@@ -1,0 +1,446 @@
+<main class="workspace">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Private research workspace</p>
+      <h1>ML Refinement</h1>
+      <p>
+        Configure bounded experiments from persisted screening evidence. Promising evidence is not
+        an approved trading Strategy.
+      </p>
+    </div>
+    <a routerLink="/strategies" class="button secondary">Strategy Research</a>
+  </header>
+
+  <nav class="tabs" aria-label="ML Refinement sections">
+    @for (
+      item of [
+        { id: 'configure', label: 'Configure' },
+        { id: 'runs', label: 'Runs' },
+        { id: 'evidence', label: 'Evidence' },
+      ];
+      track item.id
+    ) {
+      <button
+        type="button"
+        [class.active]="tab() === item.id"
+        [attr.aria-selected]="tab() === item.id"
+        role="tab"
+        (click)="setTab($any(item.id))"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </nav>
+  <p class="live" aria-live="polite">{{ message() }}</p>
+  @if (error()) {
+    <p class="notice error" aria-live="assertive">{{ error() }}</p>
+  }
+
+  @if (tab() === 'configure') {
+    <section aria-labelledby="configure-title">
+      <h2 id="configure-title">Configure a refinement</h2>
+      @if (contractState() === 'loading') {
+        <p class="notice">Loading the authoritative refinement contract…</p>
+      }
+      @if (contractState() === 'error') {
+        <div class="notice error">
+          <p>
+            The refinement contract is unavailable or malformed. Configuration is blocked; Runs
+            remains available.
+          </p>
+          <button type="button" (click)="loadContract()">Retry contract</button>
+        </div>
+      }
+      @if (contract(); as currentContract) {
+        <div class="panel">
+          <h3>1. Select persisted screening evidence</h3>
+          @if (screeningState() === 'loading') {
+            <p>Loading screening runs…</p>
+          }
+          @if (screeningState() === 'error') {
+            <p class="notice error">
+              Screening runs are unavailable.
+              <button type="button" (click)="loadScreeningRuns()">Retry</button>
+            </p>
+          }
+          <label
+            >Completed screening run<select #sourceRun (change)="selectSourceRun(sourceRun.value)">
+              <option value="">Select a completed run</option>
+              @for (run of completedScreeningRuns(); track run.id) {
+                <option [value]="run.id">
+                  {{ run.asset }} · {{ run.provider }} {{ run.market_type }} · {{ run.interval }} ·
+                  {{ run.completed_at | date: 'medium' : 'UTC' }} UTC ·
+                  {{ abbreviate(run.dataset_fingerprint) }} · v{{ run.screening_version }}
+                </option>
+              }
+            </select></label
+          >
+          @if (screeningState() === 'ready' && !completedScreeningRuns().length) {
+            <p class="notice">No completed screening runs are available.</p>
+          }
+          @if (selectedSourceRun()) {
+            @if (resultsState() === 'loading') {
+              <p>Loading all screening results…</p>
+            }
+            @if (resultsState() === 'error') {
+              <p class="notice error">Results could not be loaded. Reselect the run to retry.</p>
+            }
+            <div class="result-grid">
+              @for (result of screeningResults(); track result.id) {
+                <button
+                  type="button"
+                  class="result-card"
+                  [class.selected]="selectedSourceResult()?.id === result.id"
+                  (click)="selectSourceResult(result.id)"
+                >
+                  <strong
+                    >#{{ result.display_rank }} · {{ label(result.engine) }} ·
+                    {{ duration(result.future_duration_seconds) }}</strong
+                  >
+                  <span
+                    >{{ label(result.evidence_classification) }} · Pareto
+                    {{ result.pareto_retained ? 'retained' : 'not retained' }}</span
+                  >
+                  <span
+                    >Directional accuracy {{ result.median_directional_accuracy }} · Spearman
+                    {{ result.median_spearman_correlation ?? 'Not available' }}</span
+                  >
+                  @if (result.failed_classification_rules.length) {
+                    <small>Failed: {{ result.failed_classification_rules.join(', ') }}</small>
+                  }
+                </button>
+              } @empty {
+                @if (resultsState() === 'ready') {
+                  <p class="notice">This screening run has no results.</p>
+                }
+              }
+            </div>
+          }
+        </div>
+
+        @if (selectedSourceResult(); as selectedResult) {
+          <form [formGroup]="form" (ngSubmit)="enqueue()" class="panel">
+            <h3>2. Define the bounded search</h3>
+            <p class="muted">
+              Baseline values reproduce persisted screening configuration. Documented library
+              defaults fill only parameters that screening did not persist; they are not
+              profitability recommendations.
+            </p>
+            <fieldset>
+              <legend>Engines</legend>
+              @for (engine of currentContract.supported_engines; track engine) {
+                <label class="check"
+                  ><input
+                    type="checkbox"
+                    [checked]="searchSpaces().some((space) => space.engine === engine)"
+                    (change)="toggleEngine(engine, $any($event.target).checked)"
+                  />{{ label(engine) }}</label
+                >
+              }
+            </fieldset>
+            @for (space of searchSpaces(); track space.engine) {
+              <details>
+                <summary>{{ label(space.engine) }} parameter search space</summary>
+                <p class="muted">
+                  Comma-separated explicit values. Add alternatives deliberately; duplicate or
+                  invalid values are rejected.
+                </p>
+                <div class="field-grid">
+                  @for (parameter of space | keyvalue; track parameter.key) {
+                    @if (parameter.key !== 'engine') {
+                      <label
+                        >{{ label(parameter.key)
+                        }}<input
+                          [value]="gridValues(space, parameter.key)"
+                          (change)="
+                            updateValues(space.engine, parameter.key, $any($event.target).value)
+                          "
+                      /></label>
+                    }
+                  }
+                </div>
+              </details>
+            }
+            <details open>
+              <summary>Authoritative experiment options</summary>
+              <dl class="contract-list">
+                <div>
+                  <dt>Future duration</dt>
+                  <dd>
+                    {{ duration(selectedResult.future_duration_seconds) }} ({{
+                      selectedResult.future_duration_seconds
+                    }}
+                    seconds)
+                  </dd>
+                </div>
+                <div>
+                  <dt>Objectives</dt>
+                  <dd>{{ currentContract.supported_prediction_objectives.join(', ') }}</dd>
+                </div>
+                <div>
+                  <dt>Feature policy</dt>
+                  <dd>
+                    All {{ currentContract.variables.length }} contract variables. Explicit and
+                    top-k policies remain available through the contract but are not added silently.
+                  </dd>
+                </div>
+              </dl>
+            </details>
+            <div class="field-grid">
+              <label
+                >Confidence buckets (%)<input
+                  formControlName="confidencePercentages"
+                  aria-describedby="confidence-help"
+                /><small id="confidence-help"
+                  >Unique percentages in (0, 100], serialized as fractions.</small
+                ></label
+              ><label
+                >Fee rate (%)<input
+                  type="number"
+                  step="0.0001"
+                  formControlName="feePercentage" /></label
+              ><label
+                >Slippage rate (%)<input
+                  type="number"
+                  step="0.0001"
+                  formControlName="slippagePercentage" /></label
+              ><label>Maximum trials<input type="number" formControlName="maximumTrials" /></label
+              ><label>Runtime hours<input type="number" formControlName="runtimeHours" /></label
+              ><label>Runtime minutes<input type="number" formControlName="runtimeMinutes" /></label
+              ><label>Deterministic seed<input type="number" formControlName="seed" /></label
+              ><label class="wide"
+                >Notes<textarea formControlName="notes"></textarea
+                ><small>{{ notesRemaining() }} characters remaining</small></label
+              >
+            </div>
+            <aside class="review">
+              <h3>Review</h3>
+              <p>
+                {{ selectedSourceRun()?.asset }} · {{ label(selectedResult.engine) }} ·
+                {{ duration(selectedResult.future_duration_seconds) }}
+              </p>
+              <p>
+                Upper-bound estimate: <strong>{{ upperBound() }}</strong> combinations. This is only
+                a client estimate; combinations_planned and evaluations_selected from the backend
+                are authoritative.
+              </p>
+            </aside>
+            <button type="submit" class="primary" [disabled]="!formValue() || actionPending()">
+              {{ actionPending() ? 'Submitting…' : 'Enqueue refinement' }}
+            </button>
+          </form>
+        }
+      }
+    </section>
+  }
+
+  @if (tab() === 'runs') {
+    <section aria-labelledby="runs-title">
+      <header class="section-head">
+        <div>
+          <h2 id="runs-title">Durable refinement runs</h2>
+          <p>Newest first. Queue and worker state come from the backend.</p>
+        </div>
+        <button type="button" (click)="loadRuns()">Refresh list</button>
+      </header>
+      <div class="filters">
+        <label
+          >Status<select #runStatus (change)="statusFilter.set(runStatus.value)">
+            <option value="">All statuses</option>
+            @for (
+              status of ['queued', 'running', 'completed', 'failed', 'cancelled'];
+              track status
+            ) {
+              <option [value]="status">{{ label(status) }}</option>
+            }
+          </select></label
+        ><label
+          >Source run ID<input #sourceId (input)="sourceFilter.set(sourceId.value.trim())"
+        /></label>
+      </div>
+      @if (runsState() === 'loading' && !runs().length) {
+        <p class="notice">Loading refinement runs…</p>
+      }
+      @if (runsState() === 'error') {
+        <p class="notice error">
+          Runs are unavailable. <button type="button" (click)="loadRuns()">Retry</button>
+        </p>
+      }
+      <div class="run-layout">
+        <div class="run-list">
+          @for (run of filteredRuns(); track run.id) {
+            <button
+              type="button"
+              [class.selected]="selectedRun()?.id === run.id"
+              (click)="selectRun(run)"
+            >
+              <strong>{{ label(run.status) }}</strong
+              ><span
+                >{{ abbreviate(run.id) }} · source
+                {{ abbreviate(run.source_screening_run_id) }}</span
+              ><span
+                >{{ run.created_at | date: 'medium' : 'UTC' }} UTC · {{ run.work_completed }}/{{
+                  run.evaluations_selected
+                }}</span
+              >
+            </button>
+          } @empty {
+            <p class="notice">No runs match these filters.</p>
+          }
+        </div>
+        @if (selectedRun(); as run) {
+          <article class="run-detail">
+            <header>
+              <h3>{{ label(run.status) }} run</h3>
+              <button type="button" (click)="refreshSelectedRun()">Refresh</button>
+            </header>
+            @if (run.progress_fraction !== null) {
+              <progress [value]="run.progress_fraction" max="1">
+                {{ run.progress_fraction }}
+              </progress>
+            }
+            <p>{{ run.work_completed }} of {{ run.evaluations_selected }} work items complete.</p>
+            @if (run.cancellation_requested && run.status === 'running') {
+              <p class="notice">
+                Cancellation requested. The worker has not reported a terminal state yet.
+              </p>
+            }
+            <dl class="metric-grid">
+              <div>
+                <dt>Computed</dt>
+                <dd>{{ run.evaluations_computed }}</dd>
+              </div>
+              <div>
+                <dt>Reused</dt>
+                <dd>{{ run.evaluations_reused }}</dd>
+              </div>
+              <div>
+                <dt>Omitted</dt>
+                <dd>{{ run.evaluations_omitted }}</dd>
+              </div>
+              <div>
+                <dt>Budget exhausted</dt>
+                <dd>{{ run.budget_exhausted ? 'Yes' : 'No' }}</dd>
+              </div>
+              <div>
+                <dt>Elapsed</dt>
+                <dd>{{ run.elapsed_seconds ?? 'Not available' }} s</dd>
+              </div>
+            </dl>
+            @if (run.failure_message || run.termination_reason) {
+              <p class="notice error">{{ run.failure_message ?? run.termination_reason }}</p>
+            }
+            <div class="actions">
+              @if (run.status === 'queued' || run.status === 'running') {
+                <button type="button" [disabled]="actionPending()" (click)="cancel()">
+                  Cancel run
+                </button>
+              }
+              @if (run.status === 'failed' || run.status === 'cancelled') {
+                <button type="button" [disabled]="actionPending()" (click)="retry()">
+                  Retry run
+                </button>
+              }
+              <button type="button" (click)="setTab('evidence')">View evidence</button>
+            </div>
+            <details>
+              <summary>Operational details</summary>
+              <pre>{{ run.normalized_configuration | json }}</pre>
+              @if (run.worker_id) {
+                <p>Worker ID: {{ run.worker_id }}</p>
+              }
+            </details>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  @if (tab() === 'evidence') {
+    <section aria-labelledby="evidence-title">
+      <header class="section-head">
+        <div>
+          <h2 id="evidence-title">Evaluation evidence</h2>
+          <p>Experimental evidence only; no Strategy is activated here.</p>
+        </div>
+        @if (selectedRun()) {
+          <button type="button" (click)="loadEvidence()">Refresh evidence</button>
+        }
+      </header>
+      @if (!selectedRun()) {
+        <p class="notice">Select a refinement run in Runs first.</p>
+      } @else {
+        @if (!isTerminal()) {
+          <p class="notice">This run is not terminal. Evidence may be incomplete.</p>
+        }
+        @if (evidenceState() === 'loading') {
+          <p>Loading all evaluation pages…</p>
+        }
+        @if (evidenceState() === 'error') {
+          <p class="notice error">
+            Evidence is unavailable. <button type="button" (click)="loadEvidence()">Retry</button>
+          </p>
+        }
+        <div class="evidence-grid">
+          @for (item of evaluations(); track item.id) {
+            <article>
+              <header>
+                <span class="badge">{{ label(item.classification) }}</span
+                ><button type="button" (click)="loadEvaluation(item.id)">Load fold evidence</button>
+              </header>
+              <h3>{{ label(item.engine) }} · {{ duration(item.future_duration_seconds) }}</h3>
+              <p>{{ label(item.objective) }} · {{ item.elapsed_seconds }} s</p>
+              <p>
+                Feature policy: {{ item.feature_policy['strategy'] ?? 'Configured' }} · confidence
+                {{ item.confidence_buckets.join(', ') }}
+              </p>
+              @if (item.failed_rules.length) {
+                <p>Failed rules: {{ item.failed_rules.join(', ') }}</p>
+              }
+              <dl>
+                @for (metricItem of item.aggregate_metrics | keyvalue; track metricItem.key) {
+                  <div>
+                    <dt>{{ label(metricItem.key) }}</dt>
+                    <dd>{{ metric(metricItem.value) }}</dd>
+                  </div>
+                }
+              </dl>
+              @if (detailErrors()[item.id]) {
+                <p class="notice error">{{ detailErrors()[item.id] }}</p>
+              }
+            </article>
+          } @empty {
+            @if (evidenceState() === 'ready') {
+              <p class="notice">No evaluations have been persisted for this run.</p>
+            }
+          }
+        </div>
+        @if (evaluationDetail(); as detail) {
+          <aside class="detail">
+            <header>
+              <h3>Fold evidence · {{ abbreviate(detail.id) }}</h3>
+              <button type="button" (click)="evaluationDetail.set(null)">Close</button>
+            </header>
+            <p>
+              A fold is one isolated chronological training/validation evaluation. It measures
+              repeatability but cannot prove future performance.
+            </p>
+            @for (fold of detail.fold_evidence; track $index) {
+              <details>
+                <summary>Fold {{ $index + 1 }}</summary>
+                <dl>
+                  @for (entry of fold | keyvalue; track entry.key) {
+                    <div>
+                      <dt>{{ label(entry.key) }}</dt>
+                      <dd>{{ metric(entry.value) }}</dd>
+                    </div>
+                  }
+                </dl>
+              </details>
+            }
+          </aside>
+        }
+      }
+    </section>
+  }
+</main>
