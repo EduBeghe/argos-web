@@ -357,6 +357,53 @@ describe('MlSearchCampaignPage', () => {
     fixture.destroy();
   });
 
+  it('allows only one family offset correction when totals shrink successively', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    const original = new Subject<Page<SearchCampaignFamily>>();
+    const correction = new Subject<Page<SearchCampaignFamily>>();
+    const responses = [original, correction];
+    api.getFamilies.mockClear();
+    api.getFamilies.mockImplementation(
+      (_id: string, _offset: number, _filters: object, limit = 50) =>
+        limit === 1 ? of(page([], 0, 1)) : responses.shift()!.asObservable(),
+    );
+
+    component.familyOffset.set(100);
+    component.loadFamilies();
+    original.next({ items: [], total: 75, offset: 100, limit: 50, has_more: false });
+    correction.next({ items: [], total: 25, offset: 50, limit: 50, has_more: false });
+
+    expect(api.getFamilies.mock.calls.map((call) => call[1])).toEqual([100, 50]);
+    expect(component.familyOffset()).toBe(50);
+    expect(component.familyPage()?.offset).toBe(50);
+    expect(component.familyState()).toBe('ready');
+    expect(component.paginationLabel(component.familyPage()!)).toBe('0 of 0');
+    fixture.destroy();
+  });
+
+  it('allows only one campaign offset correction when totals shrink successively', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    const original = new Subject<Page<SearchCampaign>>();
+    const correction = new Subject<Page<SearchCampaign>>();
+    const responses = [original, correction];
+    api.getCampaigns.mockClear();
+    api.getCampaigns.mockImplementation(() => responses.shift()!.asObservable());
+
+    component.campaignOffset.set(100);
+    component.loadCampaigns();
+    original.next({ items: [], total: 75, offset: 100, limit: 25, has_more: false });
+    correction.next({ items: [], total: 25, offset: 50, limit: 25, has_more: false });
+
+    expect(api.getCampaigns.mock.calls.map((call) => call[0])).toEqual([100, 50]);
+    expect(component.campaignOffset()).toBe(50);
+    expect(component.campaignPage()?.offset).toBe(50);
+    expect(component.campaignListState()).toBe('ready');
+    expect(component.paginationLabel(component.campaignPage()!)).toBe('0 of 0');
+    fixture.destroy();
+  });
+
   it('rejects mutation calls that do not match the campaign lifecycle', () => {
     const fixture = create();
     const component = fixture.componentInstance;

@@ -172,7 +172,7 @@ export class MlSearchCampaignPage implements OnInit {
       });
   }
 
-  loadCampaigns(selectNewest = false): void {
+  loadCampaigns(selectNewest = false, correctionAllowed = true): void {
     const generation = ++this.listGeneration;
     this.campaignListState.set(this.campaignPage() ? 'ready' : 'loading');
     this.listRequest?.unsubscribe();
@@ -185,11 +185,11 @@ export class MlSearchCampaignPage implements OnInit {
       .subscribe({
         next: (page) => {
           if (generation !== this.listGeneration) return;
-          if (page.total > 0 && page.items.length === 0 && page.offset > 0) {
+          if (correctionAllowed && page.total > 0 && page.items.length === 0 && page.offset > 0) {
             const correctedOffset = Math.floor((page.total - 1) / 25) * 25;
             if (correctedOffset !== page.offset) {
               this.campaignOffset.set(correctedOffset);
-              this.loadCampaigns(selectNewest);
+              this.loadCampaigns(selectNewest, false);
               return;
             }
           }
@@ -252,7 +252,7 @@ export class MlSearchCampaignPage implements OnInit {
       });
   }
 
-  loadFamilies(): void {
+  loadFamilies(correctionAllowed = true): void {
     const campaign = this.selectedCampaign();
     if (!campaign || this.durationInvalid()) return;
     const generation = ++this.familyGeneration;
@@ -265,12 +265,12 @@ export class MlSearchCampaignPage implements OnInit {
         next: (page) => {
           if (generation !== this.familyGeneration || campaign.id !== this.selectedCampaign()?.id)
             return;
-          if (page.total > 0 && page.items.length === 0 && page.offset > 0) {
+          if (correctionAllowed && page.total > 0 && page.items.length === 0 && page.offset > 0) {
             const correctedOffset = Math.floor((page.total - 1) / 50) * 50;
             if (correctedOffset !== page.offset) {
               this.invalidateFamilyDetail();
               this.familyOffset.set(correctedOffset);
-              this.loadFamilies();
+              this.loadFamilies(false);
               return;
             }
           }
