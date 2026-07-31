@@ -24,6 +24,7 @@ import {
   formatReturn,
   humanize,
   outcomePresentation,
+  paginationLabel,
 } from './ml-search-campaign.helpers';
 import {
   CampaignContract,
@@ -67,12 +68,14 @@ export class MlSearchCampaignPage implements OnInit {
   private countRequest?: Subscription;
   private contractRequest?: Subscription;
   private familyDetailRequest?: Subscription;
+  private mutationRequest?: Subscription;
   private listGeneration = 0;
   private selectionGeneration = 0;
   private familyGeneration = 0;
   private detailGeneration = 0;
   private contractGeneration = 0;
   private countGeneration = 0;
+  private mutationGeneration = 0;
   requestedRouteId: string | null = null;
 
   readonly categories = CATEGORIES;
@@ -182,6 +185,14 @@ export class MlSearchCampaignPage implements OnInit {
       .subscribe({
         next: (page) => {
           if (generation !== this.listGeneration) return;
+          if (page.total > 0 && page.items.length === 0 && page.offset > 0) {
+            const correctedOffset = Math.floor((page.total - 1) / 25) * 25;
+            if (correctedOffset !== page.offset) {
+              this.campaignOffset.set(correctedOffset);
+              this.loadCampaigns(selectNewest);
+              return;
+            }
+          }
           this.campaignPage.set(page);
           this.campaignListState.set('ready');
           this.campaignListError.set('');
@@ -254,6 +265,15 @@ export class MlSearchCampaignPage implements OnInit {
         next: (page) => {
           if (generation !== this.familyGeneration || campaign.id !== this.selectedCampaign()?.id)
             return;
+          if (page.total > 0 && page.items.length === 0 && page.offset > 0) {
+            const correctedOffset = Math.floor((page.total - 1) / 50) * 50;
+            if (correctedOffset !== page.offset) {
+              this.invalidateFamilyDetail();
+              this.familyOffset.set(correctedOffset);
+              this.loadFamilies();
+              return;
+            }
+          }
           this.familyPage.set(page);
           this.familyState.set('ready');
           this.familyError.set('');
@@ -323,16 +343,17 @@ export class MlSearchCampaignPage implements OnInit {
   }
 
   setCategory(category: FamilyCategory): void {
+    this.invalidateFamilyDetail();
     this.category.set(category);
     this.subcategory.set(
       category === 'near' ? 4 : category === 'early' ? 2 : category === 'pending' ? 'scheduled' : 4,
     );
     this.familyOffset.set(0);
-    this.selectedFamily.set(null);
     this.loadFamilies();
   }
 
   setSubcategory(value: string): void {
+    this.invalidateFamilyDetail();
     this.subcategory.set(value === 'pending' || value === 'scheduled' ? value : Number(value));
     this.familyOffset.set(0);
     this.loadFamilies();
@@ -342,6 +363,7 @@ export class MlSearchCampaignPage implements OnInit {
     kind: 'engine' | 'objective' | 'feature' | 'minimum' | 'maximum',
     value: string,
   ): void {
+    this.invalidateFamilyDetail();
     if (kind === 'engine') this.engine.set(value);
     if (kind === 'objective') this.objective.set(value);
     if (kind === 'feature') this.featureVariant.set(value);
@@ -352,6 +374,7 @@ export class MlSearchCampaignPage implements OnInit {
   }
 
   familyPageBy(delta: number): void {
+    this.invalidateFamilyDetail();
     this.familyOffset.set(Math.max(0, this.familyOffset() + delta * 50));
     this.loadFamilies();
   }
@@ -359,22 +382,32 @@ export class MlSearchCampaignPage implements OnInit {
   openFamily(id: string): void {
     const campaign = this.selectedCampaign();
     if (!campaign) return;
-    const generation = ++this.detailGeneration;
+    this.invalidateFamilyDetail();
+    const generation = this.detailGeneration;
+    const context = this.familyDetailContext(campaign.id);
     this.familyDetailState.set('loading');
-    this.familyDetailRequest?.unsubscribe();
     this.familyDetailRequest = this.api
       .getFamily(campaign.id, id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (family) => {
-          if (generation !== this.detailGeneration || campaign.id !== this.selectedCampaign()?.id)
+          if (
+            generation !== this.detailGeneration ||
+            campaign.id !== this.selectedCampaign()?.id ||
+            context !== this.familyDetailContext(campaign.id)
+          )
             return;
           this.selectedFamily.set(family);
           this.familyDetailState.set('ready');
           this.familyDetailError.set('');
         },
         error: () => {
-          if (generation !== this.detailGeneration) return;
+          if (
+            generation !== this.detailGeneration ||
+            campaign.id !== this.selectedCampaign()?.id ||
+            context !== this.familyDetailContext(campaign.id)
+          )
+            return;
           this.familyDetailState.set('error');
           this.familyDetailError.set('Family detail is unavailable.');
         },
@@ -393,13 +426,29 @@ export class MlSearchCampaignPage implements OnInit {
 
   mutate(action: 'cancel' | 'retry'): void {
     const campaign = this.selectedCampaign();
-    if (!campaign || this.mutationPending()) return;
+    const actionAllowed =
+      (action === 'cancel' && (campaign?.status === 'queued' || campaign?.status === 'running')) ||
+      (action === 'retry' && campaign?.status === 'failed');
+    if (!campaign || !actionAllowed || this.mutationPending()) return;
+    const campaignId = campaign.id;
+    const routeId = this.requestedRouteId;
+    const selectionGeneration = this.selectionGeneration;
+    const mutationGeneration = ++this.mutationGeneration;
     this.mutationPending.set(true);
     this.mutationError.set('');
-    const request =
-      action === 'cancel' ? this.api.cancel(campaign.id) : this.api.retry(campaign.id);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    const request = action === 'cancel' ? this.api.cancel(campaignId) : this.api.retry(campaignId);
+    this.mutationRequest = request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (value) => {
+        if (
+          !this.mutationContextMatches(
+            mutationGeneration,
+            selectionGeneration,
+            routeId,
+            campaignId,
+          ) ||
+          value.id !== campaignId
+        )
+          return;
         this.selectedCampaign.set(value);
         this.mutationPending.set(false);
         this.confirmCancel.set(false);
@@ -413,13 +462,17 @@ export class MlSearchCampaignPage implements OnInit {
         this.configurePolling();
       },
       error: (error: HttpErrorResponse) => {
+        if (
+          !this.mutationContextMatches(mutationGeneration, selectionGeneration, routeId, campaignId)
+        )
+          return;
         this.mutationPending.set(false);
         this.mutationError.set(
           error.status === 409
             ? String(error.error?.detail ?? 'Campaign lifecycle conflict.')
             : 'Operation failed. Retry when ready.',
         );
-        if (error.status === 409) this.loadSelectedCampaign(campaign.id, true);
+        if (error.status === 409) this.loadSelectedCampaign(campaignId, true);
       },
     });
   }
@@ -429,6 +482,7 @@ export class MlSearchCampaignPage implements OnInit {
   formatInteger = formatInteger;
   formatReturn = formatReturn;
   humanize = humanize;
+  paginationLabel = paginationLabel;
   knownStatus(status: string): status is CampaignStatus {
     return ['queued', 'running', 'completed', 'failed', 'cancelled'].includes(status);
   }
@@ -456,10 +510,53 @@ export class MlSearchCampaignPage implements OnInit {
   }
 
   private resetFamilyContext(): void {
+    this.invalidateFamilyDetail();
     this.familyOffset.set(0);
     this.familyPage.set(null);
-    this.selectedFamily.set(null);
     this.categoryCounts.set(EMPTY_COUNTS);
+  }
+
+  invalidateFamilyDetail(): void {
+    this.familyDetailRequest?.unsubscribe();
+    this.familyDetailRequest = undefined;
+    this.detailGeneration += 1;
+    this.selectedFamily.set(null);
+    this.familyDetailState.set('idle');
+    this.familyDetailError.set('');
+  }
+
+  private familyDetailContext(campaignId: string): string {
+    return JSON.stringify({
+      campaignId,
+      category: this.category(),
+      subcategory: this.subcategory(),
+      filters: this.visibleFamilyFilters(),
+      offset: this.familyOffset(),
+    });
+  }
+
+  private mutationContextMatches(
+    mutationGeneration: number,
+    selectionGeneration: number,
+    routeId: string | null,
+    campaignId: string,
+  ): boolean {
+    return (
+      mutationGeneration === this.mutationGeneration &&
+      selectionGeneration === this.selectionGeneration &&
+      routeId === this.requestedRouteId &&
+      campaignId === this.selectedCampaign()?.id
+    );
+  }
+
+  private invalidateMutation(): void {
+    this.mutationRequest?.unsubscribe();
+    this.mutationRequest = undefined;
+    this.mutationGeneration += 1;
+    this.mutationPending.set(false);
+    this.confirmCancel.set(false);
+    this.mutationError.set('');
+    this.liveMessage.set('');
   }
 
   private configurePolling(): void {
@@ -490,7 +587,8 @@ export class MlSearchCampaignPage implements OnInit {
     this.campaignRequest?.unsubscribe();
     this.familyRequest?.unsubscribe();
     this.countRequest?.unsubscribe();
-    this.familyDetailRequest?.unsubscribe();
+    this.invalidateFamilyDetail();
+    this.invalidateMutation();
   }
 
   private cancelRequests(): void {

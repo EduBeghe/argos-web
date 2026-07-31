@@ -94,7 +94,7 @@
       <div class="pagination">
         <button type="button" (click)="campaignPageBy(-1)" [disabled]="page.offset === 0">
           Previous</button
-        ><span>{{ page.offset + 1 }}–{{ page.offset + page.items.length }} of {{ page.total }}</span
+        ><span>{{ paginationLabel(page) }}</span
         ><button type="button" (click)="campaignPageBy(1)" [disabled]="!page.has_more">Next</button>
       </div>
     }
@@ -475,8 +475,7 @@
         <div class="pagination">
           <button type="button" [disabled]="page.offset === 0" (click)="familyPageBy(-1)">
             Previous</button
-          ><span
-            >{{ page.offset + 1 }}–{{ page.offset + page.items.length }} of {{ page.total }}</span
+          ><span>{{ paginationLabel(page) }}</span
           ><button type="button" [disabled]="!page.has_more" (click)="familyPageBy(1)">Next</button>
         </div>
       }
@@ -492,7 +491,7 @@
       <section class="panel detail" aria-labelledby="family-detail-title">
         <div class="section-heading">
           <h2 id="family-detail-title">Family detail</h2>
-          <button type="button" (click)="selectedFamily.set(null)">Close details</button>
+          <button type="button" (click)="invalidateFamilyDetail()">Close details</button>
         </div>
         <dl class="summary-grid">
           <div>

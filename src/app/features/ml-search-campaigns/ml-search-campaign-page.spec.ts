@@ -55,6 +55,7 @@ const campaign: SearchCampaign = {
   failure_message: null,
   created_at: '2040-01-01T00:00:00Z',
 };
+const campaignB: SearchCampaign = { ...campaign, id: 'campaign-00000002' };
 const family: SearchCampaignFamily = {
   id: 'family-1',
   campaign_id: campaign.id,
@@ -180,6 +181,187 @@ describe('MlSearchCampaignPage', () => {
     component.mutate('cancel');
     component.mutate('cancel');
     expect(api.cancel).toHaveBeenCalledTimes(1);
+    fixture.destroy();
+  });
+
+  it('applies a mutation response only in its unchanged campaign context', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    const familyCalls = api.getFamilies.mock.calls.length;
+    component.confirmCancel.set(true);
+    component.mutate('cancel');
+    expect(component.selectedCampaign()?.status).toBe('cancelled');
+    expect(component.liveMessage()).toContain('Cancellation accepted');
+    expect(api.getFamilies.mock.calls.length).toBeGreaterThan(familyCalls);
+    fixture.destroy();
+  });
+
+  it('ignores stale mutation success and error after route selection changes', () => {
+    const cancel = new Subject<SearchCampaign>();
+    api.cancel.mockReturnValue(cancel.asObservable());
+    api.getCampaign.mockImplementation((id: string) =>
+      of(id === campaignB.id ? campaignB : campaign),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.confirmCancel.set(true);
+    component.mutate('cancel');
+    params.next(convertToParamMap({ campaignId: campaignB.id }));
+    const familyCalls = api.getFamilies.mock.calls.length;
+    const detailCalls = api.getCampaign.mock.calls.length;
+    cancel.next({ ...campaign, status: 'cancelled' });
+    expect(component.selectedCampaign()?.id).toBe(campaignB.id);
+    expect(component.liveMessage()).toBe('');
+    expect(component.mutationError()).toBe('');
+    expect(api.getFamilies.mock.calls.length).toBe(familyCalls);
+    expect(api.getCampaign.mock.calls.length).toBe(detailCalls);
+
+    const retry = new Subject<SearchCampaign>();
+    api.retry.mockReturnValue(retry.asObservable());
+    component.selectedCampaign.set({ ...campaignB, status: 'failed' });
+    component.mutate('retry');
+    params.next(convertToParamMap({ campaignId: campaign.id }));
+    const refreshCalls = api.getCampaign.mock.calls.length;
+    retry.error(new HttpErrorResponse({ status: 409, error: { detail: 'old conflict' } }));
+    expect(component.mutationError()).toBe('');
+    expect(api.getCampaign.mock.calls.length).toBe(refreshCalls);
+    fixture.destroy();
+  });
+
+  it('resets mutation state at selection boundaries and permits a valid new mutation', () => {
+    const mutationA = new Subject<SearchCampaign>();
+    const mutationB = new Subject<SearchCampaign>();
+    api.cancel
+      .mockReturnValueOnce(mutationA.asObservable())
+      .mockReturnValueOnce(mutationB.asObservable());
+    api.getCampaign.mockImplementation((id: string) =>
+      of(id === campaignB.id ? campaignB : campaign),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.confirmCancel.set(true);
+    component.mutate('cancel');
+    expect(component.mutationPending()).toBe(true);
+    params.next(convertToParamMap({ campaignId: campaignB.id }));
+    expect(component.mutationPending()).toBe(false);
+    expect(component.confirmCancel()).toBe(false);
+    component.confirmCancel.set(true);
+    component.mutate('cancel');
+    expect(api.cancel).toHaveBeenCalledTimes(2);
+    expect(component.mutationPending()).toBe(true);
+    mutationA.next({ ...campaign, status: 'cancelled' });
+    expect(component.mutationPending()).toBe(true);
+    mutationB.next({ ...campaignB, status: 'cancelled' });
+    expect(component.mutationPending()).toBe(false);
+    expect(component.selectedCampaign()?.id).toBe(campaignB.id);
+    fixture.destroy();
+  });
+
+  it.each([
+    ['category', (component: MlSearchCampaignPage) => component.setCategory('near')],
+    ['subcategory', (component: MlSearchCampaignPage) => component.setSubcategory('3')],
+    ['engine', (component: MlSearchCampaignPage) => component.setFamilyFilter('engine', 'ridge')],
+    [
+      'objective',
+      (component: MlSearchCampaignPage) =>
+        component.setFamilyFilter('objective', 'future_return_regression'),
+    ],
+    [
+      'feature',
+      (component: MlSearchCampaignPage) => component.setFamilyFilter('feature', 'top_16'),
+    ],
+    [
+      'minimum duration',
+      (component: MlSearchCampaignPage) => component.setFamilyFilter('minimum', '1800'),
+    ],
+    [
+      'maximum duration',
+      (component: MlSearchCampaignPage) => component.setFamilyFilter('maximum', '3600'),
+    ],
+    ['page', (component: MlSearchCampaignPage) => component.familyPageBy(1)],
+  ])('invalidates delayed family detail when %s changes', (_name, change) => {
+    const detail = new Subject<SearchCampaignFamily>();
+    api.getFamily.mockReturnValue(detail.asObservable());
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.openFamily(family.id);
+    change(component);
+    detail.next(family);
+    expect(component.selectedFamily()).toBeNull();
+    expect(component.familyDetailState()).toBe('idle');
+    expect(component.familyDetailError()).toBe('');
+    fixture.destroy();
+  });
+
+  it('invalidates delayed family success and error when the campaign route changes', () => {
+    const detail = new Subject<SearchCampaignFamily>();
+    api.getFamily.mockReturnValue(detail.asObservable());
+    api.getCampaign.mockImplementation((id: string) =>
+      of(id === campaignB.id ? campaignB : campaign),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.openFamily(family.id);
+    params.next(convertToParamMap({ campaignId: campaignB.id }));
+    detail.next(family);
+    detail.error(new Error('late detail error'));
+    expect(component.selectedFamily()).toBeNull();
+    expect(component.familyDetailState()).toBe('idle');
+    expect(component.familyDetailError()).toBe('');
+    fixture.destroy();
+  });
+
+  it('preserves family detail during same-context polling and lets only the newest detail win', () => {
+    const x = new Subject<SearchCampaignFamily>();
+    const y = new Subject<SearchCampaignFamily>();
+    api.getFamily.mockReturnValueOnce(x.asObservable()).mockReturnValueOnce(y.asObservable());
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.openFamily('family-x');
+    component.openFamily('family-y');
+    x.next({ ...family, id: 'family-x' });
+    y.next({ ...family, id: 'family-y' });
+    expect(component.selectedFamily()?.id).toBe('family-y');
+    component.loadFamilies();
+    expect(component.selectedFamily()?.id).toBe('family-y');
+    fixture.destroy();
+  });
+
+  it('renders empty pagination as zero and corrects one stale positive family offset', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.campaignPage.set(page([], 0, 25));
+    component.familyPage.set(page([], 0, 50));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent.match(/0 of 0/g)).toHaveLength(2);
+
+    api.getFamilies.mockClear();
+    api.getFamilies.mockImplementation(
+      (_id: string, offset: number, _filters: object, limit = 50) =>
+        of(
+          offset === 50
+            ? { items: [], total: 25, offset: 50, limit, has_more: false }
+            : { items: [family], total: 25, offset: 0, limit, has_more: false },
+        ),
+    );
+    component.familyOffset.set(50);
+    component.loadFamilies();
+    expect(component.familyOffset()).toBe(0);
+    expect(api.getFamilies.mock.calls.map((call) => call[1])).toEqual([50, 0]);
+    fixture.destroy();
+  });
+
+  it('rejects mutation calls that do not match the campaign lifecycle', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.mutate('retry');
+    component.selectedCampaign.set({ ...campaign, status: 'completed' });
+    component.mutate('cancel');
+    component.selectedCampaign.set({ ...campaign, status: 'future_status' });
+    component.mutate('cancel');
+    component.mutate('retry');
+    expect(api.cancel).not.toHaveBeenCalled();
+    expect(api.retry).not.toHaveBeenCalled();
     fixture.destroy();
   });
 

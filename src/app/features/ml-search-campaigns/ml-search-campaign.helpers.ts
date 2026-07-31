@@ -5,7 +5,13 @@ import {
   CategoryCounts,
   FamilyCategory,
   FamilyFilters,
+  Page,
 } from './ml-search-campaign.models';
+
+export interface PaginationRange {
+  start: number;
+  end: number;
+}
 
 export const CATEGORIES: readonly {
   id: FamilyCategory;
@@ -124,4 +130,16 @@ export function formatReturn(value: string | null | undefined): string {
 
 export function formatInteger(value: number): string {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
+}
+
+export function paginationRange<T>(page: Page<T>): PaginationRange {
+  if (page.total === 0 || page.items.length === 0) return { start: 0, end: 0 };
+  return { start: page.offset + 1, end: page.offset + page.items.length };
+}
+
+export function paginationLabel<T>(page: Page<T>): string {
+  const range = paginationRange(page);
+  return range.start === 0
+    ? '0 of 0'
+    : `${range.start.toLocaleString('en-US')}–${range.end.toLocaleString('en-US')} of ${page.total.toLocaleString('en-US')}`;
 }

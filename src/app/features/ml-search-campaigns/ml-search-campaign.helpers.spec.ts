@@ -4,6 +4,8 @@ import {
   formatReturn,
   humanize,
   outcomePresentation,
+  paginationLabel,
+  paginationRange,
 } from './ml-search-campaign.helpers';
 
 describe('ML search campaign presentation helpers', () => {
@@ -55,5 +57,35 @@ describe('ML search campaign presentation helpers', () => {
     expect(formatReturn('-0.001')).toContain('-0.10%');
     expect(formatReturn(null)).toBe('Not evaluated');
     expect(humanize('future_state_added')).toBe('Future State Added');
+  });
+
+  it('provides valid shared pagination ranges for empty, full and partial pages', () => {
+    expect(paginationRange({ items: [], total: 0, offset: 0, limit: 25, has_more: false })).toEqual(
+      {
+        start: 0,
+        end: 0,
+      },
+    );
+    expect(
+      paginationRange({
+        items: Array(25).fill('item'),
+        total: 60,
+        offset: 0,
+        limit: 25,
+        has_more: true,
+      }),
+    ).toEqual({ start: 1, end: 25 });
+    expect(
+      paginationRange({
+        items: Array(10).fill('item'),
+        total: 60,
+        offset: 50,
+        limit: 25,
+        has_more: false,
+      }),
+    ).toEqual({ start: 51, end: 60 });
+    expect(paginationLabel({ items: [], total: 0, offset: 0, limit: 50, has_more: false })).toBe(
+      '0 of 0',
+    );
   });
 });
