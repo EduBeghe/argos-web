@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject, throwError } from 'rxjs';
 
 import { MlSearchCampaignApiService } from './ml-search-campaign-api.service';
 import {
@@ -171,7 +171,7 @@ describe('MlSearchCampaignPage', () => {
   });
 
   it('requires in-page cancellation confirmation and prevents a duplicate pending mutation', () => {
-    const pending = new BehaviorSubject<SearchCampaign>(campaign);
+    const pending = new Subject<SearchCampaign>();
     api.cancel.mockReturnValue(pending.asObservable());
     const fixture = create();
     const component = fixture.componentInstance;

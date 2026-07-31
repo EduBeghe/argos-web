@@ -145,8 +145,8 @@
         <span>Development evidence only</span>
       </div>
       <label class="progress-label" for="coverage"
-        >Breadth coverage: {{ campaign.families_covered }} of
-        {{ campaign.families_total }} families</label
+        >Breadth coverage: {{ formatInteger(campaign.families_covered) }} of
+        {{ formatInteger(campaign.families_total) }} families</label
       >
       <progress
         id="coverage"

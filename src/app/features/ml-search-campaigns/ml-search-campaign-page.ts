@@ -20,6 +20,7 @@ import {
   categoryFilters,
   composeCategoryCounts,
   formatDuration,
+  formatInteger,
   formatReturn,
   humanize,
   outcomePresentation,
@@ -225,7 +226,7 @@ export class MlSearchCampaignPage implements OnInit {
             this.loadCounts();
             this.stopPolling();
           }
-          this.configurePolling();
+          if (!polling) this.configurePolling();
         },
         error: (error: HttpErrorResponse) => {
           if (generation !== this.selectionGeneration || id !== this.requestedRouteId) return;
@@ -425,6 +426,7 @@ export class MlSearchCampaignPage implements OnInit {
 
   abbreviate = abbreviate;
   formatDuration = formatDuration;
+  formatInteger = formatInteger;
   formatReturn = formatReturn;
   humanize = humanize;
   knownStatus(status: string): status is CampaignStatus {

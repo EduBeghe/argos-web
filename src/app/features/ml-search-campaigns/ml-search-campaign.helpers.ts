@@ -121,3 +121,7 @@ export function formatDuration(seconds: number): string {
 export function formatReturn(value: string | null | undefined): string {
   return value == null ? 'Not evaluated' : formatSignedPercentage(value);
 }
+
+export function formatInteger(value: number): string {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
+}
