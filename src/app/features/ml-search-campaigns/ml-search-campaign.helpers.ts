@@ -7,11 +7,11 @@ import {
   FamilyFilters,
 } from './ml-search-campaign.models';
 
-export const CATEGORIES: ReadonlyArray<{
+export const CATEGORIES: readonly {
   id: FamilyCategory;
   label: string;
   definition: string;
-}> = [
+}[] = [
   {
     id: 'strong',
     label: 'Strong candidates',
