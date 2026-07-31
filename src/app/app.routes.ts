@@ -39,6 +39,20 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'ml-search-campaigns',
+        loadComponent: () =>
+          import('./features/ml-search-campaigns/ml-search-campaign-page').then(
+            (module) => module.MlSearchCampaignPage,
+          ),
+      },
+      {
+        path: 'ml-search-campaigns/:campaignId',
+        loadComponent: () =>
+          import('./features/ml-search-campaigns/ml-search-campaign-page').then(
+            (module) => module.MlSearchCampaignPage,
+          ),
+      },
+      {
         path: 'instruments/detail',
         loadComponent: () =>
           import('./features/instrument-detail/instrument-detail-page').then(

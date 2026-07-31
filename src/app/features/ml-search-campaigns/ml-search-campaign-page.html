@@ -1,0 +1,547 @@
+<main class="workspace">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Durable development research</p>
+      <h1>Automated ML Search</h1>
+      <p>
+        Observe bounded, server-paginated <code>exhaustive_ohlcv_v1</code> campaigns without
+        treating development evidence as trading approval.
+      </p>
+    </div>
+    <nav class="hero-links" aria-label="ML research workspaces">
+      <a routerLink="/ml-refinement" class="button secondary">Manual Refinement</a>
+      <a routerLink="/strategies" class="button secondary">Strategy Research</a>
+    </nav>
+  </header>
+
+  <p class="live" aria-live="polite">{{ liveMessage() }}</p>
+  <section class="panel campaign-browser" aria-labelledby="campaign-list-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Newest first</p>
+        <h2 id="campaign-list-title">Campaigns</h2>
+      </div>
+      <button type="button" class="secondary" (click)="refreshAll()">Refresh workspace</button>
+    </div>
+    <div class="filters compact">
+      <label
+        >Status<select
+          #status
+          [value]="statusFilter()"
+          (change)="setCampaignFilter('status', status.value)"
+        >
+          <option value="">All statuses</option>
+          <option value="queued">Queued</option>
+          <option value="running">Running</option>
+          <option value="completed">Completed</option>
+          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+        </select></label
+      >
+      <label
+        >Outcome<select
+          #outcomeFilterControl
+          [value]="outcomeFilter()"
+          (change)="setCampaignFilter('outcome', outcomeFilterControl.value)"
+        >
+          <option value="">All outcomes</option>
+          <option value="strong_candidates_found">Strong candidates found</option>
+          <option value="no_strong_candidate">No strong candidate</option>
+          <option value="coverage_incomplete">Coverage incomplete</option>
+          <option value="search_budget_exhausted">Search budget exhausted</option>
+        </select></label
+      >
+    </div>
+    @if (campaignListError()) {
+      <p class="notice error" aria-live="assertive">
+        {{ campaignListError() }}
+        <button type="button" (click)="loadCampaigns()">Retry list</button>
+      </p>
+    }
+    @if (campaignListState() === 'loading') {
+      <p class="notice">Loading campaigns…</p>
+    }
+    @if (campaignPage(); as page) {
+      @if (!page.items.length) {
+        <div class="empty">
+          <h3>No campaigns found</h3>
+          <p>The operational backend workflow has not enqueued a matching campaign.</p>
+          <a routerLink="/ml-refinement">Return to Manual Refinement</a>
+        </div>
+      }
+      <div class="campaign-list">
+        @for (item of page.items; track item.id) {
+          <button
+            type="button"
+            class="campaign-item"
+            [class.selected]="selectedCampaign()?.id === item.id"
+            [attr.aria-current]="selectedCampaign()?.id === item.id ? 'true' : null"
+            (click)="selectCampaign(item.id)"
+          >
+            <span class="status" [attr.data-state]="item.status">{{ humanize(item.status) }}</span>
+            <strong>{{ item.outcome ? humanize(item.outcome) : 'Outcome pending' }}</strong>
+            <span>{{ item.created_at | date: 'medium' : 'UTC' }} UTC</span>
+            <span
+              >Stage {{ item.current_stage }}/4 · {{ item.families_covered }}/{{
+                item.families_total
+              }}
+              covered</span
+            >
+            <code>{{ abbreviate(item.id) }}</code>
+          </button>
+        }
+      </div>
+      <div class="pagination">
+        <button type="button" (click)="campaignPageBy(-1)" [disabled]="page.offset === 0">
+          Previous</button
+        ><span>{{ page.offset + 1 }}–{{ page.offset + page.items.length }} of {{ page.total }}</span
+        ><button type="button" (click)="campaignPageBy(1)" [disabled]="!page.has_more">Next</button>
+      </div>
+    }
+  </section>
+
+  @if (routeNotFound()) {
+    <section class="panel notice error" aria-live="assertive">
+      <h2>Campaign not found</h2>
+      <p>
+        The requested campaign does not exist. The independently paginated campaign list remains
+        available.
+      </p>
+    </section>
+  }
+  @if (campaignError() && !routeNotFound()) {
+    <p class="notice error" aria-live="assertive">
+      {{ campaignError() }}
+      @if (requestedRouteId) {
+        <button type="button" (click)="loadSelectedCampaign(requestedRouteId)">
+          Retry campaign
+        </button>
+      }
+    </p>
+  }
+
+  @if (selectedCampaign(); as campaign) {
+    <section class="outcome-banner" [attr.data-tone]="outcome().tone" aria-live="polite">
+      <p class="eyebrow">{{ humanize(campaign.status) }}</p>
+      <h2>{{ outcome().title }}</h2>
+      <p>{{ outcome().detail }}</p>
+      @if (campaign.status === 'failed') {
+        <p>
+          <strong>{{ campaign.failure_type || 'Operational failure' }}</strong
+          >: {{ campaign.failure_message || 'No failure detail supplied.' }}
+        </p>
+      }
+      @if (campaign.status === 'cancelled') {
+        <p>The scientific search did not complete.</p>
+      }
+    </section>
+
+    <section class="panel" aria-labelledby="summary-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Campaign {{ abbreviate(campaign.id) }}</p>
+          <h2 id="summary-title">Progress and work</h2>
+        </div>
+        <span>Development evidence only</span>
+      </div>
+      <label class="progress-label" for="coverage"
+        >Breadth coverage: {{ campaign.families_covered }} of
+        {{ campaign.families_total }} families</label
+      >
+      <progress
+        id="coverage"
+        [value]="campaign.families_covered"
+        [max]="campaign.families_total || 1"
+        [attr.aria-label]="'Family breadth coverage ' + (progress() * 100).toFixed(1) + ' percent'"
+      ></progress>
+      @if (campaign.families_total === 0) {
+        <p class="notice">Coverage is unavailable because this campaign contains no families.</p>
+      }
+      <dl class="summary-grid">
+        <div>
+          <dt>Current stage</dt>
+          <dd>{{ campaign.current_stage }} of 4</dd>
+        </div>
+        <div>
+          <dt>Uncovered families</dt>
+          <dd>{{ campaign.families_uncovered }}</dd>
+        </div>
+        <div>
+          <dt>Evaluations computed</dt>
+          <dd>{{ campaign.evaluations_computed }}</dd>
+        </div>
+        <div>
+          <dt>Evaluations reused</dt>
+          <dd>{{ campaign.evaluations_reused }}</dd>
+        </div>
+        <div>
+          <dt>Maximum evaluations</dt>
+          <dd>{{ campaign.maximum_evaluations }}</dd>
+        </div>
+        <div>
+          <dt>Maximum runtime</dt>
+          <dd>{{ formatDuration(campaign.maximum_runtime_seconds) }}</dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd>{{ campaign.created_at | date: 'medium' : 'UTC' }} UTC</dd>
+        </div>
+        <div>
+          <dt>First claimed</dt>
+          <dd>
+            {{
+              campaign.first_claimed_at
+                ? (campaign.first_claimed_at | date: 'medium' : 'UTC') + ' UTC'
+                : 'Not claimed'
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Completed</dt>
+          <dd>
+            {{
+              campaign.completed_at
+                ? (campaign.completed_at | date: 'medium' : 'UTC') + ' UTC'
+                : 'Not completed'
+            }}
+          </dd>
+        </div>
+      </dl>
+      <div class="operations">
+        @if (campaign.status === 'queued' || campaign.status === 'running') {
+          @if (!confirmCancel()) {
+            <button type="button" class="danger" (click)="confirmCancel.set(true)">
+              Cancel campaign
+            </button>
+          } @else {
+            <div class="confirmation">
+              <p>
+                Cancel campaign <code>{{ abbreviate(campaign.id) }}</code
+                >? Shared refinement work required by another campaign will continue.
+              </p>
+              <button
+                type="button"
+                class="danger"
+                [disabled]="mutationPending()"
+                (click)="mutate('cancel')"
+              >
+                Confirm cancellation</button
+              ><button
+                type="button"
+                [disabled]="mutationPending()"
+                (click)="confirmCancel.set(false)"
+              >
+                Keep running
+              </button>
+            </div>
+          }
+        }
+        @if (campaign.status === 'failed') {
+          <div>
+            <p>Retry resumes this campaign and its original runtime clock.</p>
+            <button type="button" [disabled]="mutationPending()" (click)="mutate('retry')">
+              Retry campaign
+            </button>
+          </div>
+        }
+      </div>
+      @if (mutationError()) {
+        <p class="notice error" aria-live="assertive">{{ mutationError() }}</p>
+      }
+    </section>
+
+    <section class="panel" aria-labelledby="families-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Server-paginated evidence</p>
+          <h2 id="families-title">Candidate families</h2>
+        </div>
+        @if (countsRefreshedAt()) {
+          <span>Counts refreshed {{ countsRefreshedAt() | date: 'mediumTime' : 'UTC' }} UTC</span>
+        }
+      </div>
+      <div class="category-tabs" role="tablist" aria-label="Family evidence categories">
+        @for (item of categories; track item.id) {
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="category() === item.id"
+            [class.selected]="category() === item.id"
+            (click)="setCategory(item.id)"
+          >
+            {{ item.label }}
+            <span>{{
+              categoryCounts()[item.id] === null ? 'Unavailable' : categoryCounts()[item.id]
+            }}</span>
+          </button>
+        }
+      </div>
+      <p>{{ categoryDefinition() }}</p>
+      @if (countsState() === 'error') {
+        <p class="notice warning">
+          One or more authoritative category counts are unavailable.
+          <button type="button" (click)="loadCounts()">Retry counts</button>
+        </p>
+      }
+      @if (category() === 'near') {
+        <label
+          >Reached stage<select
+            #nearStage
+            [value]="subcategory()"
+            (change)="setSubcategory(nearStage.value)"
+          >
+            <option value="4">Stage 4</option>
+            <option value="3">Stage 3</option>
+          </select></label
+        >
+      }
+      @if (category() === 'early') {
+        <label
+          >Discarded at<select
+            #earlyStage
+            [value]="subcategory()"
+            (change)="setSubcategory(earlyStage.value)"
+          >
+            <option value="2">Stage 2</option>
+            <option value="1">Stage 1</option>
+          </select></label
+        >
+      }
+      @if (category() === 'pending') {
+        <label
+          >Work state<select
+            #pendingState
+            [value]="subcategory()"
+            (change)="setSubcategory(pendingState.value)"
+          >
+            <option value="scheduled">Scheduled</option>
+            <option value="pending">Pending</option>
+          </select></label
+        >
+      }
+
+      <div class="filters">
+        <label
+          >Engine<select
+            #engineFilter
+            [disabled]="contractState() !== 'ready'"
+            [value]="engine()"
+            (change)="setFamilyFilter('engine', engineFilter.value)"
+          >
+            <option value="">All engines</option>
+            @for (value of contract()?.engines ?? []; track value) {
+              <option [value]="value">{{ humanize(value) }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Objective<select
+            #objectiveFilter
+            [disabled]="contractState() !== 'ready'"
+            [value]="objective()"
+            (change)="setFamilyFilter('objective', objectiveFilter.value)"
+          >
+            <option value="">All objectives</option>
+            @for (value of contract()?.objectives ?? []; track value) {
+              <option [value]="value">{{ humanize(value) }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Feature variant<select
+            #featureFilter
+            [disabled]="contractState() !== 'ready'"
+            [value]="featureVariant()"
+            (change)="setFamilyFilter('feature', featureFilter.value)"
+          >
+            <option value="">All variants</option>
+            @for (value of contract()?.feature_variants ?? []; track value) {
+              <option [value]="value">{{ humanize(value) }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Minimum horizon<select
+            #minimumFilter
+            [disabled]="contractState() !== 'ready'"
+            [value]="minimumDuration() ?? ''"
+            (change)="setFamilyFilter('minimum', minimumFilter.value)"
+          >
+            <option value="">No minimum</option>
+            @for (value of contract()?.future_durations_seconds ?? []; track value) {
+              <option [value]="value">{{ formatDuration(value) }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Maximum horizon<select
+            #maximumFilter
+            [disabled]="contractState() !== 'ready'"
+            [value]="maximumDuration() ?? ''"
+            (change)="setFamilyFilter('maximum', maximumFilter.value)"
+          >
+            <option value="">No maximum</option>
+            @for (value of contract()?.future_durations_seconds ?? []; track value) {
+              <option [value]="value">{{ formatDuration(value) }}</option>
+            }
+          </select></label
+        >
+      </div>
+      @if (contractState() === 'error') {
+        <p class="notice error">
+          {{ contractError() }} Summary and categories remain available.
+          <button type="button" (click)="loadContract()">Retry contract</button>
+        </p>
+      }
+      @if (durationInvalid()) {
+        <p class="notice error" aria-live="assertive">
+          Minimum horizon cannot exceed maximum horizon. No family request was sent.
+        </p>
+      }
+      @if (familyError()) {
+        <p class="notice error" aria-live="assertive">
+          {{ familyError() }} <button type="button" (click)="loadFamilies()">Retry families</button>
+        </p>
+      }
+      @if (familyState() === 'loading') {
+        <p class="notice">Loading one bounded family page…</p>
+      }
+      @if (familyPage(); as page) {
+        @if (!page.items.length) {
+          <div class="empty">
+            <h3>No families in this view</h3>
+            <p>The category definition and authoritative count remain unchanged.</p>
+          </div>
+        }
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Identity</th>
+                <th>Configuration</th>
+                <th>Progress</th>
+                <th>Economic evidence</th>
+                <th>Decision</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (family of page.items; track family.id) {
+                <tr>
+                  <td>
+                    <strong>{{ family.asset }}</strong
+                    ><br />{{ family.provider }} · {{ family.market_type }} · {{ family.interval }}
+                  </td>
+                  <td>
+                    {{ humanize(family.engine) }} ·
+                    {{ formatDuration(family.future_duration_seconds) }}<br />{{
+                      humanize(family.objective)
+                    }}<br />{{ humanize(family.feature_variant) }}
+                  </td>
+                  <td>Stage {{ family.current_stage }}<br />{{ humanize(family.state) }}</td>
+                  <td>
+                    Observations: {{ family.best_metrics?.observations ?? 'Not evaluated'
+                    }}<br />Positive net folds:
+                    {{ family.best_metrics?.positive_net_folds ?? 'Not evaluated' }} · Favorable
+                    direction: {{ family.best_metrics?.favorable_direction_folds ?? 'Not evaluated'
+                    }}<br />Beats benchmark:
+                    {{ family.best_metrics?.folds_beating_benchmark ?? 'Not evaluated'
+                    }}<br />Median: {{ formatReturn(family.best_metrics?.median_net_return) }} ·
+                    Worst: {{ formatReturn(family.best_metrics?.worst_net_return) }}<br />Promising
+                    configurations:
+                    {{ family.best_metrics?.promising_configurations ?? 'Not evaluated'
+                    }}<br />Complete and finite:
+                    {{
+                      family.best_metrics?.complete_and_finite === false
+                        ? 'No'
+                        : family.best_metrics?.complete_and_finite === true
+                          ? 'Yes'
+                          : 'Not evaluated'
+                    }}
+                  </td>
+                  <td>
+                    {{
+                      family.decision_reason
+                        ? humanize(family.decision_reason)
+                        : 'No decision reason'
+                    }}<br /><button type="button" (click)="openFamily(family.id)">
+                      Open details
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button type="button" [disabled]="page.offset === 0" (click)="familyPageBy(-1)">
+            Previous</button
+          ><span
+            >{{ page.offset + 1 }}–{{ page.offset + page.items.length }} of {{ page.total }}</span
+          ><button type="button" [disabled]="!page.has_more" (click)="familyPageBy(1)">Next</button>
+        </div>
+      }
+    </section>
+
+    @if (familyDetailState() === 'loading') {
+      <p class="notice">Loading family detail…</p>
+    }
+    @if (familyDetailError()) {
+      <p class="notice error">{{ familyDetailError() }}</p>
+    }
+    @if (selectedFamily(); as family) {
+      <section class="panel detail" aria-labelledby="family-detail-title">
+        <div class="section-heading">
+          <h2 id="family-detail-title">Family detail</h2>
+          <button type="button" (click)="selectedFamily.set(null)">Close details</button>
+        </div>
+        <dl class="summary-grid">
+          <div>
+            <dt>Full identity</dt>
+            <dd>
+              {{ family.asset }} · {{ family.provider }} · {{ family.market_type }} ·
+              {{ family.interval }}
+            </dd>
+          </div>
+          <div>
+            <dt>Deterministic ordinal</dt>
+            <dd>{{ family.deterministic_ordinal }}</dd>
+          </div>
+          <div>
+            <dt>Evaluations</dt>
+            <dd>
+              {{ family.evaluations_completed }} completed · {{ family.evaluations_reused }} reused
+              · {{ family.evaluations_planned }} planned
+            </dd>
+          </div>
+          <div>
+            <dt>Best evaluation</dt>
+            <dd>
+              {{
+                family.best_evaluation_id
+                  ? abbreviate(family.best_evaluation_id, 12) + ' (persisted reference only)'
+                  : 'Not evaluated'
+              }}
+            </dd>
+          </div>
+        </dl>
+        <details>
+          <summary>Secondary persisted identity</summary>
+          <dl>
+            <dt>Family ID</dt>
+            <dd>
+              <code>{{ family.id }}</code>
+            </dd>
+            <dt>Screening source</dt>
+            <dd>
+              <code>{{ family.source_screening_run_id }}</code>
+            </dd>
+            <dt>Fingerprint</dt>
+            <dd>
+              <code>{{ family.fingerprint }}</code>
+            </dd>
+          </dl>
+        </details>
+      </section>
+    }
+  }
+</main>

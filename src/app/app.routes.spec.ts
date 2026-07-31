@@ -11,9 +11,21 @@ describe('application route protection', () => {
       'evaluation',
       'strategies',
       'ml-refinement',
+      'ml-search-campaigns',
+      'ml-search-campaigns/:campaignId',
       'instruments/detail',
     ]);
     expect(routes.find((route) => route.path === '**')?.canActivate?.length).toBe(1);
+  });
+
+  it('lazy-loads both authenticated ML search campaign routes', () => {
+    const children = routes.find((route) => route.path === '')?.children ?? [];
+    expect(
+      children.find((route) => route.path === 'ml-search-campaigns')?.loadComponent,
+    ).toBeTypeOf('function');
+    expect(
+      children.find((route) => route.path === 'ml-search-campaigns/:campaignId')?.loadComponent,
+    ).toBeTypeOf('function');
   });
 
   it('lazy-loads ML Refinement inside the authenticated shell', () => {
