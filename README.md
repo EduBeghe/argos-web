@@ -169,6 +169,34 @@ The workflow does not expose protected final-test evidence, activate Strategies,
 modify Paper Trading. Supported engines, objectives, durations, variables, validation limits, costs,
 and seed defaults come from the backend contract rather than a frontend registry.
 
+## Automated ML Search campaigns
+
+The authenticated lazy routes `/ml-search-campaigns` and
+`/ml-search-campaigns/:campaignId` monitor the durable `exhaustive_ohlcv_v1` workflow. The workspace
+uses the authoritative campaign contract, campaign list/detail, family list/detail, cancellation,
+and retry endpoints under `/optimization/ml-search-campaigns`. It does not enqueue campaigns.
+
+Campaign pages are always server-paginated: 25 campaigns per request, 50 visible families per
+request, and count-only family requests with `limit=1`. The UI never expands all 3,600 families or
+downloads refinement evaluations. Categories map directly to persisted state: **Strong candidates**
+uses `strong_development_candidate`; **Still competing** uses `survived`; **Near misses** uses
+`discarded` at stage 4 or 3; **Early discarded** uses `discarded` at stage 2 or 1; and **Pending / in
+progress** combines independent `scheduled` and `pending` counts. Composite counts sum only
+non-overlapping backend totals and remain unavailable if a constituent request fails.
+
+While a selected campaign is queued or running and the document is visible, detail and the visible
+family page refresh every 30 seconds. Category counts refresh every two minutes, on manual refresh,
+and once on a terminal transition. Polling stops for hidden documents, terminal campaigns, route or
+selection changes, and component destruction. Refresh failures preserve the last successful panel.
+
+The only mutations are lifecycle-aware Cancel and Retry. Cancellation requires in-page
+confirmation; retry is available only for operationally failed campaigns and resumes the same
+campaign with its original runtime clock. Outcomes and family evidence authorize research review
+only—not Strategy activation, simulation, Paper Trading, or real trading. The backend does not
+expose a global economic family ranking, so the frontend preserves deterministic server order. A
+best evaluation is shown only as an abbreviated persisted reference because its refinement-run ID
+is unavailable and a correct deep link cannot be constructed.
+
 ## Strategy evaluation
 
 The `/evaluation` route loads the authoritative read-only `GET /paper/evaluation` response and
