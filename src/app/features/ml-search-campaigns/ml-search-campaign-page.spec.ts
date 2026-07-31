@@ -193,6 +193,11 @@ describe('MlSearchCampaignPage', () => {
     expect(component.selectedCampaign()?.status).toBe('cancelled');
     expect(component.liveMessage()).toContain('Cancellation accepted');
     expect(api.getFamilies.mock.calls.length).toBeGreaterThan(familyCalls);
+
+    component.selectedCampaign.set({ ...campaign, status: 'failed' });
+    component.mutate('retry');
+    expect(component.selectedCampaign()?.status).toBe('queued');
+    expect(component.liveMessage()).toContain('Retry accepted');
     fixture.destroy();
   });
 
@@ -287,6 +292,7 @@ describe('MlSearchCampaignPage', () => {
     component.openFamily(family.id);
     change(component);
     detail.next(family);
+    detail.error(new Error('late family error'));
     expect(component.selectedFamily()).toBeNull();
     expect(component.familyDetailState()).toBe('idle');
     expect(component.familyDetailError()).toBe('');
