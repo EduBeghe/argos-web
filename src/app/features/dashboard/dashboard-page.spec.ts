@@ -42,7 +42,7 @@ describe('DashboardPage', () => {
     expect(TestBed.inject(Router).url).toBe('/evaluation');
   });
 
-  it('presents research, refinement, and evaluation routes as keyboard-focusable navigation buttons', () => {
+  it('presents research and evaluation routes as keyboard-focusable navigation buttons', () => {
     api.getOverview.mockReturnValue(of(dashboardWithPaper));
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
@@ -52,6 +52,7 @@ describe('DashboardPage', () => {
     expect(links.map((link) => link.getAttribute('routerLink'))).toEqual([
       '/strategies',
       '/ml-refinement',
+      '/paper-strategies',
       '/evaluation',
     ]);
     expect(links.every((link) => link.tabIndex === 0)).toBe(true);

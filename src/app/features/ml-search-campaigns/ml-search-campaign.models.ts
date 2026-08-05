@@ -113,3 +113,72 @@ export interface FamilyFilters {
 
 export type FamilyCategory = 'strong' | 'competing' | 'near' | 'early' | 'pending';
 export type CategoryCounts = Record<FamilyCategory, number | null>;
+
+export interface IntegritySection {
+  valid: boolean;
+  failure_codes: string[];
+  [key: string]: unknown;
+}
+
+export interface CampaignFamilyAuditResponse {
+  campaign_id: string;
+  family_id: string;
+  evidence_integrity: IntegritySection;
+  temporal_provenance_integrity: IntegritySection;
+  overall_valid: boolean;
+  provenance_strength?: string | null;
+  temporal_manifest?: Record<string, unknown> | null;
+  reconstructed_manifest_status?: string | null;
+  reconstructed_manifest_id?: string | null;
+  winning_evidence?: Record<string, unknown> | null;
+  independent_sample_diagnostic?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
+export interface TemporalManifestResponse {
+  id: string;
+  status: string;
+  source: string;
+  manifest_fingerprint: string | null;
+  fingerprint_verified: boolean | null;
+  counts_verified: boolean | null;
+  failure_code: string | null;
+  failure_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+  cancellation_requested_at?: string | null;
+  manifest?: Record<string, unknown> | null;
+}
+
+export interface FinalValidationResponse {
+  id: string;
+  campaign_id: string;
+  family_id: string;
+  status: string;
+  classification: string | null;
+  frozen_inputs: Record<string, unknown>;
+  scenario_metrics: Record<string, unknown> | null;
+  execution_manifest: Record<string, unknown> | null;
+  failed_rules: string[] | null;
+  protected_data_read_at: string | null;
+  failure_code: string | null;
+  failure_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+  cancellation_requested_at?: string | null;
+}
+
+export interface FinalValidationPage {
+  items: FinalValidationResponse[];
+  next_cursor: string | null;
+  has_more: boolean;
+}
+
+export interface PaperDeploymentResponse {
+  id: string;
+  display_name: string;
+  status: string;
+  strategy_kind: string;
+  is_primary: boolean;
+  [key: string]: unknown;
+}

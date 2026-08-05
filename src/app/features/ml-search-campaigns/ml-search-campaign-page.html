@@ -11,6 +11,7 @@
     <nav class="hero-links" aria-label="ML research workspaces">
       <a routerLink="/ml-refinement" class="button secondary">Manual Refinement</a>
       <a routerLink="/strategies" class="button secondary">Strategy Research</a>
+      <a routerLink="/paper-strategies" class="button secondary">Paper Strategies</a>
     </nav>
   </header>
 
@@ -540,6 +541,9 @@
             </dd>
           </dl>
         </details>
+        @if (family.state === 'strong_development_candidate' && family.current_stage === 4) {
+          <app-protected-validation-panel [campaignId]="family.campaign_id" [family]="family" />
+        }
       </section>
     }
   }

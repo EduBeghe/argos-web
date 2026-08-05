@@ -165,9 +165,10 @@ reuse, omission, budget, failure, and cancellation evidence. Evaluation classifi
 evidence only: even `promising_for_strategy_simulation` permits later simulation but does not approve
 or activate a Strategy.
 
-The workflow does not expose protected final-test evidence, activate Strategies, create wallets, or
-modify Paper Trading. Supported engines, objectives, durations, variables, validation limits, costs,
-and seed defaults come from the backend contract rather than a frontend registry.
+Manual refinement does not itself consume protected evidence or create deployments. Supported
+engines, objectives, durations, variables, validation limits, costs, and seed defaults come from
+the backend contract rather than a frontend registry. Protected validation and Paper deployment are
+separate, explicit workflows described below.
 
 ## Automated ML Search campaigns
 
@@ -196,6 +197,22 @@ only—not Strategy activation, simulation, Paper Trading, or real trading. The 
 expose a global economic family ranking, so the frontend preserves deterministic server order. A
 best evaluation is shown only as an abbreviated persisted reference because its refinement-run ID
 is unavailable and a correct deep link cannot be constructed.
+
+## Protected final validation and Paper Strategies
+
+Strong stage-4 family detail adds a lazy four-step workflow: authoritative development audit,
+temporal-manifest reconstruction, one-shot protected 2024-2026 final validation, and deployment of
+completed passed current-contract evidence. The UI does not bulk validate, retune with protected
+results, retry legacy contracts, or calculate scientific classifications. It labels current evidence
+from the exact simulation-version 2, policy-version 1, 1,800-second contract; legacy evidence remains
+readable but cannot be retried or deployed.
+
+The authenticated lazy `/paper-strategies` workspace lists isolated simulated deployments with
+cursor pagination. It supports confirmed Pause, Resume, Make primary, and irreversible Archive only
+when the backend lifecycle permits them. Mutations refresh authoritative records rather than
+inventing state. `current_cash` is cash, never equity or P&L. Multiple deployments may run in
+parallel; making one primary does not pause another. Archive preserves history, performs no
+liquidation, and is not deletion. No action contacts an exchange or uses real money.
 
 ## Strategy evaluation
 
@@ -245,5 +262,6 @@ this frontend PR.
 
 ## Current limitations
 
-Current limitations include polling, WebSockets, Paper Trading mutations, strategy editing,
-catalog administration, SPY, Alpaca, and backtesting.
+Current limitations include polling rather than WebSockets, strategy editing, catalog
+administration, SPY, Alpaca, backtesting, automatic deployment or baseline retirement, and
+real-money execution.

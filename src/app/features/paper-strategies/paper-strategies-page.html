@@ -1,0 +1,173 @@
+<main>
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Simulated execution</p>
+      <h1>Paper Strategies</h1>
+      <p>
+        Operate isolated Paper wallets backed by authoritative strategy evidence. No real funds or
+        exchange orders are involved.
+      </p>
+    </div>
+    <nav aria-label="Research workspaces">
+      <a routerLink="/ml-search-campaigns">Automated ML Search</a>
+      <a routerLink="/ml-refinement">Manual Refinement</a>
+      <a routerLink="/strategies">Strategy Research</a>
+      <a routerLink="/">Dashboard</a>
+    </nav>
+  </header>
+
+  <section class="filters" aria-label="Deployment filters">
+    <label
+      >Status
+      <select #statusControl [value]="status()">
+        <option value="">Active and paused</option>
+        <option value="active">Active</option>
+        <option value="paused">Paused</option>
+        <option value="archived">Archived</option>
+      </select>
+    </label>
+    <label
+      >Strategy kind
+      <select #kindControl [value]="strategyKind()">
+        <option value="">All strategies</option>
+        <option value="baseline">Baseline</option>
+        <option value="ml_fixed_horizon_long_only">ML fixed horizon</option>
+      </select>
+    </label>
+    <label class="checkbox"
+      ><input #archivedControl type="checkbox" [checked]="includeArchived()" /> Include
+      archived</label
+    >
+    <button
+      type="button"
+      (click)="changeFilters(statusControl.value, kindControl.value, archivedControl.checked)"
+    >
+      Apply filters
+    </button>
+    <button type="button" class="secondary" (click)="load()">Refresh</button>
+  </section>
+
+  @if (loading()) {
+    <p class="notice" aria-live="polite">Loading Paper deployments…</p>
+  }
+  @if (error()) {
+    <p class="notice error" role="alert">
+      {{ error() }} <button type="button" (click)="load()">Retry</button>
+    </p>
+  }
+  @if (refreshWarning()) {
+    <p class="notice warning" role="alert">{{ refreshWarning() }}</p>
+  }
+  @if (mutationMessage()) {
+    <p class="notice" aria-live="polite">{{ mutationMessage() }}</p>
+  }
+
+  <aside class="guidance">
+    <strong>Guided baseline retirement</strong>
+    <span
+      >Deploy a passed ML validation, make the chosen ML deployment primary, pause baseline, then
+      archive baseline if desired. Each step remains manual.</span
+    >
+  </aside>
+
+  @if (page(); as data) {
+    @if (!data.items.length) {
+      <p class="empty">No deployments match these filters.</p>
+    }
+    <section class="deployment-grid" aria-label="Paper deployments">
+      @for (item of data.items; track item.id) {
+        <article class="deployment-card">
+          <header>
+            <div>
+              <h2>{{ item.display_name }}</h2>
+              <p>{{ strategy(item.strategy_kind) }}</p>
+            </div>
+            @if (item.is_primary) {
+              <span class="primary">Primary</span>
+            }
+          </header>
+          <dl>
+            <div>
+              <dt>Lifecycle</dt>
+              <dd>{{ lifecycle(item.lifecycle) }}</dd>
+            </div>
+            <div>
+              <dt>Current cash</dt>
+              <dd>{{ currency(item.current_cash) }}</dd>
+            </div>
+            <div>
+              <dt>Open positions</dt>
+              <dd>{{ item.open_position_count }}</dd>
+            </div>
+            <div>
+              <dt>Current run</dt>
+              <dd>{{ item.current_run_id ?? 'Not available' }}</dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>{{ item.created_at | date: 'medium' : 'UTC' }} UTC</dd>
+            </div>
+            <div>
+              <dt>Paused</dt>
+              <dd>
+                {{
+                  item.paused_at
+                    ? (item.paused_at | date: 'medium' : 'UTC') + ' UTC'
+                    : 'Not available'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt>Archived</dt>
+              <dd>
+                {{
+                  item.archived_at
+                    ? (item.archived_at | date: 'medium' : 'UTC') + ' UTC'
+                    : 'Not available'
+                }}
+              </dd>
+            </div>
+          </dl>
+          <details>
+            <summary>Artifact evidence</summary>
+            <p>Artifact ID: {{ item.artifact?.id ?? 'Not available' }}</p>
+            <p class="hash">SHA-256: {{ item.artifact?.sha256 ?? 'Not available' }}</p>
+          </details>
+          <div class="actions">
+            @for (action of actions(item); track action) {
+              <button
+                type="button"
+                [disabled]="pendingId() === item.id"
+                (click)="ask(item, action)"
+              >
+                {{
+                  action === 'make-primary'
+                    ? 'Make primary'
+                    : action[0]?.toUpperCase() + action.slice(1)
+                }}
+              </button>
+            }
+          </div>
+          @if (confirmation()?.id === item.id) {
+            @if (confirmation(); as confirmation) {
+              <section class="confirmation" aria-live="polite">
+                <p>{{ warning(confirmation.action) }}</p>
+                <button type="button" (click)="confirm()">Confirm</button
+                ><button type="button" class="secondary" (click)="cancelConfirmation()">
+                  Keep unchanged
+                </button>
+              </section>
+            }
+          }
+        </article>
+      }
+    </section>
+    <nav class="pagination" aria-label="Deployment pages">
+      <button type="button" [disabled]="!cursorHistory().length" (click)="previous()">
+        Previous</button
+      ><button type="button" [disabled]="!data.has_more || !data.next_cursor" (click)="next()">
+        Next
+      </button>
+    </nav>
+  }
+</main>

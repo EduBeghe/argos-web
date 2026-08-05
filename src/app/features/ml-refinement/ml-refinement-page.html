@@ -11,6 +11,7 @@
     <nav class="hero-actions" aria-label="Related research workspaces">
       <a routerLink="/ml-search-campaigns" class="button secondary">Automated Search</a>
       <a routerLink="/strategies" class="button secondary">Strategy Research</a>
+      <a routerLink="/paper-strategies" class="button secondary">Paper Strategies</a>
     </nav>
   </header>
   <nav class="tabs" role="tablist" aria-label="ML Refinement sections">
@@ -352,23 +353,7 @@
               >Fee rate (%)<input
                 type="number"
                 step="0.0001"
-                formControlName="feePercentage" /></label
-            ><label
-              >Slippage rate (%)<input
-                type="number"
-                step="0.0001"
-                formControlName="slippagePercentage" /></label
-            ><label
-              >Maximum trials <app-metric-help metric="mlTrialBudget" /><input
-                type="number"
-                step="1"
-                formControlName="maximumTrials"
-              /><small
-                >1â€“{{ currentContract.validation_limits.maximum_trials }} and at least the engine
-                count.</small
-              ></label
-            ><label
-              >Runtime hours <app-metric-help metric="mlRuntimeBudget" /><input
+     Ûní¢G§²ÚîÆ­yÝetric="mlRuntimeBudget" /><input
                 type="number"
                 step="1"
                 formControlName="runtimeHours" /></label

@@ -53,6 +53,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'paper-strategies',
+        loadComponent: () =>
+          import('./features/paper-strategies/paper-strategies-page').then(
+            (module) => module.PaperStrategiesPage,
+          ),
+      },
+      {
         path: 'instruments/detail',
         loadComponent: () =>
           import('./features/instrument-detail/instrument-detail-page').then(

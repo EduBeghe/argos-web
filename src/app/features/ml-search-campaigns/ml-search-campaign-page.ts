@@ -14,6 +14,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, Subscription, timer } from 'rxjs';
 
 import { MlSearchCampaignApiService } from './ml-search-campaign-api.service';
+import { ProtectedValidationPanel } from './protected-validation-panel';
 import {
   abbreviate,
   CATEGORIES,
@@ -50,7 +51,7 @@ const EMPTY_COUNTS: CategoryCounts = {
 
 @Component({
   selector: 'app-ml-search-campaign-page',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, ProtectedValidationPanel],
   templateUrl: './ml-search-campaign-page.html',
   styleUrl: './ml-search-campaign-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
