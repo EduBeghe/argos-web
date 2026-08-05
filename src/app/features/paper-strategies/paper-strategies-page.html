@@ -19,7 +19,7 @@
   <section class="filters" aria-label="Deployment filters">
     <label
       >Status
-      <select #statusControl [value]="status()">
+      <select #statusControl [value]="status()" [disabled]="pendingId() !== null">
         <option value="">Active and paused</option>
         <option value="active">Active</option>
         <option value="paused">Paused</option>
@@ -28,23 +28,31 @@
     </label>
     <label
       >Strategy kind
-      <select #kindControl [value]="strategyKind()">
+      <select #kindControl [value]="strategyKind()" [disabled]="pendingId() !== null">
         <option value="">All strategies</option>
         <option value="baseline">Baseline</option>
         <option value="ml_fixed_horizon_long_only">ML fixed horizon</option>
       </select>
     </label>
     <label class="checkbox"
-      ><input #archivedControl type="checkbox" [checked]="includeArchived()" /> Include
-      archived</label
+      ><input
+        #archivedControl
+        type="checkbox"
+        [checked]="includeArchived()"
+        [disabled]="pendingId() !== null"
+      />
+      Include archived</label
     >
     <button
       type="button"
+      [disabled]="pendingId() !== null"
       (click)="changeFilters(statusControl.value, kindControl.value, archivedControl.checked)"
     >
       Apply filters
     </button>
-    <button type="button" class="secondary" (click)="load()">Refresh</button>
+    <button type="button" class="secondary" [disabled]="pendingId() !== null" (click)="load()">
+      Refresh
+    </button>
   </section>
 
   @if (loading()) {
@@ -135,11 +143,7 @@
           </details>
           <div class="actions">
             @for (action of actions(item); track action) {
-              <button
-                type="button"
-                [disabled]="pendingId() === item.id"
-                (click)="ask(item, action)"
-              >
+              <button type="button" [disabled]="pendingId() !== null" (click)="ask(item, action)">
                 {{
                   action === 'make-primary'
                     ? 'Make primary'
@@ -152,8 +156,14 @@
             @if (confirmation(); as confirmation) {
               <section class="confirmation" aria-live="polite">
                 <p>{{ warning(confirmation.action) }}</p>
-                <button type="button" (click)="confirm()">Confirm</button
-                ><button type="button" class="secondary" (click)="cancelConfirmation()">
+                <button type="button" [disabled]="pendingId() !== null" (click)="confirm()">
+                  Confirm</button
+                ><button
+                  type="button"
+                  class="secondary"
+                  [disabled]="pendingId() !== null"
+                  (click)="cancelConfirmation()"
+                >
                   Keep unchanged
                 </button>
               </section>
@@ -163,11 +173,20 @@
       }
     </section>
     <nav class="pagination" aria-label="Deployment pages">
-      <button type="button" [disabled]="!cursorHistory().length" (click)="previous()">
+      <button
+        type="button"
+        [disabled]="pendingId() !== null || !cursorHistory().length"
+        (click)="previous()"
+      >
         Previous</button
-      ><button type="button" [disabled]="!data.has_more || !data.next_cursor" (click)="next()">
+      ><button
+        type="button"
+        [disabled]="pendingId() !== null || !data.has_more || !data.next_cursor"
+        (click)="next()"
+      >
         Next
       </button>
     </nav>
   }
 </main>
+
