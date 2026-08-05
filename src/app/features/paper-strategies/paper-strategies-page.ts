@@ -53,10 +53,13 @@ export class PaperStrategiesPage {
     this.destroyRef.onDestroy(() => {
       this.request?.unsubscribe();
       this.mutation?.unsubscribe();
+      this.pendingId.set(null);
+      this.confirmation.set(null);
     });
   }
 
   load(): void {
+    if (this.pendingId()) return;
     const generation = ++this.generation;
     this.request?.unsubscribe();
     this.loading.set(!this.page());
@@ -89,6 +92,7 @@ export class PaperStrategiesPage {
   }
 
   changeFilters(status: string, strategyKind: string, includeArchived: boolean): void {
+    if (this.pendingId()) return;
     this.status.set(status);
     this.strategyKind.set(strategyKind);
     this.includeArchived.set(includeArchived);
@@ -99,6 +103,7 @@ export class PaperStrategiesPage {
   }
 
   next(): void {
+    if (this.pendingId()) return;
     const next = this.page()?.next_cursor;
     if (!next) return;
     this.cursorHistory.update((history) => [...history, this.cursor()]);
@@ -107,6 +112,7 @@ export class PaperStrategiesPage {
   }
 
   previous(): void {
+    if (this.pendingId()) return;
     const history = [...this.cursorHistory()];
     if (!history.length) return;
     this.cursor.set(history.pop());
@@ -115,6 +121,7 @@ export class PaperStrategiesPage {
   }
 
   ask(item: PaperDeployment, action: DeploymentAction): void {
+    if (this.pendingId()) return;
     if (!this.actions(item).includes(action)) return;
     this.confirmation.set({ id: item.id, action });
     this.mutationMessage.set('');
@@ -130,15 +137,17 @@ export class PaperStrategiesPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          if (generation !== this.generation) return;
           this.pendingId.set(null);
+          this.mutation = undefined;
+          if (generation !== this.generation) return;
           this.confirmation.set(null);
           this.mutationMessage.set('Deployment state updated from backend authority.');
           this.load();
         },
         error: (error: HttpErrorResponse) => {
-          if (generation !== this.generation) return;
           this.pendingId.set(null);
+          this.mutation = undefined;
+          if (generation !== this.generation) return;
           this.confirmation.set(null);
           this.mutationMessage.set(this.errorDetail(error));
           if (error.status === 409) this.load();
@@ -147,6 +156,7 @@ export class PaperStrategiesPage {
   }
 
   cancelConfirmation(): void {
+    if (this.pendingId()) return;
     this.confirmation.set(null);
   }
 
@@ -164,3 +174,4 @@ export class PaperStrategiesPage {
     return 'Deployment action failed. Previously loaded data is preserved.';
   }
 }
+
