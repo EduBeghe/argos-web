@@ -7,7 +7,9 @@
     @if (!opened()) {
       <button type="button" (click)="open()">Open protected workflow</button>
     } @else {
-      <button type="button" class="secondary" (click)="refresh()">Refresh</button>
+      <button type="button" class="secondary" [disabled]="pending()" (click)="refresh()">
+        Refresh
+      </button>
     }
   </header>
   @if (opened()) {
@@ -46,7 +48,9 @@
             </div>
             <div>
               <dt>Provenance strength</dt>
-              <dd>{{ item.provenance_strength ?? 'Not available' }}</dd>
+              <dd>
+                {{ item.temporal_provenance_integrity.provenance_strength ?? 'Not available' }}
+              </dd>
             </div>
           </dl>
           @if (
@@ -71,7 +75,11 @@
           }
           <details>
             <summary>Winning evidence and independent-sample diagnostic</summary>
-            <p>Winning evidence: {{ item.winning_evidence ? 'Available' : 'Not available' }}</p>
+            <p>Winning evaluation: {{ item.winning_evaluation ? 'Available' : 'Not available' }}</p>
+            <p>
+              Winning configuration:
+              {{ item.winning_configuration ? 'Available' : 'Not available' }}
+            </p>
             <p>
               Independent sample:
               {{ item.independent_sample_diagnostic ? 'Available' : 'Not available' }}
@@ -119,7 +127,12 @@
               </button>
             }
             @if (item.status === 'queued' || item.status === 'running') {
-              <button type="button" class="danger" (click)="setConfirmation('manifest-cancel')">
+              <button
+                type="button"
+                class="danger"
+                [disabled]="pending()"
+                (click)="setConfirmation('manifest-cancel')"
+              >
                 Cancel
               </button>
             }
@@ -127,8 +140,14 @@
           @if (confirmation() === 'manifest-cancel') {
             <div class="confirmation">
               <p>Cancel reconstruction {{ item.id }}?</p>
-              <button type="button" (click)="cancelManifest()">Confirm cancel</button
-              ><button type="button" class="secondary" (click)="setConfirmation(null)">
+              <button type="button" [disabled]="pending()" (click)="cancelManifest()">
+                Confirm cancel</button
+              ><button
+                type="button"
+                class="secondary"
+                [disabled]="pending()"
+                (click)="setConfirmation(null)"
+              >
                 Keep running
               </button>
             </div>
@@ -162,8 +181,14 @@
               This consumes protected 2024–2026 evidence once for this immutable identity. It cannot
               retune the candidate and cannot be retried after protected data is read.
             </p>
-            <button type="button" (click)="enqueueValidation()">Consume protected evidence</button
-            ><button type="button" class="secondary" (click)="setConfirmation(null)">
+            <button type="button" [disabled]="pending()" (click)="enqueueValidation()">
+              Consume protected evidence</button
+            ><button
+              type="button"
+              class="secondary"
+              [disabled]="pending()"
+              (click)="setConfirmation(null)"
+            >
               Go back
             </button>
           </div>
@@ -172,6 +197,7 @@
           <label
             >Validation evidence<select
               #validationControl
+              [disabled]="pending()"
               (change)="selectValidation(validations()[validationControl.selectedIndex]!)"
             >
               @for (item of validations(); track item.id) {
@@ -294,10 +320,17 @@
                 !item.protected_data_read_at &&
                 (item.status === 'failed' || item.status === 'cancelled')
               ) {
-                <button type="button" (click)="retryValidation()">Retry validation</button>
+                <button type="button" [disabled]="pending()" (click)="retryValidation()">
+                  Retry validation
+                </button>
               }
               @if (item.status === 'queued' || item.status === 'running') {
-                <button type="button" class="danger" (click)="setConfirmation('validation-cancel')">
+                <button
+                  type="button"
+                  class="danger"
+                  [disabled]="pending()"
+                  (click)="setConfirmation('validation-cancel')"
+                >
                   Cancel validation
                 </button>
               }
@@ -305,8 +338,14 @@
             @if (confirmation() === 'validation-cancel') {
               <div class="confirmation">
                 <p>Cancel validation {{ item.id }}?</p>
-                <button type="button" (click)="cancelValidation()">Confirm cancel</button
-                ><button type="button" class="secondary" (click)="setConfirmation(null)">
+                <button type="button" [disabled]="pending()" (click)="cancelValidation()">
+                  Confirm cancel</button
+                ><button
+                  type="button"
+                  class="secondary"
+                  [disabled]="pending()"
+                  (click)="setConfirmation(null)"
+                >
                   Keep running
                 </button>
               </div>
@@ -324,12 +363,14 @@
               >Display name<input
                 #nameControl
                 maxlength="80"
+                [disabled]="pending()"
                 [value]="displayName()"
                 (input)="displayName.set(nameControl.value)" /></label
             ><label class="checkbox"
               ><input
                 #primaryControl
                 type="checkbox"
+                [disabled]="pending()"
                 [checked]="makePrimary()"
                 (change)="makePrimary.set(primaryControl.checked)"
               />
@@ -355,3 +396,4 @@
     </ol>
   }
 </section>
+
