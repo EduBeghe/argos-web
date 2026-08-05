@@ -41,8 +41,10 @@ export class ProtectedValidationPanel {
   readonly family = input.required<SearchCampaignFamily>();
   private readonly api = inject(ProtectedValidationApiService);
   private readonly destroyRef = inject(DestroyRef);
-  private requests: Subscription[] = [];
-  private poll?: Subscription;
+  private readRequests: Subscription[] = [];
+  private pollingRequests: Subscription[] = [];
+  private pollTimer?: Subscription;
+  private mutation?: Subscription;
   private generation = 0;
   private context = '';
 
@@ -71,7 +73,7 @@ export class ProtectedValidationPanel {
     effect(() => {
       const context = `${this.campaignId()}:${this.family().id}`;
       if (this.context && context !== this.context) {
-        this.cancelAll();
+        this.cancelContext();
         this.opened.set(false);
         this.audit.set(null);
         this.manifest.set(null);
@@ -96,10 +98,11 @@ export class ProtectedValidationPanel {
   }
 
   refresh(): void {
+    if (this.pending()) return;
     const generation = ++this.generation;
-    this.cancelRequests();
+    this.cancelReadsAndPolling();
     this.loading.set(true);
-    this.requests.push(
+    this.readRequests.push(
       this.api
         .audit(this.campaignId(), this.family().id)
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -109,7 +112,7 @@ export class ProtectedValidationPanel {
             this.audit.set(audit);
             this.manifest.set(null);
             if (audit.reconstructed_manifest_id) {
-              this.requests.push(
+              this.readRequests.push(
                 this.api
                   .manifest(audit.reconstructed_manifest_id)
                   .pipe(takeUntilDestroyed(this.destroyRef))
@@ -139,7 +142,7 @@ export class ProtectedValidationPanel {
           },
         }),
     );
-    this.requests.push(
+    this.readRequests.push(
       this.api
         .validations(this.campaignId(), this.family().id)
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -228,10 +231,12 @@ export class ProtectedValidationPanel {
   }
 
   selectValidation(item: FinalValidationResponse): void {
+    if (this.pending()) return;
     this.selectedValidation.set(item);
     this.configurePolling();
   }
   setConfirmation(value: 'validate' | 'manifest-cancel' | 'validation-cancel' | null): void {
+    if (this.pending()) return;
     this.confirmation.set(value);
   }
 
@@ -240,24 +245,22 @@ export class ProtectedValidationPanel {
     if (this.pending()) return;
     this.pending.set(true);
     this.mutationError.set('');
-    this.requests.push(
-      request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (value) => {
-          if (generation !== this.generation) return;
-          this.pending.set(false);
-          success(value);
-        },
-        error: (error: HttpErrorResponse) => {
-          if (generation !== this.generation) return;
-          this.pending.set(false);
-          this.mutationError.set(this.errorDetail(error));
-          if (error.status === 409) this.refresh();
-        },
-      }),
-    );
+    this.mutation = request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (value) => {
+        this.finishMutation();
+        if (generation !== this.generation) return;
+        success(value);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.finishMutation();
+        if (generation !== this.generation) return;
+        this.mutationError.set(this.errorDetail(error));
+        if (error.status === 409) this.refresh();
+      },
+    });
   }
   private configurePolling(): void {
-    this.poll?.unsubscribe();
+    this.cancelPolling();
     if (document.hidden) return;
     const manifest = this.manifest();
     const validation = this.selectedValidation();
@@ -265,7 +268,7 @@ export class ProtectedValidationPanel {
       (manifest && !terminalWorkStatus(manifest.status)) ||
       (validation && !terminalWorkStatus(validation.status))
     ) {
-      this.poll = timer(5000, 5000)
+      this.pollTimer = timer(5000, 5000)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => this.pollSelected());
     }
@@ -276,7 +279,7 @@ export class ProtectedValidationPanel {
     const manifest = this.manifest();
     const validation = this.selectedValidation();
     if (manifest && !terminalWorkStatus(manifest.status)) {
-      this.requests.push(
+      this.pollingRequests.push(
         this.api.manifest(manifest.id).subscribe({
           next: (value) => {
             if (generation !== this.generation) return;
@@ -287,14 +290,14 @@ export class ProtectedValidationPanel {
           },
           error: () => {
             this.mutationError.set('Manifest polling failed. Use Refresh to continue.');
-            this.poll?.unsubscribe();
+            this.cancelPolling();
           },
         }),
       );
       return;
     }
     if (validation && !terminalWorkStatus(validation.status)) {
-      this.requests.push(
+      this.pollingRequests.push(
         this.api.validation(validation.id).subscribe({
           next: (value) => {
             if (generation !== this.generation) return;
@@ -307,24 +310,46 @@ export class ProtectedValidationPanel {
           },
           error: () => {
             this.mutationError.set('Validation polling failed. Use Refresh to continue.');
-            this.poll?.unsubscribe();
+            this.cancelPolling();
           },
         }),
       );
     }
   }
   private readonly visibilityChanged = (): void => {
-    if (document.hidden) this.poll?.unsubscribe();
+    if (document.hidden) this.cancelPolling();
     else this.configurePolling();
   };
-  private cancelRequests(): void {
-    this.requests.forEach((request) => request.unsubscribe());
-    this.requests = [];
-    this.poll?.unsubscribe();
+  private cancelReadsAndPolling(): void {
+    this.readRequests.forEach((request) => request.unsubscribe());
+    this.readRequests = [];
+    this.cancelPolling();
+  }
+  private cancelPolling(): void {
+    this.pollTimer?.unsubscribe();
+    this.pollTimer = undefined;
+    this.pollingRequests.forEach((request) => request.unsubscribe());
+    this.pollingRequests = [];
+  }
+  private finishMutation(): void {
+    this.mutation = undefined;
+    this.pending.set(false);
+  }
+  private cancelMutation(): void {
+    this.mutation?.unsubscribe();
+    this.mutation = undefined;
+    this.pending.set(false);
+    this.confirmation.set(null);
+    this.deployedId.set(null);
+    this.mutationError.set('');
+  }
+  private cancelContext(): void {
+    this.generation += 1;
+    this.cancelReadsAndPolling();
+    this.cancelMutation();
   }
   private cancelAll(): void {
-    this.generation += 1;
-    this.cancelRequests();
+    this.cancelContext();
   }
   private errorDetail(error: HttpErrorResponse): string {
     const detail: unknown = error.error?.detail;
@@ -339,3 +364,4 @@ export class ProtectedValidationPanel {
     return 'Protected workflow action failed.';
   }
 }
+
