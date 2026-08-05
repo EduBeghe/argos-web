@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Observable, of, Subject } from 'rxjs';
 
 import {
@@ -85,7 +86,7 @@ describe('ProtectedValidationPanel', () => {
     api.reconstruct.mockReturnValue(of(manifest));
     TestBed.configureTestingModule({
       imports: [ProtectedValidationPanel],
-      providers: [{ provide: ProtectedValidationApiService, useValue: api }],
+      providers: [{ provide: ProtectedValidationApiService, useValue: api }, provideRouter([])],
     });
   });
 

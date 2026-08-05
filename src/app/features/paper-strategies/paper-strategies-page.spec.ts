@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Observable, of, Subject } from 'rxjs';
 
 import { PaperStrategiesPage } from './paper-strategies-page';
@@ -36,7 +37,7 @@ describe('PaperStrategiesPage', () => {
     api.mutate.mockReset().mockReturnValue(of({ ...deployment, lifecycle: 'paused' }));
     TestBed.configureTestingModule({
       imports: [PaperStrategiesPage],
-      providers: [{ provide: PaperStrategyApiService, useValue: api }],
+      providers: [{ provide: PaperStrategyApiService, useValue: api }, provideRouter([])],
     });
   });
 
