@@ -353,7 +353,23 @@
               >Fee rate (%)<input
                 type="number"
                 step="0.0001"
-     Ûní¢G§²ÚîÆ­yÝetric="mlRuntimeBudget" /><input
+                formControlName="feePercentage" /></label
+            ><label
+              >Slippage rate (%)<input
+                type="number"
+                step="0.0001"
+                formControlName="slippagePercentage" /></label
+            ><label
+              >Maximum trials <app-metric-help metric="mlTrialBudget" /><input
+                type="number"
+                step="1"
+                formControlName="maximumTrials"
+              /><small
+                >1â€“{{ currentContract.validation_limits.maximum_trials }} and at least the engine
+                count.</small
+              ></label
+            ><label
+              >Runtime hours <app-metric-help metric="mlRuntimeBudget" /><input
                 type="number"
                 step="1"
                 formControlName="runtimeHours" /></label
