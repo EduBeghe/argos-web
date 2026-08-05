@@ -364,4 +364,3 @@ export class ProtectedValidationPanel {
     return 'Protected workflow action failed.';
   }
 }
-

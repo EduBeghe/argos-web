@@ -174,4 +174,3 @@ export class PaperStrategiesPage {
     return 'Deployment action failed. Previously loaded data is preserved.';
   }
 }
-

@@ -175,4 +175,3 @@ describe('ProtectedValidationPanel', () => {
     expect(pending.observed).toBe(false);
   });
 });
-

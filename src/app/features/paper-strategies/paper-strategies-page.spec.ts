@@ -128,4 +128,3 @@ describe('PaperStrategiesPage', () => {
     expect(pending.observed).toBe(false);
   });
 });
-

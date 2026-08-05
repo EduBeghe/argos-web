@@ -183,4 +183,3 @@ export interface PaperDeploymentResponse {
   is_primary: boolean;
   [key: string]: unknown;
 }
-
