@@ -117,6 +117,7 @@ export type CategoryCounts = Record<FamilyCategory, number | null>;
 export interface IntegritySection {
   valid: boolean;
   failure_codes: string[];
+  provenance_strength?: string | null;
   [key: string]: unknown;
 }
 
@@ -126,11 +127,11 @@ export interface CampaignFamilyAuditResponse {
   evidence_integrity: IntegritySection;
   temporal_provenance_integrity: IntegritySection;
   overall_valid: boolean;
-  provenance_strength?: string | null;
   temporal_manifest?: Record<string, unknown> | null;
   reconstructed_manifest_status?: string | null;
   reconstructed_manifest_id?: string | null;
-  winning_evidence?: Record<string, unknown> | null;
+  winning_evaluation?: Record<string, unknown> | null;
+  winning_configuration?: Record<string, unknown> | null;
   independent_sample_diagnostic?: Record<string, unknown> | null;
   [key: string]: unknown;
 }
@@ -182,3 +183,4 @@ export interface PaperDeploymentResponse {
   is_primary: boolean;
   [key: string]: unknown;
 }
+
