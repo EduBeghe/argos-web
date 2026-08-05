@@ -13,9 +13,18 @@ describe('application route protection', () => {
       'ml-refinement',
       'ml-search-campaigns',
       'ml-search-campaigns/:campaignId',
+      'paper-strategies',
       'instruments/detail',
     ]);
     expect(routes.find((route) => route.path === '**')?.canActivate?.length).toBe(1);
+  });
+
+  it('lazy-loads Paper Strategies inside the authenticated shell', () => {
+    const route = routes
+      .find((item) => item.path === '')
+      ?.children?.find((item) => item.path === 'paper-strategies');
+    expect(route?.loadComponent).toBeTypeOf('function');
+    expect(route?.canActivate).toBeUndefined();
   });
 
   it('lazy-loads both authenticated ML search campaign routes', () => {

@@ -1,0 +1,398 @@
+<section class="protected" aria-labelledby="protected-title">
+  <header>
+    <div>
+      <p class="eyebrow">One-shot scientific boundary</p>
+      <h3 id="protected-title">Protected validation</h3>
+    </div>
+    @if (!opened()) {
+      <button type="button" (click)="open()">Open protected workflow</button>
+    } @else {
+      <button type="button" class="secondary" [disabled]="pending()" (click)="refresh()">
+        Refresh
+      </button>
+    }
+  </header>
+  @if (opened()) {
+    <p class="boundary">
+      The 2024–2026 protected period may be consumed once for an immutable candidate identity. It
+      cannot tune features, thresholds, or hyperparameters.
+    </p>
+    @if (loading()) {
+      <p aria-live="polite">Loading protected evidence…</p>
+    }
+    @if (auditError()) {
+      <p role="alert" class="error">{{ auditError() }}</p>
+    }
+    @if (validationError()) {
+      <p role="alert" class="error">{{ validationError() }}</p>
+    }
+    @if (mutationError()) {
+      <p role="alert" class="error">{{ mutationError() }}</p>
+    }
+    <ol class="steps">
+      <li>
+        <h4>1. Development audit</h4>
+        @if (audit(); as item) {
+          <dl>
+            <div>
+              <dt>Evidence integrity</dt>
+              <dd>{{ item.evidence_integrity.valid ? 'Valid' : 'Invalid' }}</dd>
+            </div>
+            <div>
+              <dt>Temporal provenance</dt>
+              <dd>{{ item.temporal_provenance_integrity.valid ? 'Valid' : 'Invalid' }}</dd>
+            </div>
+            <div>
+              <dt>Overall valid</dt>
+              <dd>{{ item.overall_valid ? 'Yes' : 'No' }}</dd>
+            </div>
+            <div>
+              <dt>Provenance strength</dt>
+              <dd>
+                {{ item.temporal_provenance_integrity.provenance_strength ?? 'Not available' }}
+              </dd>
+            </div>
+          </dl>
+          @if (
+            item.evidence_integrity.failure_codes.length ||
+            item.temporal_provenance_integrity.failure_codes.length
+          ) {
+            <details>
+              <summary>Integrity failures</summary>
+              <ul>
+                @for (code of item.evidence_integrity.failure_codes; track code) {
+                  <li>
+                    {{ reason(code) }} <code>{{ code }}</code>
+                  </li>
+                }
+                @for (code of item.temporal_provenance_integrity.failure_codes; track code) {
+                  <li>
+                    {{ reason(code) }} <code>{{ code }}</code>
+                  </li>
+                }
+              </ul>
+            </details>
+          }
+          <details>
+            <summary>Winning evidence and independent-sample diagnostic</summary>
+            <p>Winning evaluation: {{ item.winning_evaluation ? 'Available' : 'Not available' }}</p>
+            <p>
+              Winning configuration:
+              {{ item.winning_configuration ? 'Available' : 'Not available' }}
+            </p>
+            <p>
+              Independent sample:
+              {{ item.independent_sample_diagnostic ? 'Available' : 'Not available' }}
+            </p>
+          </details>
+        } @else {
+          <p>Audit evidence is not available.</p>
+        }
+      </li>
+      <li>
+        <h4>2. Temporal manifest reconstruction</h4>
+        @if (manifest(); as item) {
+          <dl>
+            <div>
+              <dt>Status</dt>
+              <dd>{{ reason(item.status) }}</dd>
+            </div>
+            <div>
+              <dt>Source</dt>
+              <dd>{{ reason(item.source) }}</dd>
+            </div>
+            <div>
+              <dt>Fingerprint verified</dt>
+              <dd>{{ value(item.fingerprint_verified) }}</dd>
+            </div>
+            <div>
+              <dt>Counts verified</dt>
+              <dd>{{ value(item.counts_verified) }}</dd>
+            </div>
+            <div>
+              <dt>Fingerprint</dt>
+              <dd class="hash">{{ item.manifest_fingerprint ?? 'Not available' }}</dd>
+            </div>
+          </dl>
+          @if (item.failure_code) {
+            <p class="error">
+              {{ reason(item.failure_code) }} <code>{{ item.failure_code }}</code
+              >: {{ item.failure_message }}
+            </p>
+          }
+          <div class="actions">
+            @if (item.status === 'failed' || item.status === 'cancelled') {
+              <button type="button" [disabled]="pending()" (click)="retryManifest()">
+                Retry reconstruction
+              </button>
+            }
+            @if (item.status === 'queued' || item.status === 'running') {
+              <button
+                type="button"
+                class="danger"
+                [disabled]="pending()"
+                (click)="setConfirmation('manifest-cancel')"
+              >
+                Cancel
+              </button>
+            }
+          </div>
+          @if (confirmation() === 'manifest-cancel') {
+            <div class="confirmation">
+              <p>Cancel reconstruction {{ item.id }}?</p>
+              <button type="button" [disabled]="pending()" (click)="cancelManifest()">
+                Confirm cancel</button
+              ><button
+                type="button"
+                class="secondary"
+                [disabled]="pending()"
+                (click)="setConfirmation(null)"
+              >
+                Keep running
+              </button>
+            </div>
+          }
+          <details>
+            <summary>Manifest evidence</summary>
+            <p>
+              Large manifest evidence is preserved by the backend. Verification values above are
+              authoritative.
+            </p>
+          </details>
+        } @else {
+          <p>No temporal manifest exists.</p>
+          <button type="button" [disabled]="pending()" (click)="reconstruct()">
+            Reconstruct temporal provenance
+          </button>
+        }
+      </li>
+      <li>
+        <h4>3. Protected final validation</h4>
+        @if (audit()?.overall_valid) {
+          <button type="button" [disabled]="pending()" (click)="setConfirmation('validate')">
+            Enqueue protected validation
+          </button>
+        } @else {
+          <p>Validation remains unavailable until the refreshed audit is fully valid.</p>
+        }
+        @if (confirmation() === 'validate') {
+          <div class="confirmation">
+            <p>
+              This consumes protected 2024–2026 evidence once for this immutable identity. It cannot
+              retune the candidate and cannot be retried after protected data is read.
+            </p>
+            <button type="button" [disabled]="pending()" (click)="enqueueValidation()">
+              Consume protected evidence</button
+            ><button
+              type="button"
+              class="secondary"
+              [disabled]="pending()"
+              (click)="setConfirmation(null)"
+            >
+              Go back
+            </button>
+          </div>
+        }
+        @if (validations().length) {
+          <label
+            >Validation evidence<select
+              #validationControl
+              [disabled]="pending()"
+              (change)="selectValidation(validations()[validationControl.selectedIndex]!)"
+            >
+              @for (item of validations(); track item.id) {
+                <option>
+                  {{ item.created_at | date: 'medium' : 'UTC' }} UTC · {{ item.status }} ·
+                  {{ compatible(item) ? 'Current contract' : 'Legacy contract' }}
+                </option>
+              }
+            </select></label
+          >
+        }
+        @if (selectedValidation(); as item) {
+          <article class="validation">
+            <p class="contract" [class.legacy]="!compatible(item)">
+              {{
+                compatible(item)
+                  ? 'Current corrected contract'
+                  : 'Legacy contract — readable only, not retryable or deployable'
+              }}
+            </p>
+            <p>
+              <strong>{{ presentation(item.classification) }}</strong>
+            </p>
+            <dl>
+              <div>
+                <dt>Status</dt>
+                <dd>{{ reason(item.status) }}</dd>
+              </div>
+              <div>
+                <dt>Protected data read</dt>
+                <dd>
+                  {{
+                    item.protected_data_read_at
+                      ? (item.protected_data_read_at | date: 'medium' : 'UTC') + ' UTC'
+                      : 'Not available'
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt>Completed</dt>
+                <dd>
+                  {{
+                    item.completed_at
+                      ? (item.completed_at | date: 'medium' : 'UTC') + ' UTC'
+                      : 'Not available'
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt>Simulation / policy / cadence</dt>
+                <dd>
+                  {{ value(item.frozen_inputs['simulation_version']) }} /
+                  {{ value(item.frozen_inputs['policy_version']) }} /
+                  {{ value(item.frozen_inputs['decision_cadence_seconds']) }} seconds
+                </dd>
+              </div>
+              <div>
+                <dt>Confidence fraction</dt>
+                <dd>
+                  {{
+                    value(
+                      item.execution_manifest?.['confidence_bucket_fraction'] ??
+                        item.frozen_inputs['confidence_bucket_fraction']
+                    )
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt>Signed-score threshold</dt>
+                <dd>{{ value(item.execution_manifest?.['signed_score_threshold']) }}</dd>
+              </div>
+              <div>
+                <dt>Development / protected rows</dt>
+                <dd>
+                  {{ value(item.execution_manifest?.['development_row_count']) }} /
+                  {{ value(item.execution_manifest?.['protected_row_count']) }}
+                </dd>
+              </div>
+              <div>
+                <dt>Protected boundaries</dt>
+                <dd>
+                  {{ value(item.execution_manifest?.['first_protected_boundary']) }} —
+                  {{ value(item.execution_manifest?.['last_protected_boundary']) }}
+                </dd>
+              </div>
+            </dl>
+            @if (item.failed_rules?.length) {
+              <ul>
+                @for (rule of item.failed_rules ?? []; track rule) {
+                  <li>
+                    {{ reason(rule) }} <code>{{ rule }}</code>
+                  </li>
+                }
+              </ul>
+            }
+            @if (item.failure_code) {
+              <p class="error">
+                {{ reason(item.failure_code) }} <code>{{ item.failure_code }}</code
+                >: {{ item.failure_message }}
+              </p>
+            }
+            <details>
+              <summary>Authoritative scenario metrics</summary>
+              @if (item.scenario_metrics) {
+                <dl>
+                  @for (metric of item.scenario_metrics | keyvalue; track metric.key) {
+                    <div>
+                      <dt>{{ reason(metric.key) }}</dt>
+                      <dd>{{ value(metric.value) }}</dd>
+                    </div>
+                  }
+                </dl>
+              } @else {
+                <p>Not available</p>
+              }
+            </details>
+            <div class="actions">
+              @if (
+                compatible(item) &&
+                !item.protected_data_read_at &&
+                (item.status === 'failed' || item.status === 'cancelled')
+              ) {
+                <button type="button" [disabled]="pending()" (click)="retryValidation()">
+                  Retry validation
+                </button>
+              }
+              @if (item.status === 'queued' || item.status === 'running') {
+                <button
+                  type="button"
+                  class="danger"
+                  [disabled]="pending()"
+                  (click)="setConfirmation('validation-cancel')"
+                >
+                  Cancel validation
+                </button>
+              }
+            </div>
+            @if (confirmation() === 'validation-cancel') {
+              <div class="confirmation">
+                <p>Cancel validation {{ item.id }}?</p>
+                <button type="button" [disabled]="pending()" (click)="cancelValidation()">
+                  Confirm cancel</button
+                ><button
+                  type="button"
+                  class="secondary"
+                  [disabled]="pending()"
+                  (click)="setConfirmation(null)"
+                >
+                  Keep running
+                </button>
+              </div>
+            }
+          </article>
+        }
+      </li>
+      <li>
+        <h4>4. Paper deployment</h4>
+        @if (selectedValidation(); as item) {
+          @if (
+            item.status === 'completed' && item.classification === 'passed' && compatible(item)
+          ) {
+            <label
+              >Display name<input
+                #nameControl
+                maxlength="80"
+                [disabled]="pending()"
+                [value]="displayName()"
+                (input)="displayName.set(nameControl.value)" /></label
+            ><label class="checkbox"
+              ><input
+                #primaryControl
+                type="checkbox"
+                [disabled]="pending()"
+                [checked]="makePrimary()"
+                (change)="makePrimary.set(primaryControl.checked)"
+              />
+              Make primary</label
+            ><button
+              type="button"
+              [disabled]="pending() || !validName(displayName())"
+              (click)="deploy()"
+            >
+              Deploy strategy
+            </button>
+          } @else {
+            <p>This evidence is not eligible for deployment.</p>
+          }
+        }
+        @if (deployedId()) {
+          <p class="success" aria-live="polite">
+            Paper deployment created. <a routerLink="/paper-strategies">Open Paper Strategies</a> ·
+            ID {{ deployedId() }}
+          </p>
+        }
+      </li>
+    </ol>
+  }
+</section>

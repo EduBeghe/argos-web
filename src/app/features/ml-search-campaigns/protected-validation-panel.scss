@@ -1,0 +1,108 @@
+.protected {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #405b76;
+  border-radius: 0.7rem;
+  background: #0b1727;
+}
+.protected > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.eyebrow {
+  margin: 0;
+  color: #94a9c1;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.boundary,
+.confirmation {
+  padding: 0.8rem;
+  border-left: 3px solid #b69b5d;
+  background: #16263a;
+}
+.steps {
+  display: grid;
+  gap: 1rem;
+  padding-left: 1.4rem;
+}
+.steps > li {
+  padding: 1rem;
+  border: 1px solid #2c4057;
+  border-radius: 0.55rem;
+  background: #0f1d2f;
+}
+dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #24364b;
+}
+dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+}
+button,
+a {
+  border: 1px solid #52677f;
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  color: #dce7f2;
+  background: #182a3f;
+  text-decoration: none;
+}
+.secondary {
+  background: transparent;
+}
+.danger {
+  border-color: #815453;
+}
+.error,
+.legacy {
+  color: #deb2ae;
+}
+.contract {
+  padding: 0.4rem;
+  border-left: 3px solid #54846a;
+}
+.success {
+  color: #acd7ba;
+}
+.hash {
+  font-family: monospace;
+}
+.checkbox {
+  display: flex;
+  gap: 0.5rem;
+}
+label {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.6rem 0;
+}
+select,
+input {
+  max-width: 100%;
+  padding: 0.5rem;
+  color: #edf3fb;
+  background: #101f32;
+  border: 1px solid #52677f;
+}
+@media (max-width: 42rem) {
+  .protected > header,
+  dl div {
+    display: block;
+  }
+  dd {
+    text-align: left;
+  }
+}
