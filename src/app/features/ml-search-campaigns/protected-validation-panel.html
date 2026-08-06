@@ -91,74 +91,85 @@
       </li>
       <li>
         <h4>2. Temporal manifest reconstruction</h4>
-        @if (manifest(); as item) {
-          <dl>
-            <div>
-              <dt>Status</dt>
-              <dd>{{ reason(item.status) }}</dd>
+        @if (manifestPresentation().status === 'available') {
+          @if (manifest(); as item) {
+            <dl>
+              <div>
+                <dt>Status</dt>
+                <dd>{{ reason(item.status) }}</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd>{{ reason(item.source) }}</dd>
+              </div>
+              <div>
+                <dt>Fingerprint verified</dt>
+                <dd>{{ value(item.fingerprint_verified) }}</dd>
+              </div>
+              <div>
+                <dt>Counts verified</dt>
+                <dd>{{ value(item.counts_verified) }}</dd>
+              </div>
+              <div>
+                <dt>Fingerprint</dt>
+                <dd class="hash">{{ item.manifest_fingerprint ?? 'Not available' }}</dd>
+              </div>
+            </dl>
+            @if (item.failure_code) {
+              <p class="error">
+                {{ reason(item.failure_code) }} <code>{{ item.failure_code }}</code
+                >: {{ item.failure_message }}
+              </p>
+            }
+            <div class="actions">
+              @if (item.status === 'failed' || item.status === 'cancelled') {
+                <button type="button" [disabled]="pending()" (click)="retryManifest()">
+                  Retry reconstruction
+                </button>
+              }
+              @if (item.status === 'queued' || item.status === 'running') {
+                <button
+                  type="button"
+                  class="danger"
+                  [disabled]="pending()"
+                  (click)="setConfirmation('manifest-cancel')"
+                >
+                  Cancel
+                </button>
+              }
             </div>
-            <div>
-              <dt>Source</dt>
-              <dd>{{ reason(item.source) }}</dd>
-            </div>
-            <div>
-              <dt>Fingerprint verified</dt>
-              <dd>{{ value(item.fingerprint_verified) }}</dd>
-            </div>
-            <div>
-              <dt>Counts verified</dt>
-              <dd>{{ value(item.counts_verified) }}</dd>
-            </div>
-            <div>
-              <dt>Fingerprint</dt>
-              <dd class="hash">{{ item.manifest_fingerprint ?? 'Not available' }}</dd>
-            </div>
-          </dl>
-          @if (item.failure_code) {
-            <p class="error">
-              {{ reason(item.failure_code) }} <code>{{ item.failure_code }}</code
-              >: {{ item.failure_message }}
-            </p>
+            @if (confirmation() === 'manifest-cancel') {
+              <div class="confirmation">
+                <p>Cancel reconstruction {{ item.id }}?</p>
+                <button type="button" [disabled]="pending()" (click)="cancelManifest()">
+                  Confirm cancel</button
+                ><button
+                  type="button"
+                  class="secondary"
+                  [disabled]="pending()"
+                  (click)="setConfirmation(null)"
+                >
+                  Keep running
+                </button>
+              </div>
+            }
+            <details>
+              <summary>Manifest evidence</summary>
+              <p>
+                Large manifest evidence is preserved by the backend. Verification values above are
+                authoritative.
+              </p>
+            </details>
           }
-          <div class="actions">
-            @if (item.status === 'failed' || item.status === 'cancelled') {
-              <button type="button" [disabled]="pending()" (click)="retryManifest()">
-                Retry reconstruction
-              </button>
-            }
-            @if (item.status === 'queued' || item.status === 'running') {
-              <button
-                type="button"
-                class="danger"
-                [disabled]="pending()"
-                (click)="setConfirmation('manifest-cancel')"
-              >
-                Cancel
-              </button>
-            }
+        } @else if (manifestPresentation().status === 'loading') {
+          <p aria-live="polite">Loading temporal manifest…</p>
+        } @else if (manifestPresentation().status === 'detail-error') {
+          <div role="alert" class="error">
+            <p>Temporal manifest detail is unavailable.</p>
+            <button type="button" class="secondary" [disabled]="pending()" (click)="refresh()">
+              Refresh
+            </button>
           </div>
-          @if (confirmation() === 'manifest-cancel') {
-            <div class="confirmation">
-              <p>Cancel reconstruction {{ item.id }}?</p>
-              <button type="button" [disabled]="pending()" (click)="cancelManifest()">
-                Confirm cancel</button
-              ><button
-                type="button"
-                class="secondary"
-                [disabled]="pending()"
-                (click)="setConfirmation(null)"
-              >
-                Keep running
-              </button>
-            </div>
-          }
-          <details>
-            <summary>Manifest evidence</summary>
-            <p>
-              Large manifest evidence is preserved by the backend. Verification values above are
-              authoritative.
-            </p>
-          </details>
         } @else {
           <p>No temporal manifest exists.</p>
           <button type="button" [disabled]="pending()" (click)="reconstruct()">
