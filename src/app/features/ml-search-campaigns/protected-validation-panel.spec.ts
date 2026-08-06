@@ -65,6 +65,11 @@ const manifest: TemporalManifestResponse = {
   completed_at: '2026-01-01T00:01:00Z',
 };
 
+const auditWithManifest: CampaignFamilyAuditResponse = {
+  ...audit,
+  reconstructed_manifest_id: manifest.id,
+};
+
 describe('ProtectedValidationPanel', () => {
   const emptyValidations: FinalValidationPage = { items: [], next_cursor: null, has_more: false };
   const api = {
@@ -105,6 +110,90 @@ describe('ProtectedValidationPanel', () => {
     expect(fixture.nativeElement.textContent).toContain('complete_reconstruction');
     expect(fixture.nativeElement.textContent).toContain('Winning evaluation: Available');
     expect(fixture.nativeElement.textContent).toContain('Winning configuration: Available');
+    fixture.destroy();
+  });
+
+  it('keeps manifest existence unresolved until identified detail is available', () => {
+    const pending = new Subject<TemporalManifestResponse>();
+    api.audit.mockReturnValue(of(auditWithManifest));
+    api.manifest.mockReturnValue(pending.asObservable());
+    const fixture = create();
+    fixture.componentInstance.open();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Loading temporal manifest…');
+    expect(fixture.nativeElement.textContent).not.toContain('No temporal manifest exists.');
+    expect(fixture.nativeElement.textContent).not.toContain('Reconstruct temporal provenance');
+
+    pending.next(manifest);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Completed');
+    expect(fixture.nativeElement.textContent).toContain(manifest.manifest_fingerprint);
+    expect(fixture.nativeElement.textContent).toContain('Fingerprint verified');
+    expect(fixture.nativeElement.textContent).toContain('Counts verified');
+    fixture.destroy();
+  });
+
+  it('shows manifest detail failure with Refresh and never offers reconstruction', () => {
+    const pending = new Subject<TemporalManifestResponse>();
+    api.audit.mockReturnValue(of(auditWithManifest));
+    api.manifest.mockReturnValue(pending.asObservable());
+    const fixture = create();
+    fixture.componentInstance.open();
+    pending.error(new HttpErrorResponse({ status: 503 }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Temporal manifest detail is unavailable.');
+    expect(fixture.nativeElement.textContent).toContain('Refresh');
+    expect(fixture.nativeElement.textContent).not.toContain('No temporal manifest exists.');
+    expect(fixture.nativeElement.textContent).not.toContain('Reconstruct temporal provenance');
+    fixture.destroy();
+  });
+
+  it('offers reconstruction only after the audit confirms manifest absence', () => {
+    const fixture = create();
+    fixture.componentInstance.open();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('No temporal manifest exists.');
+    expect(fixture.nativeElement.textContent).toContain('Reconstruct temporal provenance');
+    fixture.destroy();
+  });
+
+  it('clears a previous absence while a refreshed audit remains pending', () => {
+    const delayedAudit = new Subject<CampaignFamilyAuditResponse>();
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.open();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No temporal manifest exists.');
+
+    api.audit.mockReturnValueOnce(delayedAudit.asObservable());
+    component.refresh();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Loading temporal manifest…');
+    expect(fixture.nativeElement.textContent).not.toContain('No temporal manifest exists.');
+    expect(fixture.nativeElement.textContent).not.toContain('Reconstruct temporal provenance');
+    fixture.destroy();
+  });
+
+  it('ignores stale manifest detail after a newer audit confirms absence', () => {
+    const staleDetail = new Subject<TemporalManifestResponse>();
+    api.audit.mockReturnValueOnce(of(auditWithManifest));
+    api.manifest.mockReturnValue(staleDetail.asObservable());
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.open();
+    expect(component.manifestPresentation().status).toBe('loading');
+
+    api.audit.mockReturnValueOnce(of(audit));
+    component.refresh();
+    expect(component.manifestPresentation().status).toBe('absent');
+    staleDetail.next(manifest);
+    fixture.detectChanges();
+    expect(component.manifestPresentation().status).toBe('absent');
+    expect(component.manifest()).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('No temporal manifest exists.');
     fixture.destroy();
   });
 

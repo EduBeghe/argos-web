@@ -91,7 +91,16 @@
       </li>
       <li>
         <h4>2. Temporal manifest reconstruction</h4>
-        @if (manifest(); as item) {
+        @if (manifestPresentation().status === 'loading') {
+          <p aria-live="polite">Loading temporal manifest…</p>
+        } @else if (manifestPresentation().status === 'detail-error') {
+          <div role="alert" class="error">
+            <p>Temporal manifest detail is unavailable.</p>
+            <button type="button" class="secondary" [disabled]="pending()" (click)="refresh()">
+              Refresh
+            </button>
+          </div>
+        } @else if (manifest(); as item) {
           <dl>
             <div>
               <dt>Status</dt>

@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -29,6 +30,12 @@ import {
   validationPresentation,
 } from './protected-validation.helpers';
 
+type ManifestPresentationState =
+  | { status: 'loading' }
+  | { status: 'absent' }
+  | { status: 'available'; manifest: TemporalManifestResponse }
+  | { status: 'detail-error' };
+
 @Component({
   selector: 'app-protected-validation-panel',
   imports: [DatePipe, KeyValuePipe, RouterLink],
@@ -50,7 +57,11 @@ export class ProtectedValidationPanel {
 
   readonly opened = signal(false);
   readonly audit = signal<CampaignFamilyAuditResponse | null>(null);
-  readonly manifest = signal<TemporalManifestResponse | null>(null);
+  readonly manifestPresentation = signal<ManifestPresentationState>({ status: 'loading' });
+  readonly manifest = computed(() => {
+    const state = this.manifestPresentation();
+    return state.status === 'available' ? state.manifest : null;
+  });
   readonly validations = signal<FinalValidationResponse[]>([]);
   readonly selectedValidation = signal<FinalValidationResponse | null>(null);
   readonly loading = signal(false);
@@ -76,7 +87,7 @@ export class ProtectedValidationPanel {
         this.cancelContext();
         this.opened.set(false);
         this.audit.set(null);
-        this.manifest.set(null);
+        this.manifestPresentation.set({ status: 'loading' });
         this.validations.set([]);
         this.selectedValidation.set(null);
         this.confirmation.set(null);
@@ -101,6 +112,7 @@ export class ProtectedValidationPanel {
     if (this.pending()) return;
     const generation = ++this.generation;
     this.cancelReadsAndPolling();
+    this.manifestPresentation.set({ status: 'loading' });
     this.loading.set(true);
     this.readRequests.push(
       this.api
@@ -110,8 +122,8 @@ export class ProtectedValidationPanel {
           next: (audit) => {
             if (generation !== this.generation) return;
             this.audit.set(audit);
-            this.manifest.set(null);
             if (audit.reconstructed_manifest_id) {
+              this.manifestPresentation.set({ status: 'loading' });
               this.readRequests.push(
                 this.api
                   .manifest(audit.reconstructed_manifest_id)
@@ -119,15 +131,17 @@ export class ProtectedValidationPanel {
                   .subscribe({
                     next: (manifest) => {
                       if (generation !== this.generation) return;
-                      this.manifest.set(manifest);
+                      this.manifestPresentation.set({ status: 'available', manifest });
                       this.configurePolling();
                     },
                     error: () => {
                       if (generation !== this.generation) return;
-                      this.mutationError.set('Temporal manifest detail is unavailable.');
+                      this.manifestPresentation.set({ status: 'detail-error' });
                     },
                   }),
               );
+            } else {
+              this.manifestPresentation.set({ status: 'absent' });
             }
             this.auditError.set('');
             this.loading.set(false);
@@ -167,7 +181,7 @@ export class ProtectedValidationPanel {
 
   reconstruct(): void {
     this.run(this.api.reconstruct(this.campaignId(), this.family().id), (manifest) => {
-      this.manifest.set(manifest);
+      this.manifestPresentation.set({ status: 'available', manifest });
       this.configurePolling();
     });
   }
@@ -175,7 +189,7 @@ export class ProtectedValidationPanel {
     const item = this.manifest();
     if (item)
       this.run(this.api.manifestAction(item.id, 'retry'), (value) => {
-        this.manifest.set(value);
+        this.manifestPresentation.set({ status: 'available', manifest: value });
         this.configurePolling();
       });
   }
@@ -184,7 +198,7 @@ export class ProtectedValidationPanel {
     if (item)
       this.run(this.api.manifestAction(item.id, 'cancel'), (value) => {
         this.confirmation.set(null);
-        this.manifest.set(value);
+        this.manifestPresentation.set({ status: 'available', manifest: value });
         this.configurePolling();
       });
   }
@@ -283,7 +297,7 @@ export class ProtectedValidationPanel {
         this.api.manifest(manifest.id).subscribe({
           next: (value) => {
             if (generation !== this.generation) return;
-            this.manifest.set(value);
+            this.manifestPresentation.set({ status: 'available', manifest: value });
             if (value.status === 'completed' && value.fingerprint_verified && value.counts_verified)
               this.refresh();
             else this.configurePolling();
