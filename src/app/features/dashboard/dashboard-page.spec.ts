@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { Observable, of, Subject, throwError } from 'rxjs';
 
@@ -8,6 +9,7 @@ import { dashboardOverview, dashboardWithPaper, paperSnapshot } from './dashboar
 import { DashboardOverview, PaperPortfolioSnapshot } from './dashboard.models';
 import { DashboardPage } from './dashboard-page';
 import { PaperHistoryApiService } from '../paper-history/paper-history-api.service';
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 
 describe('DashboardPage', () => {
   const api = {
@@ -42,20 +44,23 @@ describe('DashboardPage', () => {
     expect(TestBed.inject(Router).url).toBe('/evaluation');
   });
 
-  it('presents research and evaluation routes as keyboard-focusable navigation buttons', () => {
+  it('presents all other workspaces separately from the evaluation action', () => {
     api.getOverview.mockReturnValue(of(dashboardWithPaper));
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
-    const links = [
-      ...fixture.nativeElement.querySelectorAll('a.secondary-action'),
+    const navigation = fixture.debugElement.query(By.directive(WorkspaceNavigation));
+    expect(navigation.componentInstance.currentWorkspace()).toBe('dashboard');
+    const workspaceLinks = [
+      ...navigation.nativeElement.querySelectorAll('a'),
     ] as HTMLAnchorElement[];
-    expect(links.map((link) => link.getAttribute('routerLink'))).toEqual([
-      '/strategies',
+    expect(workspaceLinks.map((link) => link.getAttribute('href'))).toEqual([
+      '/ml-search-campaigns',
       '/ml-refinement',
+      '/strategies',
       '/paper-strategies',
-      '/evaluation',
     ]);
-    expect(links.every((link) => link.tabIndex === 0)).toBe(true);
+    expect(workspaceLinks.every((link) => link.tabIndex === 0)).toBe(true);
+    expect(fixture.nativeElement.querySelector('a[routerLink="/evaluation"]')).not.toBeNull();
   });
 
   it('shows initial loading and then a data-driven instrument with no active run', () => {

@@ -3,10 +3,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Subscription, timer } from 'rxjs';
 
 import { MetricHelp } from '../../shared/components/metric-help/metric-help';
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import { MetricKey } from '../../shared/metrics/metric-definitions';
 import { MlRefinementApiService } from './ml-refinement-api.service';
 import {
@@ -47,7 +47,7 @@ const IMPORTANT_METRICS: Readonly<Record<string, MetricKey>> = {
 
 @Component({
   selector: 'app-ml-refinement-page',
-  imports: [DatePipe, JsonPipe, KeyValuePipe, MetricHelp, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, JsonPipe, KeyValuePipe, MetricHelp, ReactiveFormsModule, WorkspaceNavigation],
   templateUrl: './ml-refinement-page.html',
   styleUrl: './ml-refinement-page.scss',
 })

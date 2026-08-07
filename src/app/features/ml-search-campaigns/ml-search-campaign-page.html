@@ -8,11 +8,7 @@
         treating development evidence as trading approval.
       </p>
     </div>
-    <nav class="hero-links" aria-label="ML research workspaces">
-      <a routerLink="/ml-refinement" class="button secondary">Manual Refinement</a>
-      <a routerLink="/strategies" class="button secondary">Strategy Research</a>
-      <a routerLink="/paper-strategies" class="button secondary">Paper Strategies</a>
-    </nav>
+    <app-workspace-navigation currentWorkspace="automated-search" />
   </header>
 
   <p class="live" aria-live="polite">{{ liveMessage() }}</p>

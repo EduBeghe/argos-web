@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { Observable, of, Subject, throwError } from 'rxjs';
 
@@ -12,6 +13,7 @@ import {
   ScreeningRun,
 } from './ml-refinement.models';
 import { MlRefinementPage } from './ml-refinement-page';
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 
 const contract: RefinementContract = {
   contract_version: 2,
@@ -101,6 +103,14 @@ const completedRun: RefinementRun = {
 };
 
 describe('MlRefinementPage', () => {
+  it('supplies the ML Refinement workspace identity to shared navigation', () => {
+    const { fixture } = create();
+    const navigation = fixture.debugElement.query(By.directive(WorkspaceNavigation));
+
+    expect(navigation.componentInstance.currentWorkspace()).toBe('ml-refinement');
+    expect(navigation.nativeElement.querySelectorAll('a')).toHaveLength(4);
+  });
+
   const api = {
     getContract: vi.fn<() => Observable<RefinementContract>>(),
     getScreeningRuns: vi.fn(),
