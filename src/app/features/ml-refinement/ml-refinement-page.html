@@ -8,11 +8,7 @@
         an approved trading Strategy.
       </p>
     </div>
-    <nav class="hero-actions" aria-label="Related research workspaces">
-      <a routerLink="/ml-search-campaigns" class="button secondary">Automated Search</a>
-      <a routerLink="/strategies" class="button secondary">Strategy Research</a>
-      <a routerLink="/paper-strategies" class="button secondary">Paper Strategies</a>
-    </nav>
+    <app-workspace-navigation currentWorkspace="ml-refinement" />
   </header>
   <nav class="tabs" role="tablist" aria-label="ML Refinement sections">
     @for (item of tabs; track item) {

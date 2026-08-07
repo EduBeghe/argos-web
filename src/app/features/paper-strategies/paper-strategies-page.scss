@@ -22,14 +22,12 @@ h2 {
   margin: 0.2rem 0;
   color: #edf3fb;
 }
-nav,
 .actions,
 .filters {
   display: flex;
   gap: 0.65rem;
   flex-wrap: wrap;
 }
-a,
 button {
   border: 1px solid #52677f;
   border-radius: 0.45rem;
@@ -124,7 +122,7 @@ button:disabled {
   .page-header {
     display: block;
   }
-  .page-header nav {
+  .page-header app-workspace-navigation {
     margin-top: 1rem;
   }
   .filters {

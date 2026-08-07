@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { BehaviorSubject, Observable, of, Subject, throwError } from 'rxjs';
 
@@ -11,6 +12,7 @@ import {
   SearchCampaignFamily,
 } from './ml-search-campaign.models';
 import { MlSearchCampaignPage } from './ml-search-campaign-page';
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 
 const contract: CampaignContract = {
   preset: 'exhaustive_ohlcv_v1',
@@ -97,6 +99,19 @@ const page = <T>(items: T[], total = items.length, limit = 50): Page<T> => ({
 });
 
 describe('MlSearchCampaignPage', () => {
+  it('identifies list and detail routes as the Automated Search workspace', () => {
+    const fixture = create();
+    const navigation = fixture.debugElement.query(By.directive(WorkspaceNavigation));
+
+    expect(navigation.componentInstance.currentWorkspace()).toBe('automated-search');
+    expect(
+      [...navigation.nativeElement.querySelectorAll('a')].map((link: HTMLAnchorElement) =>
+        link.getAttribute('href'),
+      ),
+    ).not.toContain('/ml-search-campaigns');
+    fixture.destroy();
+  });
+
   const params = new BehaviorSubject(convertToParamMap({ campaignId: campaign.id }));
   const api = {
     getContract: vi.fn<() => Observable<CampaignContract>>(),

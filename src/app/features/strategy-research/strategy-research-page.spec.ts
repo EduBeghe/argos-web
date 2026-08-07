@@ -1,13 +1,23 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 
 import { StrategyResearchApiService } from './strategy-research-api.service';
 import { StrategyResearchPage } from './strategy-research-page';
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import { EdgeGuidedRun, RunPage, TargetedCandidatePage } from './strategy-research.models';
 
 describe('StrategyResearchPage workspace', () => {
+  it('supplies the Strategy Research workspace identity to shared navigation', () => {
+    const fixture = render();
+    const navigation = fixture.debugElement.query(By.directive(WorkspaceNavigation));
+
+    expect(navigation.componentInstance.currentWorkspace()).toBe('strategy-research');
+    expect(navigation.nativeElement.querySelectorAll('a')).toHaveLength(4);
+  });
+
   const api = {
     getRuns: vi.fn(),
     getDiagnostics: vi.fn(),

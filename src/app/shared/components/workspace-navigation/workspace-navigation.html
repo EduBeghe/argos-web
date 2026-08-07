@@ -1,0 +1,7 @@
+<nav aria-label="Argos workspaces">
+  @for (workspace of workspaces; track workspace.identity) {
+    @if (workspace.identity !== currentWorkspace()) {
+      <a [routerLink]="workspace.route">{{ workspace.label }}</a>
+    }
+  }
+</nav>

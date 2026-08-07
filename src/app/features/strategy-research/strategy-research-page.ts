@@ -8,10 +8,10 @@ import {
   OnDestroy,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { MetricHelp } from '../../shared/components/metric-help/metric-help';
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import {
   formatCurrency,
   formatPercentage,
@@ -59,7 +59,7 @@ const CONDITIONS = [
 
 @Component({
   selector: 'app-strategy-research-page',
-  imports: [DatePipe, JsonPipe, RouterLink, MetricHelp, EdgeEvidenceChart],
+  imports: [DatePipe, JsonPipe, MetricHelp, EdgeEvidenceChart, WorkspaceNavigation],
   templateUrl: './strategy-research-page.html',
   styleUrl: './strategy-research-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

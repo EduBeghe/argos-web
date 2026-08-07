@@ -2,9 +2,9 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import { PaperStrategyApiService } from './paper-strategy-api.service';
 import {
   actionWarning,
@@ -17,7 +17,7 @@ import { CursorPage, DeploymentAction, PaperDeployment } from './paper-strategy.
 
 @Component({
   selector: 'app-paper-strategies-page',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, WorkspaceNavigation],
   templateUrl: './paper-strategies-page.html',
   styleUrl: './paper-strategies-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

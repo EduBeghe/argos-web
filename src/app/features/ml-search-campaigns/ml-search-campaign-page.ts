@@ -13,6 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, Subscription, timer } from 'rxjs';
 
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import { MlSearchCampaignApiService } from './ml-search-campaign-api.service';
 import { ProtectedValidationPanel } from './protected-validation-panel';
 import {
@@ -51,7 +52,7 @@ const EMPTY_COUNTS: CategoryCounts = {
 
 @Component({
   selector: 'app-ml-search-campaign-page',
-  imports: [DatePipe, RouterLink, ProtectedValidationPanel],
+  imports: [DatePipe, RouterLink, ProtectedValidationPanel, WorkspaceNavigation],
   templateUrl: './ml-search-campaign-page.html',
   styleUrl: './ml-search-campaign-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

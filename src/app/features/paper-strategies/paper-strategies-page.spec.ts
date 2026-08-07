@@ -1,9 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { Observable, of, Subject } from 'rxjs';
 
 import { PaperStrategiesPage } from './paper-strategies-page';
+import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import { PaperStrategyApiService } from './paper-strategy-api.service';
 import { CursorPage, PaperDeployment } from './paper-strategy.models';
 
@@ -27,6 +29,14 @@ const page: CursorPage<PaperDeployment> = {
 };
 
 describe('PaperStrategiesPage', () => {
+  it('supplies the Paper Strategies workspace identity to shared navigation', () => {
+    const fixture = create();
+    const navigation = fixture.debugElement.query(By.directive(WorkspaceNavigation));
+
+    expect(navigation.componentInstance.currentWorkspace()).toBe('paper-strategies');
+    expect(navigation.nativeElement.querySelectorAll('a')).toHaveLength(4);
+  });
+
   const api = {
     list: vi.fn<() => Observable<CursorPage<PaperDeployment>>>(),
     mutate: vi.fn<() => Observable<PaperDeployment>>(),

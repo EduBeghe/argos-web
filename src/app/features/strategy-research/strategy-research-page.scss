@@ -35,8 +35,7 @@ h2 {
 }
 button,
 select,
-input,
-.nav-button {
+input {
   font: inherit;
   color: #d4dde4;
   background: #222d34;
@@ -44,13 +43,11 @@ input,
   border-radius: 0.45rem;
   padding: 0.58rem 0.75rem;
 }
-button,
-.nav-button {
+button {
   cursor: pointer;
   text-decoration: none;
 }
 button:focus-visible,
-.nav-button:focus-visible,
 select:focus-visible,
 input:focus-visible {
   outline: 2px solid #86aabd;
