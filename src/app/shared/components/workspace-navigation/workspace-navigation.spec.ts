@@ -40,12 +40,12 @@ describe('WorkspaceNavigation', () => {
     expect(
       anchors.map((anchor) => ({
         label: anchor.nativeElement.textContent.trim(),
-        route: anchor.injector.get(RouterLink).routerLink,
+        route: anchor.nativeElement.getAttribute('href'),
       })),
     ).toEqual(expected.map((workspace) => ({ label: workspace.label, route: workspace.route })));
-    expect(
-      anchors.filter((anchor) => anchor.injector.get(RouterLink).routerLink === route),
-    ).toEqual([]);
+    expect(anchors.filter((anchor) => anchor.nativeElement.getAttribute('href') === route)).toEqual(
+      [],
+    );
     expect(anchors.every((anchor) => anchor.nativeElement.tabIndex === 0)).toBe(true);
   });
 
