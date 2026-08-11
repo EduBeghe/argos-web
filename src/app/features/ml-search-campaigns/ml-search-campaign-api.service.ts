@@ -85,7 +85,7 @@ export class MlSearchCampaignApiService {
   getDiagnosticQualifications(
     campaignId: string,
     offset = 0,
-    limit = 100,
+    limit = 200,
   ): Observable<Page<DiagnosticQualification>> {
     return this.http.get<Page<DiagnosticQualification>>(
       `${this.base}/optimization/ml-search-campaigns/${encodeURIComponent(campaignId)}/qualifications`,

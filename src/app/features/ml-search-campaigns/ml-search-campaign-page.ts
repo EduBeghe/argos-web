@@ -11,7 +11,19 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of, Subscription, timer } from 'rxjs';
+import {
+  catchError,
+  EMPTY,
+  expand,
+  forkJoin,
+  map,
+  Observable,
+  of,
+  reduce,
+  Subscription,
+  throwError,
+  timer,
+} from 'rxjs';
 
 import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import { MlSearchCampaignApiService } from './ml-search-campaign-api.service';
@@ -37,6 +49,7 @@ import {
   FamilyFilters,
   DiagnosticQualification,
   DiagnosticQualificationEnqueueResponse,
+  DiagnosticQualificationView,
   Page,
   SearchCampaign,
   SearchCampaignFamily,
@@ -44,6 +57,8 @@ import {
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 const ACTIVE = new Set<string>(['queued', 'running']);
+const DIAGNOSTIC_PAGE_LIMIT = 200;
+const DIAGNOSTIC_REQUEST_VERSION = 1;
 const EMPTY_COUNTS: CategoryCounts = {
   strong: null,
   competing: null,
@@ -76,6 +91,7 @@ export class MlSearchCampaignPage implements OnInit {
   private diagnosticRequest?: Subscription;
   private diagnosticSubmitRequest?: Subscription;
   private diagnosticPoll?: Subscription;
+  private readonly diagnosticPlaceholders = new Map<string, DiagnosticQualificationView>();
   private listGeneration = 0;
   private selectionGeneration = 0;
   private familyGeneration = 0;
@@ -122,7 +138,7 @@ export class MlSearchCampaignPage implements OnInit {
   readonly mutationError = signal('');
   readonly liveMessage = signal('');
   readonly diagnosticSelection = signal<ReadonlyMap<string, SearchCampaignFamily>>(new Map());
-  readonly diagnosticPage = signal<Page<DiagnosticQualification> | null>(null);
+  readonly diagnosticPage = signal<Page<DiagnosticQualificationView> | null>(null);
   readonly diagnosticState = signal<LoadState>('idle');
   readonly diagnosticError = signal('');
   readonly diagnosticStale = signal(false);
@@ -601,6 +617,32 @@ export class MlSearchCampaignPage implements OnInit {
           }
           const created = response.items.filter((item) => item.created).length;
           const reused = response.items.filter((item) => item.reused).length;
+          const acceptedAt = new Date().toISOString();
+          const selected = this.diagnosticSelection();
+          const placeholders = response.items.map((item): DiagnosticQualificationView => {
+            const family = selected.get(item.family_id)!;
+            return {
+              id: item.qualification_id,
+              campaign_id: campaign.id,
+              family_id: item.family_id,
+              provenance: 'diagnostic_stage3_near_miss',
+              status: item.status,
+              engine: family.engine,
+              objective: family.objective,
+              search_track: family.search_track || 'not_available',
+              future_duration_seconds: family.future_duration_seconds,
+              feature_variant: family.feature_variant,
+              created_at: acceptedAt,
+              completed_at: null,
+              created: item.created,
+              reused: item.reused,
+              qualification: null,
+            };
+          });
+          for (const placeholder of placeholders) {
+            this.diagnosticPlaceholders.set(placeholder.id, placeholder);
+          }
+          this.publishDiagnosticViews([...(this.diagnosticPage()?.items ?? []), ...placeholders]);
           this.diagnosticSubmitting.set(false);
           this.diagnosticConfirmation.set(false);
           this.diagnosticMessage.set(
@@ -628,16 +670,15 @@ export class MlSearchCampaignPage implements OnInit {
     const generation = this.diagnosticGeneration;
     if (!this.diagnosticPage()) this.diagnosticState.set('loading');
     this.diagnosticRequest?.unsubscribe();
-    this.diagnosticRequest = this.api
-      .getDiagnosticQualifications(campaign.id)
+    this.diagnosticRequest = this.loadAllDiagnosticQualifications(campaign.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (page) => {
+        next: (items) => {
           this.diagnosticRequest = undefined;
           if (!this.diagnosticContextMatches(generation, campaign.id)) return;
-          const unique = new Map<string, DiagnosticQualification>();
-          for (const item of page.items) if (item.id) unique.set(item.id, item);
-          this.diagnosticPage.set({ ...page, items: [...unique.values()] });
+          const hydrated = items.map((item) => this.hydratedDiagnosticView(item));
+          for (const item of hydrated) this.diagnosticPlaceholders.delete(item.id);
+          this.publishDiagnosticViews([...hydrated, ...this.diagnosticPlaceholders.values()]);
           this.diagnosticState.set('ready');
           this.diagnosticError.set('');
           this.diagnosticStale.set(false);
@@ -658,14 +699,20 @@ export class MlSearchCampaignPage implements OnInit {
       });
   }
 
-  scenarioReturn(item: DiagnosticQualification, key: 'base' | 'stress_1_5x' | 'stress_2x'): string {
-    return this.formatReturn(item.scenario_metrics?.[key]?.total_net_return);
+  scenarioReturn(
+    item: DiagnosticQualificationView,
+    key: 'base' | 'stress_1_5x' | 'stress_2x',
+  ): string {
+    return this.formatReturn(item.qualification?.scenario_metrics?.[key]?.total_net_return);
   }
 
-  diagnosticClassification(item: DiagnosticQualification): string {
-    if (item.classification === 'qualified') return 'Diagnostic qualified';
-    if (item.classification === 'rejected') return 'Diagnostic rejected';
-    return item.classification ? humanize(item.classification) : 'Not available';
+  diagnosticClassification(item: DiagnosticQualificationView): string {
+    if (!item.qualification) return 'Diagnostic accepted';
+    if (item.qualification.classification === 'qualified') return 'Diagnostic qualified';
+    if (item.qualification.classification === 'rejected') return 'Diagnostic rejected';
+    return item.qualification.classification
+      ? humanize(item.qualification.classification)
+      : 'Not available';
   }
 
   private visibleFamilyFilters(): FamilyFilters {
@@ -696,6 +743,7 @@ export class MlSearchCampaignPage implements OnInit {
     this.stopDiagnosticPolling();
     this.diagnosticGeneration += 1;
     this.diagnosticSelection.set(new Map());
+    this.diagnosticPlaceholders.clear();
     this.diagnosticPage.set(null);
     this.diagnosticState.set('idle');
     this.diagnosticError.set('');
@@ -715,14 +763,98 @@ export class MlSearchCampaignPage implements OnInit {
     campaignId: string,
     familyIds: string[],
   ): boolean {
-    if (response.campaign_id !== campaignId || !response.items.length) return false;
+    if (
+      response.campaign_id !== campaignId ||
+      response.request_version !== DIAGNOSTIC_REQUEST_VERSION ||
+      !response.items.length ||
+      response.items.length !== familyIds.length
+    )
+      return false;
     const expected = new Set(familyIds);
-    const returned = new Set<string>();
+    const returnedFamilies = new Set<string>();
+    const returnedQualifications = new Set<string>();
     for (const item of response.items) {
-      if (!item.family_id || !item.qualification_id || !expected.has(item.family_id)) return false;
-      returned.add(item.family_id);
+      if (
+        !item.family_id ||
+        !item.qualification_id ||
+        !expected.has(item.family_id) ||
+        returnedFamilies.has(item.family_id) ||
+        returnedQualifications.has(item.qualification_id) ||
+        typeof item.created !== 'boolean' ||
+        typeof item.reused !== 'boolean' ||
+        item.created === item.reused
+      )
+        return false;
+      returnedFamilies.add(item.family_id);
+      returnedQualifications.add(item.qualification_id);
     }
-    return returned.size === expected.size;
+    return returnedFamilies.size === expected.size;
+  }
+
+  private loadAllDiagnosticQualifications(
+    campaignId: string,
+  ): Observable<DiagnosticQualification[]> {
+    return this.api.getDiagnosticQualifications(campaignId, 0, DIAGNOSTIC_PAGE_LIMIT).pipe(
+      expand((page) => {
+        if (!page.has_more) return EMPTY;
+        const nextOffset = page.offset + page.items.length;
+        if (!page.items.length || nextOffset <= page.offset) {
+          return throwError(() => new Error('Diagnostic pagination did not advance.'));
+        }
+        return this.api.getDiagnosticQualifications(campaignId, nextOffset, DIAGNOSTIC_PAGE_LIMIT);
+      }),
+      reduce((items, page) => [...items, ...page.items], [] as DiagnosticQualification[]),
+    );
+  }
+
+  private hydratedDiagnosticView(item: DiagnosticQualification): DiagnosticQualificationView {
+    return {
+      id: item.id,
+      campaign_id: item.campaign_id,
+      family_id: item.family_id,
+      provenance: item.provenance,
+      status: item.status,
+      engine: item.engine,
+      objective: item.objective,
+      search_track: item.search_track,
+      future_duration_seconds: this.frozenNumber(item.frozen_inputs, 'future_duration_seconds'),
+      feature_variant: this.frozenString(item.frozen_inputs, 'feature_variant'),
+      created_at: item.created_at,
+      completed_at: item.completed_at,
+      created: null,
+      reused: null,
+      qualification: item,
+    };
+  }
+
+  private publishDiagnosticViews(incoming: DiagnosticQualificationView[]): void {
+    const merged = new Map<string, DiagnosticQualificationView>();
+    for (const item of incoming) {
+      const existing = merged.get(item.id);
+      if (item.qualification || !existing?.qualification) merged.set(item.id, item);
+    }
+    const items = [...merged.values()].sort(
+      (left, right) =>
+        Date.parse(right.created_at) - Date.parse(left.created_at) ||
+        right.id.localeCompare(left.id),
+    );
+    this.diagnosticPage.set({
+      items,
+      total: items.length,
+      offset: 0,
+      limit: DIAGNOSTIC_PAGE_LIMIT,
+      has_more: false,
+    });
+  }
+
+  private frozenNumber(inputs: Record<string, unknown>, key: string): number {
+    const value = inputs[key];
+    return typeof value === 'number' ? value : Number.NaN;
+  }
+
+  private frozenString(inputs: Record<string, unknown>, key: string): string {
+    const value = inputs[key];
+    return typeof value === 'string' && value ? value : 'not_available';
   }
 
   private diagnosticHttpError(error: HttpErrorResponse): string {

@@ -81,6 +81,7 @@ export interface SearchCampaignFamily {
   market_type: string;
   interval: string;
   engine: string;
+  search_track?: string;
   future_duration_seconds: number;
   objective: string;
   feature_variant: string;
@@ -241,4 +242,22 @@ export interface DiagnosticQualification {
   failure_type: string | null;
   failure_message: string | null;
   created_at: string;
+}
+
+export interface DiagnosticQualificationView {
+  id: string;
+  campaign_id: string;
+  family_id: string;
+  provenance: string;
+  status: string;
+  engine: string;
+  objective: string;
+  search_track: string;
+  future_duration_seconds: number;
+  feature_variant: string;
+  created_at: string;
+  completed_at: string | null;
+  created: boolean | null;
+  reused: boolean | null;
+  qualification: DiagnosticQualification | null;
 }

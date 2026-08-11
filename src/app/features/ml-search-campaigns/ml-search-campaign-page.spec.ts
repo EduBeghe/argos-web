@@ -125,7 +125,10 @@ const qualification: DiagnosticQualification = {
   objective: 'future_return_regression',
   search_track: 'diversified',
   seed_family_id: null,
-  frozen_inputs: {},
+  frozen_inputs: {
+    future_duration_seconds: 1800,
+    feature_variant: 'top_k_32',
+  },
   temporal_manifest: {},
   temporal_manifest_fingerprint: 't'.repeat(64),
   policy_identity: {},
@@ -576,6 +579,197 @@ describe('MlSearchCampaignPage', () => {
       ],
     });
     expect(component.diagnosticMessage()).toContain('0 created and 1 reused');
+    expect(component.diagnosticPage()?.items[0]).toMatchObject({
+      id: 'qualification-1',
+      status: 'queued',
+      qualification: null,
+    });
+    fixture.destroy();
+  });
+
+  it('traverses every diagnostic page sequentially with the backend maximum', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    const records = Array.from({ length: 201 }, (_, index) => ({
+      ...qualification,
+      id: `qualification-${String(index).padStart(3, '0')}`,
+      created_at: new Date(Date.UTC(2040, 0, 1, 0, index)).toISOString(),
+    }));
+    api.getDiagnosticQualifications.mockImplementation(
+      (_campaignId: string, offset: number, limit: number) =>
+        of({
+          items: records.slice(offset, offset + limit),
+          total: records.length,
+          offset,
+          limit,
+          has_more: offset + limit < records.length,
+        }),
+    );
+
+    const fixture = create();
+
+    expect(api.getDiagnosticQualifications.mock.calls.map((call) => call.slice(1))).toEqual([
+      [0, 200],
+      [200, 200],
+    ]);
+    expect(fixture.componentInstance.diagnosticPage()?.items).toHaveLength(201);
+    expect(fixture.componentInstance.diagnosticPage()?.items[0].id).toBe('qualification-200');
+    fixture.destroy();
+  });
+
+  it('keeps an accepted placeholder visible through eventual list consistency and hydrates it', () => {
+    vi.useFakeTimers();
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getDiagnosticQualifications
+      .mockReturnValueOnce(of(page([], 0, 200)))
+      .mockReturnValueOnce(of(page([], 0, 200)))
+      .mockReturnValueOnce(of(page([{ ...qualification, status: 'running' }], 1, 200)));
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({
+        campaign_id: diagnosticCampaign.id,
+        request_version: 1,
+        items: [
+          {
+            family_id: nearFamily.id,
+            qualification_id: qualification.id,
+            status: 'queued',
+            created: true,
+            reused: false,
+          },
+        ],
+      }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+
+    expect(component.diagnosticPage()?.items[0]).toMatchObject({
+      id: qualification.id,
+      status: 'queued',
+      qualification: null,
+    });
+    vi.advanceTimersByTime(5_000);
+    expect(component.diagnosticPage()?.items[0]).toMatchObject({
+      id: qualification.id,
+      status: 'running',
+    });
+    expect(component.diagnosticPage()?.items[0].qualification).not.toBeNull();
+    fixture.destroy();
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ['empty', []],
+    [
+      'duplicate family',
+      [
+        {
+          family_id: nearFamily.id,
+          qualification_id: 'qualification-a',
+          status: 'queued',
+          created: true,
+          reused: false,
+        },
+        {
+          family_id: nearFamily.id,
+          qualification_id: 'qualification-b',
+          status: 'queued',
+          created: true,
+          reused: false,
+        },
+      ],
+    ],
+    [
+      'contradictory flags',
+      [
+        {
+          family_id: nearFamily.id,
+          qualification_id: 'qualification-a',
+          status: 'queued',
+          created: true,
+          reused: true,
+        },
+      ],
+    ],
+    [
+      'mismatched family',
+      [
+        {
+          family_id: 'another-family',
+          qualification_id: 'qualification-a',
+          status: 'queued',
+          created: true,
+          reused: false,
+        },
+      ],
+    ],
+  ])('rejects a malformed %s enqueue response without false success', (_name, items) => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({ campaign_id: diagnosticCampaign.id, request_version: 1, items }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.openDiagnosticConfirmation();
+    const readsBefore = api.getDiagnosticQualifications.mock.calls.length;
+    component.confirmDiagnostic();
+
+    expect(component.diagnosticSubmitError()).toContain('invalid response');
+    expect(component.diagnosticMessage()).toBe('');
+    expect(api.getDiagnosticQualifications).toHaveBeenCalledTimes(readsBefore);
+    fixture.destroy();
+  });
+
+  it('rejects duplicate qualification identities', () => {
+    const secondFamily = { ...nearFamily, id: 'near-family-2' };
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({
+        campaign_id: diagnosticCampaign.id,
+        request_version: 1,
+        items: [nearFamily, secondFamily].map((item) => ({
+          family_id: item.id,
+          qualification_id: 'same-qualification',
+          status: 'queued',
+          created: true,
+          reused: false,
+        })),
+      }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.toggleDiagnosticFamily(secondFamily, true);
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+    expect(component.diagnosticSubmitError()).toContain('invalid response');
+    expect(component.diagnosticPage()?.items).toHaveLength(0);
+    fixture.destroy();
+  });
+
+  it('preserves last-good evidence and reports malformed non-advancing pagination', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getDiagnosticQualifications
+      .mockReturnValueOnce(of(page([qualification], 1, 200)))
+      .mockReturnValueOnce(of({ items: [], total: 201, offset: 0, limit: 200, has_more: true }));
+    const fixture = create();
+    fixture.componentInstance.loadDiagnostics();
+    expect(fixture.componentInstance.diagnosticPage()?.items[0].id).toBe(qualification.id);
+    expect(fixture.componentInstance.diagnosticStale()).toBe(true);
+    expect(fixture.componentInstance.diagnosticError()).toContain('refresh failed');
     fixture.destroy();
   });
 
@@ -635,6 +829,8 @@ describe('MlSearchCampaignPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Diagnostic qualified');
     expect(fixture.nativeElement.textContent).toContain('not a strong-candidate designation');
     expect(fixture.nativeElement.textContent).toContain('Completed round trips');
+    expect(fixture.nativeElement.textContent).toContain('30 minutes');
+    expect(fixture.nativeElement.textContent).toContain('Top k 32');
     api.getDiagnosticQualifications.mockReturnValueOnce(throwError(() => new Error('offline')));
     fixture.componentInstance.loadDiagnostics();
     fixture.detectChanges();

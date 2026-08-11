@@ -649,7 +649,8 @@
                 </div>
                 <p>
                   Family <code>{{ abbreviate(item.family_id, 12) }}</code> ·
-                  {{ humanize(item.engine) }} · {{ humanize(item.objective) }} ·
+                  {{ humanize(item.engine) }} · {{ formatDuration(item.future_duration_seconds) }} ·
+                  {{ humanize(item.objective) }} · {{ humanize(item.feature_variant) }} ·
                   {{ humanize(item.search_track) }}
                 </p>
                 <p>
@@ -660,66 +661,74 @@
                       : 'Not completed'
                   }}
                 </p>
-                @if (item.status === 'completed') {
-                  <p>
-                    This is diagnostic research evidence, not a strong-candidate designation or
-                    Paper Trading approval.
-                  </p>
-                  <dl class="summary-grid">
-                    <div>
-                      <dt>Base return</dt>
-                      <dd>{{ scenarioReturn(item, 'base') }}</dd>
-                    </div>
-                    <div>
-                      <dt>1.5x cost return</dt>
-                      <dd>{{ scenarioReturn(item, 'stress_1_5x') }}</dd>
-                    </div>
-                    <div>
-                      <dt>2x cost return</dt>
-                      <dd>{{ scenarioReturn(item, 'stress_2x') }}</dd>
-                    </div>
-                    <div>
-                      <dt>Maximum drawdown</dt>
-                      <dd>{{ formatReturn(item.scenario_metrics?.maximum_drawdown) }}</dd>
-                    </div>
-                    <div>
-                      <dt>Completed round trips</dt>
-                      <dd>{{ item.scenario_metrics?.round_trips ?? 'Not available' }}</dd>
-                    </div>
-                    <div>
-                      <dt>Trade records</dt>
-                      <dd>{{ item.trades?.length ?? 'Not available' }}</dd>
-                    </div>
-                  </dl>
-                  <h4>2024 quarter returns</h4>
-                  @if (item.quarter_returns?.length) {
-                    <ol class="quarter-list">
-                      @for (value of item.quarter_returns; track $index) {
-                        <li>Q{{ $index + 1 }}: {{ formatReturn(value) }}</li>
-                      }
-                    </ol>
-                  } @else {
-                    <p>Not available</p>
+                @if (item.qualification; as qualification) {
+                  @if (item.status === 'completed') {
+                    <p>
+                      This is diagnostic research evidence, not a strong-candidate designation or
+                      Paper Trading approval.
+                    </p>
+                    <dl class="summary-grid">
+                      <div>
+                        <dt>Base return</dt>
+                        <dd>{{ scenarioReturn(item, 'base') }}</dd>
+                      </div>
+                      <div>
+                        <dt>1.5x cost return</dt>
+                        <dd>{{ scenarioReturn(item, 'stress_1_5x') }}</dd>
+                      </div>
+                      <div>
+                        <dt>2x cost return</dt>
+                        <dd>{{ scenarioReturn(item, 'stress_2x') }}</dd>
+                      </div>
+                      <div>
+                        <dt>Maximum drawdown</dt>
+                        <dd>
+                          {{ formatReturn(qualification.scenario_metrics?.maximum_drawdown) }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Completed round trips</dt>
+                        <dd>
+                          {{ qualification.scenario_metrics?.round_trips ?? 'Not available' }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Trade records</dt>
+                        <dd>{{ qualification.trades?.length ?? 'Not available' }}</dd>
+                      </div>
+                    </dl>
+                    <h4>2024 quarter returns</h4>
+                    @if (qualification.quarter_returns?.length) {
+                      <ol class="quarter-list">
+                        @for (value of qualification.quarter_returns; track $index) {
+                          <li>Q{{ $index + 1 }}: {{ formatReturn(value) }}</li>
+                        }
+                      </ol>
+                    } @else {
+                      <p>Not available</p>
+                    }
+                    <h4>Failed rules</h4>
+                    @if (qualification.failed_rules?.length) {
+                      <ul>
+                        @for (rule of qualification.failed_rules; track rule) {
+                          <li>{{ humanize(rule) }}</li>
+                        }
+                      </ul>
+                    } @else {
+                      <p>None reported</p>
+                    }
                   }
-                  <h4>Failed rules</h4>
-                  @if (item.failed_rules?.length) {
-                    <ul>
-                      @for (rule of item.failed_rules; track rule) {
-                        <li>{{ humanize(rule) }}</li>
-                      }
-                    </ul>
-                  } @else {
-                    <p>None reported</p>
-                  }
+                } @else {
+                  <p>Accepted by the diagnostic service. Persisted evidence is being hydrated.</p>
                 }
                 @if (item.status === 'failed' || item.status === 'cancelled') {
                   <p class="notice error">
                     {{
-                      item.failure_type
-                        ? humanize(item.failure_type)
+                      item.qualification?.failure_type
+                        ? humanize(item.qualification?.failure_type)
                         : 'Qualification did not complete'
                     }}:
-                    {{ item.failure_message || 'No failure detail supplied.' }}
+                    {{ item.qualification?.failure_message || 'No failure detail supplied.' }}
                   </p>
                 }
               </article>
