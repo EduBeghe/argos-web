@@ -7,6 +7,7 @@ import { BehaviorSubject, Observable, of, Subject, throwError } from 'rxjs';
 import { MlSearchCampaignApiService } from './ml-search-campaign-api.service';
 import {
   CampaignContract,
+  DiagnosticQualification,
   Page,
   SearchCampaign,
   SearchCampaignFamily,
@@ -58,6 +59,13 @@ const campaign: SearchCampaign = {
   created_at: '2040-01-01T00:00:00Z',
 };
 const campaignB: SearchCampaign = { ...campaign, id: 'campaign-00000002' };
+const diagnosticCampaign: SearchCampaign = {
+  ...campaign,
+  status: 'completed',
+  outcome: 'no_strong_candidate',
+  current_stage: 4,
+  completed_at: '2040-02-01T00:00:00Z',
+};
 const family: SearchCampaignFamily = {
   id: 'family-1',
   campaign_id: campaign.id,
@@ -90,6 +98,54 @@ const family: SearchCampaignFamily = {
   decision_reason: 'latest_gate_passed',
   deterministic_ordinal: 17,
 };
+const nearFamily: SearchCampaignFamily = {
+  ...family,
+  state: 'discarded',
+  current_stage: 3,
+  feature_variant: 'top_k_32',
+  best_metrics: {
+    ...family.best_metrics,
+    observations: 150,
+    positive_net_folds: 5,
+    folds_beating_benchmark: 2,
+    median_net_return: '0.012',
+  },
+};
+const qualification: DiagnosticQualification = {
+  id: 'qualification-1',
+  campaign_id: campaign.id,
+  family_id: nearFamily.id,
+  candidate_fingerprint: 'c'.repeat(64),
+  policy_fingerprint: 'p'.repeat(64),
+  qualification_version: 1,
+  provenance: 'diagnostic_stage3_near_miss',
+  status: 'completed',
+  classification: 'qualified',
+  engine: 'ridge',
+  objective: 'future_return_regression',
+  search_track: 'diversified',
+  seed_family_id: null,
+  frozen_inputs: {},
+  temporal_manifest: {},
+  temporal_manifest_fingerprint: 't'.repeat(64),
+  policy_identity: {},
+  scenario_metrics: {
+    base: { total_net_return: '0.02' },
+    stress_1_5x: { total_net_return: '0.015' },
+    stress_2x: { total_net_return: '0.01' },
+    maximum_drawdown: '-0.03',
+    round_trips: 12,
+  },
+  quarter_returns: ['0.01', '0.02', '-0.01', '0.03'],
+  trades: [{ id: 'trade-1' }],
+  failed_rules: [],
+  evidence_end_exclusive: '2025-01-01T00:00:00Z',
+  completed_at: '2041-01-01T00:00:00Z',
+  failed_at: null,
+  failure_type: null,
+  failure_message: null,
+  created_at: '2040-12-01T00:00:00Z',
+};
 const page = <T>(items: T[], total = items.length, limit = 50): Page<T> => ({
   items,
   total,
@@ -121,6 +177,9 @@ describe('MlSearchCampaignPage', () => {
     getFamily: vi.fn(),
     cancel: vi.fn(),
     retry: vi.fn(),
+    enqueueDiagnosticQualifications: vi.fn(),
+    getDiagnosticQualifications: vi.fn(),
+    getDiagnosticQualification: vi.fn(),
   };
   const router = { navigate: vi.fn(() => Promise.resolve(true)) };
 
@@ -139,6 +198,11 @@ describe('MlSearchCampaignPage', () => {
     api.getFamily.mockReturnValue(of(family));
     api.cancel.mockReturnValue(of({ ...campaign, status: 'cancelled' }));
     api.retry.mockReturnValue(of({ ...campaign, status: 'queued' }));
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({ campaign_id: campaign.id, request_version: 1, items: [] }),
+    );
+    api.getDiagnosticQualifications.mockReturnValue(of(page([], 0, 100)));
+    api.getDiagnosticQualification.mockReturnValue(of(qualification));
     TestBed.configureTestingModule({
       imports: [MlSearchCampaignPage],
       providers: [
@@ -162,7 +226,7 @@ describe('MlSearchCampaignPage', () => {
     expect(fixture.nativeElement.textContent).toContain('1,200 of 3,600 families');
     expect(fixture.nativeElement.textContent).toContain('Observations: 0');
     expect(fixture.nativeElement.textContent).toContain('Complete and finite: No');
-    expect(fixture.nativeElement.textContent).toContain('±0.00%');
+    expect(fixture.nativeElement.textContent).toContain('Â±0.00%');
     expect(fixture.nativeElement.querySelector('progress').getAttribute('aria-label')).toContain(
       'Family breadth coverage',
     );
@@ -446,5 +510,136 @@ describe('MlSearchCampaignPage', () => {
     );
     fixture.destroy();
     vi.useRealTimers();
+  });
+
+  it('shows launch controls only for completed no-strong-candidate near Stage 3 evidence', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getFamilies.mockImplementation(
+      (_id: string, _offset: number, _filters: object, limit = 50) =>
+        of(limit === 1 ? page([nearFamily], 1, 1) : page([nearFamily])),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Run 2024 diagnostic');
+    expect(fixture.nativeElement.querySelector('input[type="checkbox"]')).not.toBeNull();
+    component.setSubcategory('4');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Run 2024 diagnostic');
+    expect(component.diagnosticSelection().size).toBe(0);
+    fixture.destroy();
+  });
+
+  it('preserves stable unique selection and requires confirmation before one POST', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    const response = new Subject<{
+      campaign_id: string;
+      request_version: number;
+      items: {
+        family_id: string;
+        qualification_id: string;
+        status: string;
+        created: boolean;
+        reused: boolean;
+      }[];
+    }>();
+    api.enqueueDiagnosticQualifications.mockReturnValue(response.asObservable());
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.openDiagnosticConfirmation();
+    expect(api.enqueueDiagnosticQualifications).not.toHaveBeenCalled();
+    component.confirmDiagnostic();
+    component.confirmDiagnostic();
+    expect(api.enqueueDiagnosticQualifications).toHaveBeenCalledTimes(1);
+    expect(api.enqueueDiagnosticQualifications).toHaveBeenCalledWith(diagnosticCampaign.id, {
+      family_ids: [nearFamily.id],
+    });
+    response.next({
+      campaign_id: diagnosticCampaign.id,
+      request_version: 1,
+      items: [
+        {
+          family_id: nearFamily.id,
+          qualification_id: 'qualification-1',
+          status: 'queued',
+          created: false,
+          reused: true,
+        },
+      ],
+    });
+    expect(component.diagnosticMessage()).toContain('0 created and 1 reused');
+    fixture.destroy();
+  });
+
+  it('preserves selections across filters and enforces the ten-family boundary', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    const families = Array.from({ length: 11 }, (_, index) => ({
+      ...nearFamily,
+      id: `family-${index + 1}`,
+      engine: index % 3 === 0 ? 'ridge' : index % 3 === 1 ? 'lightgbm' : 'catboost',
+      future_duration_seconds: [64800, 86400, 172800, 259200][index % 4],
+      feature_variant: `top_k_${[16, 32, 64][index % 3]}`,
+    }));
+    families.slice(0, 10).forEach((item) => component.toggleDiagnosticFamily(item, true));
+    component.toggleDiagnosticFamily(families[10], true);
+    expect(component.selectedDiagnosticFamilies().map((item) => item.id)).toEqual(
+      families.slice(0, 10).map((item) => item.id),
+    );
+    component.setFamilyFilter('engine', 'ridge');
+    expect(component.diagnosticSelection().size).toBe(10);
+    component.toggleDiagnosticFamily(families[0], false);
+    component.toggleDiagnosticFamily(families[10], true);
+    expect(component.selectedDiagnosticFamilies().at(-1)?.id).toBe('family-11');
+    fixture.destroy();
+  });
+
+  it('stops diagnostic polling on transient failure while preserving the last page', () => {
+    vi.useFakeTimers();
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    const running = { ...qualification, status: 'running', classification: null };
+    api.getDiagnosticQualifications
+      .mockReturnValueOnce(of(page([running], 1, 100)))
+      .mockReturnValueOnce(throwError(() => new Error('transient')));
+    const fixture = create();
+    expect(api.getDiagnosticQualifications).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(5_000);
+    expect(api.getDiagnosticQualifications).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.diagnosticPage()?.items[0].id).toBe(running.id);
+    expect(fixture.componentInstance.diagnosticStale()).toBe(true);
+    vi.advanceTimersByTime(15_000);
+    expect(api.getDiagnosticQualifications).toHaveBeenCalledTimes(2);
+    fixture.destroy();
+    vi.useRealTimers();
+  });
+
+  it('renders authoritative completed evidence and preserves it after refresh failure', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getDiagnosticQualifications.mockReturnValueOnce(of(page([qualification], 1, 100)));
+    const fixture = create();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Diagnostic qualified');
+    expect(fixture.nativeElement.textContent).toContain('not a strong-candidate designation');
+    expect(fixture.nativeElement.textContent).toContain('Completed round trips');
+    api.getDiagnosticQualifications.mockReturnValueOnce(throwError(() => new Error('offline')));
+    fixture.componentInstance.loadDiagnostics();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Diagnostic qualified');
+    expect(fixture.nativeElement.textContent).toContain('Displayed evidence may be stale');
+    fixture.destroy();
   });
 });

@@ -56,7 +56,7 @@
       </p>
     }
     @if (campaignListState() === 'loading') {
-      <p class="notice">Loading campaigns…</p>
+      <p class="notice">Loading campaignsâ€¦</p>
     }
     @if (campaignPage(); as page) {
       @if (!page.items.length) {
@@ -79,7 +79,7 @@
             <strong>{{ item.outcome ? humanize(item.outcome) : 'Outcome pending' }}</strong>
             <span>{{ item.created_at | date: 'medium' : 'UTC' }} UTC</span>
             <span
-              >Stage {{ item.current_stage }}/4 · {{ item.families_covered }}/{{
+              >Stage {{ item.current_stage }}/4 Â· {{ item.families_covered }}/{{
                 item.families_total
               }}
               covered</span
@@ -401,7 +401,7 @@
         </p>
       }
       @if (familyState() === 'loading') {
-        <p class="notice">Loading one bounded family page…</p>
+        <p class="notice">Loading one bounded family pageâ€¦</p>
       }
       @if (familyPage(); as page) {
         @if (!page.items.length) {
@@ -414,6 +414,9 @@
           <table>
             <thead>
               <tr>
+                @if (diagnosticLaunchEligible()) {
+                  <th scope="col">Select</th>
+                }
                 <th>Identity</th>
                 <th>Configuration</th>
                 <th>Progress</th>
@@ -424,12 +427,40 @@
             <tbody>
               @for (family of page.items; track family.id) {
                 <tr>
+                  @if (diagnosticLaunchEligible()) {
+                    <td>
+                      <label class="row-selection">
+                        <input
+                          type="checkbox"
+                          [checked]="diagnosticSelected(family.id)"
+                          [disabled]="
+                            diagnosticSelection().size >= 10 && !diagnosticSelected(family.id)
+                          "
+                          [attr.aria-label]="
+                            'Select ' +
+                            humanize(family.engine) +
+                            ', ' +
+                            formatDuration(family.future_duration_seconds) +
+                            ', ' +
+                            humanize(family.objective) +
+                            ', ' +
+                            humanize(family.feature_variant)
+                          "
+                          (change)="diagnosticCheckboxChanged(family, $event)"
+                        />
+                        <span>{{ diagnosticSelected(family.id) ? 'Selected' : 'Select' }}</span>
+                      </label>
+                      @if (diagnosticSelection().size >= 10 && !diagnosticSelected(family.id)) {
+                        <small>Maximum 10 selected</small>
+                      }
+                    </td>
+                  }
                   <td>
                     <strong>{{ family.asset }}</strong
-                    ><br />{{ family.provider }} · {{ family.market_type }} · {{ family.interval }}
+                    ><br />{{ family.provider }} Â· {{ family.market_type }} Â· {{ family.interval }}
                   </td>
                   <td>
-                    {{ humanize(family.engine) }} ·
+                    {{ humanize(family.engine) }} Â·
                     {{ formatDuration(family.future_duration_seconds) }}<br />{{
                       humanize(family.objective)
                     }}<br />{{ humanize(family.feature_variant) }}
@@ -438,11 +469,11 @@
                   <td>
                     Observations: {{ family.best_metrics?.observations ?? 'Not evaluated'
                     }}<br />Positive net folds:
-                    {{ family.best_metrics?.positive_net_folds ?? 'Not evaluated' }} · Favorable
+                    {{ family.best_metrics?.positive_net_folds ?? 'Not evaluated' }} Â· Favorable
                     direction: {{ family.best_metrics?.favorable_direction_folds ?? 'Not evaluated'
                     }}<br />Beats benchmark:
                     {{ family.best_metrics?.folds_beating_benchmark ?? 'Not evaluated'
-                    }}<br />Median: {{ formatReturn(family.best_metrics?.median_net_return) }} ·
+                    }}<br />Median: {{ formatReturn(family.best_metrics?.median_net_return) }} Â·
                     Worst: {{ formatReturn(family.best_metrics?.worst_net_return) }}<br />Promising
                     configurations:
                     {{ family.best_metrics?.promising_configurations ?? 'Not evaluated'
@@ -476,10 +507,230 @@
           ><button type="button" [disabled]="!page.has_more" (click)="familyPageBy(1)">Next</button>
         </div>
       }
+
+      @if (diagnosticLaunchEligible()) {
+        <section class="diagnostic-selection" aria-labelledby="diagnostic-selection-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Operator-selected research</p>
+              <h3 id="diagnostic-selection-title">
+                Selected families ({{ diagnosticSelection().size }}/10)
+              </h3>
+            </div>
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="diagnosticSelection().size === 0 || diagnosticSubmitting()"
+              (click)="clearDiagnosticSelection()"
+            >
+              Clear selection
+            </button>
+          </div>
+          @if (selectedDiagnosticFamilies().length === 0) {
+            <p>No families selected. Choose one to ten Stage 3 near misses manually.</p>
+          } @else {
+            <ul class="selected-families">
+              @for (family of selectedDiagnosticFamilies(); track family.id) {
+                <li>
+                  <div>
+                    <code>{{ abbreviate(family.id, 12) }}</code>
+                    <strong>
+                      {{ humanize(family.engine) }} Â·
+                      {{ formatDuration(family.future_duration_seconds) }} Â·
+                      {{ humanize(family.objective) }} Â· {{ humanize(family.feature_variant) }}
+                    </strong>
+                    <span>
+                      Stage 3 evidence:
+                      {{ family.best_metrics?.observations ?? 'Not evaluated' }} observations Â·
+                      {{ family.best_metrics?.positive_net_folds ?? 'Not evaluated' }}
+                      positive net folds Â·
+                      {{ family.best_metrics?.folds_beating_benchmark ?? 'Not evaluated' }} folds
+                      beating benchmark Â· median
+                      {{ formatReturn(family.best_metrics?.median_net_return) }}
+                    </span>
+                  </div>
+                  <button type="button" (click)="toggleDiagnosticFamily(family, false)">
+                    Remove
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+          @if (!diagnosticConfirmation()) {
+            <button
+              type="button"
+              class="primary-action"
+              [disabled]="diagnosticSelection().size === 0 || diagnosticSubmitting()"
+              (click)="openDiagnosticConfirmation()"
+            >
+              Run 2024 diagnostic
+            </button>
+          } @else {
+            <div
+              class="confirmation diagnostic-confirmation"
+              role="group"
+              aria-label="Confirm diagnostic qualification"
+            >
+              <p>
+                Qualify exactly {{ diagnosticSelection().size }} selected
+                {{ diagnosticSelection().size === 1 ? 'family' : 'families' }} using calendar year
+                2024 only. The reserved 2025 evidence is untouched. The source campaign and
+                discarded families remain unchanged. These diagnostic results cannot identify a
+                strong candidate or enable Paper Trading.
+              </p>
+              <div class="confirmation-actions">
+                <button
+                  type="button"
+                  [disabled]="diagnosticSubmitting()"
+                  (click)="confirmDiagnostic()"
+                >
+                  Confirm 2024 diagnostic
+                </button>
+                <button
+                  type="button"
+                  [disabled]="diagnosticSubmitting()"
+                  (click)="diagnosticConfirmation.set(false)"
+                >
+                  Go back
+                </button>
+              </div>
+            </div>
+          }
+          <p aria-live="polite">{{ diagnosticMessage() }}</p>
+          @if (diagnosticSubmitError()) {
+            <p class="notice error" role="alert">{{ diagnosticSubmitError() }}</p>
+          }
+        </section>
+      }
     </section>
 
+    @if (campaign.status === 'completed') {
+      <section class="panel" aria-labelledby="diagnostic-results-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Authoritative calendar-2024 evidence</p>
+            <h2 id="diagnostic-results-title">Diagnostic qualifications</h2>
+          </div>
+          <button type="button" (click)="loadDiagnostics()">Refresh diagnostics</button>
+        </div>
+        <p>
+          Diagnostic qualification does not identify a strong candidate and does not approve Paper
+          Trading.
+        </p>
+        @if (diagnosticState() === 'loading') {
+          <p class="notice">Loading diagnostic qualificationsâ€¦</p>
+        }
+        @if (diagnosticError()) {
+          <p class="notice error" role="alert">
+            {{ diagnosticError() }}
+            @if (diagnosticStale()) {
+              <strong> Displayed evidence may be stale.</strong>
+            }
+          </p>
+        }
+        @if (diagnosticPage(); as diagnostics) {
+          @if (!diagnostics.items.length) {
+            <div class="empty">
+              <h3>No diagnostic qualifications</h3>
+              <p>No Stage 3 diagnostic work has been submitted for this campaign.</p>
+            </div>
+          }
+          <div class="diagnostic-results">
+            @for (item of diagnostics.items; track item.id) {
+              <article class="diagnostic-card" [attr.data-state]="item.status">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">{{ humanize(item.provenance) }}</p>
+                    <h3>{{ diagnosticClassification(item) }}</h3>
+                  </div>
+                  <span class="status" [attr.data-state]="item.status">{{
+                    humanize(item.status)
+                  }}</span>
+                </div>
+                <p>
+                  Family <code>{{ abbreviate(item.family_id, 12) }}</code> Â·
+                  {{ humanize(item.engine) }} Â· {{ humanize(item.objective) }} Â·
+                  {{ humanize(item.search_track) }}
+                </p>
+                <p>
+                  Created {{ item.created_at | date: 'medium' : 'UTC' }} UTC Â· Completed
+                  {{
+                    item.completed_at
+                      ? (item.completed_at | date: 'medium' : 'UTC') + ' UTC'
+                      : 'Not completed'
+                  }}
+                </p>
+                @if (item.status === 'completed') {
+                  <p>
+                    This is diagnostic research evidence, not a strong-candidate designation or
+                    Paper Trading approval.
+                  </p>
+                  <dl class="summary-grid">
+                    <div>
+                      <dt>Base return</dt>
+                      <dd>{{ scenarioReturn(item, 'base') }}</dd>
+                    </div>
+                    <div>
+                      <dt>1.5x cost return</dt>
+                      <dd>{{ scenarioReturn(item, 'stress_1_5x') }}</dd>
+                    </div>
+                    <div>
+                      <dt>2x cost return</dt>
+                      <dd>{{ scenarioReturn(item, 'stress_2x') }}</dd>
+                    </div>
+                    <div>
+                      <dt>Maximum drawdown</dt>
+                      <dd>{{ formatReturn(item.scenario_metrics?.maximum_drawdown) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Completed round trips</dt>
+                      <dd>{{ item.scenario_metrics?.round_trips ?? 'Not available' }}</dd>
+                    </div>
+                    <div>
+                      <dt>Trade records</dt>
+                      <dd>{{ item.trades?.length ?? 'Not available' }}</dd>
+                    </div>
+                  </dl>
+                  <h4>2024 quarter returns</h4>
+                  @if (item.quarter_returns?.length) {
+                    <ol class="quarter-list">
+                      @for (value of item.quarter_returns; track $index) {
+                        <li>Q{{ $index + 1 }}: {{ formatReturn(value) }}</li>
+                      }
+                    </ol>
+                  } @else {
+                    <p>Not available</p>
+                  }
+                  <h4>Failed rules</h4>
+                  @if (item.failed_rules?.length) {
+                    <ul>
+                      @for (rule of item.failed_rules; track rule) {
+                        <li>{{ humanize(rule) }}</li>
+                      }
+                    </ul>
+                  } @else {
+                    <p>None reported</p>
+                  }
+                }
+                @if (item.status === 'failed' || item.status === 'cancelled') {
+                  <p class="notice error">
+                    {{
+                      item.failure_type
+                        ? humanize(item.failure_type)
+                        : 'Qualification did not complete'
+                    }}:
+                    {{ item.failure_message || 'No failure detail supplied.' }}
+                  </p>
+                }
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+
     @if (familyDetailState() === 'loading') {
-      <p class="notice">Loading family detail…</p>
+      <p class="notice">Loading family detailâ€¦</p>
     }
     @if (familyDetailError()) {
       <p class="notice error">{{ familyDetailError() }}</p>
@@ -494,7 +745,7 @@
           <div>
             <dt>Full identity</dt>
             <dd>
-              {{ family.asset }} · {{ family.provider }} · {{ family.market_type }} ·
+              {{ family.asset }} Â· {{ family.provider }} Â· {{ family.market_type }} Â·
               {{ family.interval }}
             </dd>
           </div>
@@ -505,8 +756,8 @@
           <div>
             <dt>Evaluations</dt>
             <dd>
-              {{ family.evaluations_completed }} completed · {{ family.evaluations_reused }} reused
-              · {{ family.evaluations_planned }} planned
+              {{ family.evaluations_completed }} completed Â· {{ family.evaluations_reused }} reused
+              Â· {{ family.evaluations_planned }} planned
             </dd>
           </div>
           <div>

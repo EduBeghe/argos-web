@@ -94,4 +94,32 @@ describe('MlSearchCampaignApiService', () => {
     expect(retry.request.body).toEqual({});
     retry.flush({});
   });
+
+  it('uses the exact diagnostic endpoints, provenance filter and POST body', () => {
+    service
+      .enqueueDiagnosticQualifications('campaign/id', { family_ids: ['family/1', 'family-2'] })
+      .subscribe();
+    const post = http.expectOne(
+      'https://api.example.test/optimization/ml-search-campaigns/campaign%2Fid/diagnostic-qualifications',
+    );
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ family_ids: ['family/1', 'family-2'] });
+    expect(Object.keys(post.request.body)).toEqual(['family_ids']);
+    post.flush({ campaign_id: 'campaign/id', request_version: 1, items: [] });
+
+    service.getDiagnosticQualifications('campaign/id', 100, 25).subscribe();
+    const list = http.expectOne((request) => request.url.endsWith('/campaign%2Fid/qualifications'));
+    expect(list.request.params.keys().sort()).toEqual(['limit', 'offset', 'provenance']);
+    expect(list.request.params.get('provenance')).toBe('diagnostic_stage3_near_miss');
+    expect(list.request.params.get('offset')).toBe('100');
+    expect(list.request.params.get('limit')).toBe('25');
+    list.flush({ items: [], total: 0, offset: 100, limit: 25, has_more: false });
+
+    service.getDiagnosticQualification('campaign/id', 'qualification/id').subscribe();
+    http
+      .expectOne(
+        'https://api.example.test/optimization/ml-search-campaigns/campaign%2Fid/qualifications/qualification%2Fid',
+      )
+      .flush({});
+  });
 });

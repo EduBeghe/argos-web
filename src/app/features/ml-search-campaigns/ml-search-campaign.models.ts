@@ -183,3 +183,62 @@ export interface PaperDeploymentResponse {
   is_primary: boolean;
   [key: string]: unknown;
 }
+
+export const DIAGNOSTIC_QUALIFICATION_PROVENANCE = 'diagnostic_stage3_near_miss';
+
+export interface DiagnosticQualificationRequest {
+  family_ids: string[];
+}
+
+export interface DiagnosticQualificationEnqueueItem {
+  family_id: string;
+  qualification_id: string;
+  status: string;
+  created: boolean;
+  reused: boolean;
+}
+
+export interface DiagnosticQualificationEnqueueResponse {
+  campaign_id: string;
+  request_version: number;
+  items: DiagnosticQualificationEnqueueItem[];
+}
+
+export interface QualificationScenarioMetrics {
+  base?: { total_net_return?: string | null; [key: string]: unknown } | null;
+  stress_1_5x?: { total_net_return?: string | null; [key: string]: unknown } | null;
+  stress_2x?: { total_net_return?: string | null; [key: string]: unknown } | null;
+  maximum_drawdown?: string | null;
+  round_trips?: number | null;
+  [key: string]: unknown;
+}
+
+export interface DiagnosticQualification {
+  id: string;
+  campaign_id: string;
+  family_id: string;
+  candidate_fingerprint: string;
+  policy_fingerprint: string;
+  qualification_version: number;
+  provenance: string;
+  status: string;
+  classification: string | null;
+  engine: string;
+  objective: string;
+  search_track: string;
+  seed_family_id: string | null;
+  frozen_inputs: Record<string, unknown>;
+  temporal_manifest: Record<string, unknown>;
+  temporal_manifest_fingerprint: string;
+  policy_identity: Record<string, unknown>;
+  scenario_metrics: QualificationScenarioMetrics | null;
+  quarter_returns: string[] | null;
+  trades: Record<string, unknown>[] | null;
+  failed_rules: string[] | null;
+  evidence_end_exclusive: string;
+  completed_at: string | null;
+  failed_at: string | null;
+  failure_type: string | null;
+  failure_message: string | null;
+  created_at: string;
+}
