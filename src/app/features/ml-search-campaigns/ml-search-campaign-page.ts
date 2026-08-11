@@ -624,7 +624,7 @@ export class MlSearchCampaignPage implements OnInit {
   loadDiagnostics(fromPoll = false): void {
     const campaign = this.selectedCampaign();
     if (!campaign || campaign.status !== 'completed') return;
-    if (fromPoll && this.diagnosticRequest) return;
+    if (fromPoll && this.diagnosticRequest && !this.diagnosticRequest.closed) return;
     const generation = this.diagnosticGeneration;
     if (!this.diagnosticPage()) this.diagnosticState.set('loading');
     this.diagnosticRequest?.unsubscribe();
