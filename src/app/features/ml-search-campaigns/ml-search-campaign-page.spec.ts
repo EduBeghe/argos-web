@@ -829,8 +829,8 @@ describe('MlSearchCampaignPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Diagnostic qualified');
     expect(fixture.nativeElement.textContent).toContain('not a strong-candidate designation');
     expect(fixture.nativeElement.textContent).toContain('Completed round trips');
-    expect(fixture.nativeElement.textContent).toContain('30 minutes');
-    expect(fixture.nativeElement.textContent).toContain('Top k 32');
+    expect(fixture.nativeElement.textContent).toContain('30m');
+    expect(fixture.nativeElement.textContent).toContain('Top K 32');
     api.getDiagnosticQualifications.mockReturnValueOnce(throwError(() => new Error('offline')));
     fixture.componentInstance.loadDiagnostics();
     fixture.detectChanges();
