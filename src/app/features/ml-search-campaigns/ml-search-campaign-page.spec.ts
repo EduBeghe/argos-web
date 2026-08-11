@@ -226,7 +226,7 @@ describe('MlSearchCampaignPage', () => {
     expect(fixture.nativeElement.textContent).toContain('1,200 of 3,600 families');
     expect(fixture.nativeElement.textContent).toContain('Observations: 0');
     expect(fixture.nativeElement.textContent).toContain('Complete and finite: No');
-    expect(fixture.nativeElement.textContent).toContain('Â±0.00%');
+    expect(fixture.nativeElement.textContent).toContain('±0.00%');
     expect(fixture.nativeElement.querySelector('progress').getAttribute('aria-label')).toContain(
       'Family breadth coverage',
     );

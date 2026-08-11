@@ -56,7 +56,7 @@
       </p>
     }
     @if (campaignListState() === 'loading') {
-      <p class="notice">Loading campaignsâ€¦</p>
+      <p class="notice">Loading campaigns…</p>
     }
     @if (campaignPage(); as page) {
       @if (!page.items.length) {
@@ -79,7 +79,7 @@
             <strong>{{ item.outcome ? humanize(item.outcome) : 'Outcome pending' }}</strong>
             <span>{{ item.created_at | date: 'medium' : 'UTC' }} UTC</span>
             <span
-              >Stage {{ item.current_stage }}/4 Â· {{ item.families_covered }}/{{
+              >Stage {{ item.current_stage }}/4 · {{ item.families_covered }}/{{
                 item.families_total
               }}
               covered</span
@@ -401,7 +401,7 @@
         </p>
       }
       @if (familyState() === 'loading') {
-        <p class="notice">Loading one bounded family pageâ€¦</p>
+        <p class="notice">Loading one bounded family page…</p>
       }
       @if (familyPage(); as page) {
         @if (!page.items.length) {
@@ -457,10 +457,10 @@
                   }
                   <td>
                     <strong>{{ family.asset }}</strong
-                    ><br />{{ family.provider }} Â· {{ family.market_type }} Â· {{ family.interval }}
+                    ><br />{{ family.provider }} · {{ family.market_type }} · {{ family.interval }}
                   </td>
                   <td>
-                    {{ humanize(family.engine) }} Â·
+                    {{ humanize(family.engine) }} ·
                     {{ formatDuration(family.future_duration_seconds) }}<br />{{
                       humanize(family.objective)
                     }}<br />{{ humanize(family.feature_variant) }}
@@ -469,11 +469,11 @@
                   <td>
                     Observations: {{ family.best_metrics?.observations ?? 'Not evaluated'
                     }}<br />Positive net folds:
-                    {{ family.best_metrics?.positive_net_folds ?? 'Not evaluated' }} Â· Favorable
+                    {{ family.best_metrics?.positive_net_folds ?? 'Not evaluated' }} · Favorable
                     direction: {{ family.best_metrics?.favorable_direction_folds ?? 'Not evaluated'
                     }}<br />Beats benchmark:
                     {{ family.best_metrics?.folds_beating_benchmark ?? 'Not evaluated'
-                    }}<br />Median: {{ formatReturn(family.best_metrics?.median_net_return) }} Â·
+                    }}<br />Median: {{ formatReturn(family.best_metrics?.median_net_return) }} ·
                     Worst: {{ formatReturn(family.best_metrics?.worst_net_return) }}<br />Promising
                     configurations:
                     {{ family.best_metrics?.promising_configurations ?? 'Not evaluated'
@@ -535,17 +535,17 @@
                   <div>
                     <code>{{ abbreviate(family.id, 12) }}</code>
                     <strong>
-                      {{ humanize(family.engine) }} Â·
-                      {{ formatDuration(family.future_duration_seconds) }} Â·
-                      {{ humanize(family.objective) }} Â· {{ humanize(family.feature_variant) }}
+                      {{ humanize(family.engine) }} ·
+                      {{ formatDuration(family.future_duration_seconds) }} ·
+                      {{ humanize(family.objective) }} · {{ humanize(family.feature_variant) }}
                     </strong>
                     <span>
                       Stage 3 evidence:
-                      {{ family.best_metrics?.observations ?? 'Not evaluated' }} observations Â·
+                      {{ family.best_metrics?.observations ?? 'Not evaluated' }} observations ·
                       {{ family.best_metrics?.positive_net_folds ?? 'Not evaluated' }}
-                      positive net folds Â·
+                      positive net folds ·
                       {{ family.best_metrics?.folds_beating_benchmark ?? 'Not evaluated' }} folds
-                      beating benchmark Â· median
+                      beating benchmark · median
                       {{ formatReturn(family.best_metrics?.median_net_return) }}
                     </span>
                   </div>
@@ -618,7 +618,7 @@
           Trading.
         </p>
         @if (diagnosticState() === 'loading') {
-          <p class="notice">Loading diagnostic qualificationsâ€¦</p>
+          <p class="notice">Loading diagnostic qualifications…</p>
         }
         @if (diagnosticError()) {
           <p class="notice error" role="alert">
@@ -648,12 +648,12 @@
                   }}</span>
                 </div>
                 <p>
-                  Family <code>{{ abbreviate(item.family_id, 12) }}</code> Â·
-                  {{ humanize(item.engine) }} Â· {{ humanize(item.objective) }} Â·
+                  Family <code>{{ abbreviate(item.family_id, 12) }}</code> ·
+                  {{ humanize(item.engine) }} · {{ humanize(item.objective) }} ·
                   {{ humanize(item.search_track) }}
                 </p>
                 <p>
-                  Created {{ item.created_at | date: 'medium' : 'UTC' }} UTC Â· Completed
+                  Created {{ item.created_at | date: 'medium' : 'UTC' }} UTC · Completed
                   {{
                     item.completed_at
                       ? (item.completed_at | date: 'medium' : 'UTC') + ' UTC'
@@ -730,7 +730,7 @@
     }
 
     @if (familyDetailState() === 'loading') {
-      <p class="notice">Loading family detailâ€¦</p>
+      <p class="notice">Loading family detail…</p>
     }
     @if (familyDetailError()) {
       <p class="notice error">{{ familyDetailError() }}</p>
@@ -745,7 +745,7 @@
           <div>
             <dt>Full identity</dt>
             <dd>
-              {{ family.asset }} Â· {{ family.provider }} Â· {{ family.market_type }} Â·
+              {{ family.asset }} · {{ family.provider }} · {{ family.market_type }} ·
               {{ family.interval }}
             </dd>
           </div>
@@ -756,8 +756,8 @@
           <div>
             <dt>Evaluations</dt>
             <dd>
-              {{ family.evaluations_completed }} completed Â· {{ family.evaluations_reused }} reused
-              Â· {{ family.evaluations_planned }} planned
+              {{ family.evaluations_completed }} completed · {{ family.evaluations_reused }} reused
+              · {{ family.evaluations_planned }} planned
             </dd>
           </div>
           <div>
