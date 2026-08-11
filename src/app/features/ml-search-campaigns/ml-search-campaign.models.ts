@@ -38,6 +38,7 @@ export interface CampaignContract {
 export interface SearchCampaign {
   id: string;
   experiment_key: string;
+  preset: string;
   status: CampaignStatus | string;
   outcome: CampaignOutcome | string | null;
   contract_version: number;
@@ -67,6 +68,8 @@ export interface FamilyBestMetrics {
   folds_beating_benchmark?: number | null;
   median_net_return?: string | null;
   worst_net_return?: string | null;
+  round_trips?: number | null;
+  inactive_folds?: number | null;
   promising_configurations?: number | null;
   complete_and_finite?: boolean | null;
 }
@@ -76,6 +79,7 @@ export interface SearchCampaignFamily {
   campaign_id: string;
   source_screening_run_id: string;
   fingerprint: string;
+  preset: string;
   asset: string;
   provider: string;
   market_type: string;
@@ -92,6 +96,8 @@ export interface SearchCampaignFamily {
   evaluations_reused: number;
   best_evaluation_id: string | null;
   best_metrics: FamilyBestMetrics | null;
+  selected_policy: Record<string, unknown> | null;
+  selected_policy_fingerprint: string | null;
   decision_reason: string | null;
   deterministic_ordinal: number;
 }
@@ -255,7 +261,8 @@ export interface DiagnosticQualificationView {
   search_track: string;
   future_duration_seconds: number;
   feature_variant: string;
-  created_at: string;
+  accepted_at: string | null;
+  created_at: string | null;
   completed_at: string | null;
   created: boolean | null;
   reused: boolean | null;

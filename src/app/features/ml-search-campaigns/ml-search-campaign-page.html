@@ -429,29 +429,33 @@
                 <tr>
                   @if (diagnosticLaunchEligible()) {
                     <td>
-                      <label class="row-selection">
-                        <input
-                          type="checkbox"
-                          [checked]="diagnosticSelected(family.id)"
-                          [disabled]="
-                            diagnosticSelection().size >= 10 && !diagnosticSelected(family.id)
-                          "
-                          [attr.aria-label]="
-                            'Select ' +
-                            humanize(family.engine) +
-                            ', ' +
-                            formatDuration(family.future_duration_seconds) +
-                            ', ' +
-                            humanize(family.objective) +
-                            ', ' +
-                            humanize(family.feature_variant)
-                          "
-                          (change)="diagnosticCheckboxChanged(family, $event)"
-                        />
-                        <span>{{ diagnosticSelected(family.id) ? 'Selected' : 'Select' }}</span>
-                      </label>
-                      @if (diagnosticSelection().size >= 10 && !diagnosticSelected(family.id)) {
-                        <small>Maximum 10 selected</small>
+                      @if (familyDiagnosticEligible(family)) {
+                        <label class="row-selection">
+                          <input
+                            type="checkbox"
+                            [checked]="diagnosticSelected(family.id)"
+                            [disabled]="
+                              diagnosticSelection().size >= 10 && !diagnosticSelected(family.id)
+                            "
+                            [attr.aria-label]="
+                              'Select ' +
+                              humanize(family.engine) +
+                              ', ' +
+                              formatDuration(family.future_duration_seconds) +
+                              ', ' +
+                              humanize(family.objective) +
+                              ', ' +
+                              humanize(family.feature_variant)
+                            "
+                            (change)="diagnosticCheckboxChanged(family, $event)"
+                          />
+                          <span>{{ diagnosticSelected(family.id) ? 'Selected' : 'Select' }}</span>
+                        </label>
+                        @if (diagnosticSelection().size >= 10 && !diagnosticSelected(family.id)) {
+                          <small>Maximum 10 selected</small>
+                        }
+                      } @else {
+                        <small>Not eligible for 2024 diagnostic.</small>
                       }
                     </td>
                   }
@@ -653,14 +657,18 @@
                   {{ humanize(item.objective) }} · {{ humanize(item.feature_variant) }} ·
                   {{ humanize(item.search_track) }}
                 </p>
-                <p>
-                  Created {{ item.created_at | date: 'medium' : 'UTC' }} UTC · Completed
-                  {{
-                    item.completed_at
-                      ? (item.completed_at | date: 'medium' : 'UTC') + ' UTC'
-                      : 'Not completed'
-                  }}
-                </p>
+                @if (item.created_at) {
+                  <p>
+                    Created {{ item.created_at | date: 'medium' : 'UTC' }} UTC · Completed
+                    {{
+                      item.completed_at
+                        ? (item.completed_at | date: 'medium' : 'UTC') + ' UTC'
+                        : 'Not completed'
+                    }}
+                  </p>
+                } @else {
+                  <p>Accepted {{ item.accepted_at | date: 'medium' : 'UTC' }} UTC</p>
+                }
                 @if (item.qualification; as qualification) {
                   @if (item.status === 'completed') {
                     <p>

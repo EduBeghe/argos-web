@@ -13,8 +13,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   catchError,
+  concatMap,
   EMPTY,
   expand,
+  from,
   forkJoin,
   map,
   Observable,
@@ -23,6 +25,7 @@ import {
   Subscription,
   throwError,
   timer,
+  toArray,
 } from 'rxjs';
 
 import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
@@ -59,6 +62,7 @@ type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 const ACTIVE = new Set<string>(['queued', 'running']);
 const DIAGNOSTIC_PAGE_LIMIT = 200;
 const DIAGNOSTIC_REQUEST_VERSION = 1;
+const DIAGNOSTIC_PRESET = 'economic_policy_search_v2';
 const EMPTY_COUNTS: CategoryCounts = {
   strong: null,
   competing: null,
@@ -66,6 +70,49 @@ const EMPTY_COUNTS: CategoryCounts = {
   early: null,
   pending: null,
 };
+
+function decimalParts(value: string): { coefficient: bigint; exponent: number } | null {
+  const match = /^([+-]?)(\d+)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(value.trim());
+  if (!match) return null;
+  const exponent = Number(match[4] ?? 0) - (match[3]?.length ?? 0);
+  if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 1000) return null;
+  const coefficient = BigInt(`${match[1] === '-' ? '-' : ''}${match[2]}${match[3] ?? ''}`);
+  return { coefficient, exponent };
+}
+
+function compareDecimals(left: string, right: string): number | null {
+  const a = decimalParts(left);
+  const b = decimalParts(right);
+  if (!a || !b) return null;
+  const exponent = Math.min(a.exponent, b.exponent);
+  const leftValue = a.coefficient * 10n ** BigInt(a.exponent - exponent);
+  const rightValue = b.coefficient * 10n ** BigInt(b.exponent - exponent);
+  return leftValue < rightValue ? -1 : leftValue > rightValue ? 1 : 0;
+}
+
+export function familyDiagnosticEligible(family: SearchCampaignFamily): boolean {
+  const metrics = family.best_metrics;
+  const median = metrics?.median_net_return;
+  const worst = metrics?.worst_net_return;
+  return (
+    family.preset === DIAGNOSTIC_PRESET &&
+    family.state === 'discarded' &&
+    family.current_stage === 3 &&
+    family.best_evaluation_id !== null &&
+    family.selected_policy !== null &&
+    family.selected_policy_fingerprint !== null &&
+    metrics?.complete_and_finite === true &&
+    (metrics.observations ?? -1) >= 100 &&
+    (metrics.positive_net_folds ?? -1) >= 4 &&
+    metrics.folds_beating_benchmark === 2 &&
+    typeof median === 'string' &&
+    compareDecimals(median, '0') === 1 &&
+    typeof worst === 'string' &&
+    (compareDecimals(worst, '-0.05') ?? -1) >= 0 &&
+    (metrics.round_trips ?? -1) >= 10 &&
+    (metrics.inactive_folds ?? Number.POSITIVE_INFINITY) <= 2
+  );
+}
 
 @Component({
   selector: 'app-ml-search-campaign-page',
@@ -151,12 +198,17 @@ export class MlSearchCampaignPage implements OnInit {
     const campaign = this.selectedCampaign();
     return (
       campaign?.status === 'completed' &&
+      campaign.preset === DIAGNOSTIC_PRESET &&
       campaign.outcome === 'no_strong_candidate' &&
+      campaign.families_uncovered === 0 &&
+      campaign.families_covered === campaign.families_total &&
+      campaign.cancellation_requested_at === null &&
       this.category() === 'near' &&
       this.subcategory() === 3
     );
   });
   readonly selectedDiagnosticFamilies = computed(() => [...this.diagnosticSelection().values()]);
+  readonly familyDiagnosticEligible = familyDiagnosticEligible;
 
   readonly outcome = computed(() => outcomePresentation(this.selectedCampaign()?.outcome ?? null));
   readonly categoryDefinition = computed(
@@ -561,7 +613,7 @@ export class MlSearchCampaignPage implements OnInit {
   }
 
   toggleDiagnosticFamily(family: SearchCampaignFamily, selected: boolean): void {
-    if (!this.diagnosticLaunchEligible()) return;
+    if (!this.diagnosticLaunchEligible() || (selected && !familyDiagnosticEligible(family))) return;
     const next = new Map(this.diagnosticSelection());
     if (selected) {
       if (!next.has(family.id) && next.size >= 10) return;
@@ -586,7 +638,12 @@ export class MlSearchCampaignPage implements OnInit {
   }
 
   openDiagnosticConfirmation(): void {
-    if (!this.diagnosticLaunchEligible() || this.diagnosticSelection().size === 0) return;
+    if (
+      !this.diagnosticLaunchEligible() ||
+      this.diagnosticSelection().size === 0 ||
+      !this.selectionRemainsDiagnosticEligible()
+    )
+      return;
     this.diagnosticConfirmation.set(true);
   }
 
@@ -598,7 +655,8 @@ export class MlSearchCampaignPage implements OnInit {
       !this.diagnosticLaunchEligible() ||
       this.diagnosticSubmitting() ||
       familyIds.length < 1 ||
-      familyIds.length > 10
+      familyIds.length > 10 ||
+      !this.selectionRemainsDiagnosticEligible()
     )
       return;
     const generation = this.diagnosticGeneration;
@@ -632,7 +690,8 @@ export class MlSearchCampaignPage implements OnInit {
               search_track: family.search_track || 'not_available',
               future_duration_seconds: family.future_duration_seconds,
               feature_variant: family.feature_variant,
-              created_at: acceptedAt,
+              accepted_at: acceptedAt,
+              created_at: null,
               completed_at: null,
               created: item.created,
               reused: item.reused,
@@ -670,7 +729,7 @@ export class MlSearchCampaignPage implements OnInit {
     const generation = this.diagnosticGeneration;
     if (!this.diagnosticPage()) this.diagnosticState.set('loading');
     this.diagnosticRequest?.unsubscribe();
-    this.diagnosticRequest = this.loadAllDiagnosticQualifications(campaign.id)
+    this.diagnosticRequest = this.loadDiagnosticEvidence(campaign.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (items) => {
@@ -807,6 +866,45 @@ export class MlSearchCampaignPage implements OnInit {
     );
   }
 
+  private loadDiagnosticEvidence(campaignId: string): Observable<DiagnosticQualification[]> {
+    return this.loadAllDiagnosticQualifications(campaignId).pipe(
+      concatMap((items) => {
+        const authoritative = new Map<string, DiagnosticQualification>();
+        for (const item of items) authoritative.set(item.id, item);
+        const unresolved = [...this.diagnosticPlaceholders.values()].filter(
+          (placeholder) => !authoritative.has(placeholder.id),
+        );
+        return from(unresolved).pipe(
+          concatMap((placeholder) =>
+            this.api.getDiagnosticQualification(campaignId, placeholder.id).pipe(
+              map((detail) => {
+                if (!this.validDiagnosticDetail(detail, placeholder, campaignId)) {
+                  throw new Error('Diagnostic detail identity does not match the accepted work.');
+                }
+                return detail;
+              }),
+            ),
+          ),
+          toArray(),
+          map((details) => [...authoritative.values(), ...details]),
+        );
+      }),
+    );
+  }
+
+  private validDiagnosticDetail(
+    detail: DiagnosticQualification,
+    placeholder: DiagnosticQualificationView,
+    campaignId: string,
+  ): boolean {
+    return (
+      detail.id === placeholder.id &&
+      detail.campaign_id === campaignId &&
+      detail.family_id === placeholder.family_id &&
+      detail.provenance === 'diagnostic_stage3_near_miss'
+    );
+  }
+
   private hydratedDiagnosticView(item: DiagnosticQualification): DiagnosticQualificationView {
     return {
       id: item.id,
@@ -819,6 +917,7 @@ export class MlSearchCampaignPage implements OnInit {
       search_track: item.search_track,
       future_duration_seconds: this.frozenNumber(item.frozen_inputs, 'future_duration_seconds'),
       feature_variant: this.frozenString(item.frozen_inputs, 'feature_variant'),
+      accepted_at: null,
       created_at: item.created_at,
       completed_at: item.completed_at,
       created: null,
@@ -835,8 +934,8 @@ export class MlSearchCampaignPage implements OnInit {
     }
     const items = [...merged.values()].sort(
       (left, right) =>
-        Date.parse(right.created_at) - Date.parse(left.created_at) ||
-        right.id.localeCompare(left.id),
+        Date.parse(right.created_at ?? right.accepted_at ?? '') -
+          Date.parse(left.created_at ?? left.accepted_at ?? '') || right.id.localeCompare(left.id),
     );
     this.diagnosticPage.set({
       items,
@@ -855,6 +954,21 @@ export class MlSearchCampaignPage implements OnInit {
   private frozenString(inputs: Record<string, unknown>, key: string): string {
     const value = inputs[key];
     return typeof value === 'string' && value ? value : 'not_available';
+  }
+
+  private selectionRemainsDiagnosticEligible(): boolean {
+    const stale = this.selectedDiagnosticFamilies().filter(
+      (family) => !familyDiagnosticEligible(family),
+    );
+    if (!stale.length) return true;
+    const next = new Map(this.diagnosticSelection());
+    for (const family of stale) next.delete(family.id);
+    this.diagnosticSelection.set(next);
+    this.diagnosticConfirmation.set(false);
+    this.diagnosticSubmitError.set(
+      `${stale.length} selected ${stale.length === 1 ? 'family is' : 'families are'} no longer eligible. Review the refreshed evidence and select again.`,
+    );
+    return false;
   }
 
   private diagnosticHttpError(error: HttpErrorResponse): string {

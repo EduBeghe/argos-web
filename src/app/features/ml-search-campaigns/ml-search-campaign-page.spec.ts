@@ -12,7 +12,7 @@ import {
   SearchCampaign,
   SearchCampaignFamily,
 } from './ml-search-campaign.models';
-import { MlSearchCampaignPage } from './ml-search-campaign-page';
+import { familyDiagnosticEligible, MlSearchCampaignPage } from './ml-search-campaign-page';
 import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 
 const contract: CampaignContract = {
@@ -37,6 +37,7 @@ const contract: CampaignContract = {
 const campaign: SearchCampaign = {
   id: 'campaign-00000001',
   experiment_key: 'e'.repeat(64),
+  preset: 'economic_policy_search_v2',
   status: 'running',
   outcome: null,
   contract_version: 1,
@@ -63,6 +64,8 @@ const diagnosticCampaign: SearchCampaign = {
   ...campaign,
   status: 'completed',
   outcome: 'no_strong_candidate',
+  families_covered: 3600,
+  families_uncovered: 0,
   current_stage: 4,
   completed_at: '2040-02-01T00:00:00Z',
 };
@@ -71,6 +74,7 @@ const family: SearchCampaignFamily = {
   campaign_id: campaign.id,
   source_screening_run_id: 'source-1',
   fingerprint: 'f'.repeat(64),
+  preset: 'economic_policy_search_v2',
   asset: 'GENERIC/USD',
   provider: 'venue',
   market_type: 'spot',
@@ -94,7 +98,11 @@ const family: SearchCampaignFamily = {
     worst_net_return: '-0.001',
     promising_configurations: 0,
     complete_and_finite: false,
+    round_trips: 0,
+    inactive_folds: 4,
   },
+  selected_policy: { kind: 'long_only' },
+  selected_policy_fingerprint: 'policy-1',
   decision_reason: 'latest_gate_passed',
   deterministic_ordinal: 17,
 };
@@ -109,6 +117,10 @@ const nearFamily: SearchCampaignFamily = {
     positive_net_folds: 5,
     folds_beating_benchmark: 2,
     median_net_return: '0.012',
+    worst_net_return: '-0.05',
+    complete_and_finite: true,
+    round_trips: 10,
+    inactive_folds: 2,
   },
 };
 const qualification: DiagnosticQualification = {
@@ -536,6 +548,163 @@ describe('MlSearchCampaignPage', () => {
     fixture.destroy();
   });
 
+  it.each([
+    ['preset', { preset: 'another_preset' }],
+    ['status', { status: 'running' }],
+    ['outcome', { outcome: 'coverage_incomplete' }],
+    ['uncovered families', { families_uncovered: 1 }],
+    ['coverage mismatch', { families_covered: 3599 }],
+    ['cancellation request', { cancellation_requested_at: '2040-01-01T00:00:00Z' }],
+  ])('rejects diagnostic campaign eligibility when %s is incompatible', (_name, override) => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.selectedCampaign.set({ ...diagnosticCampaign, ...override });
+    component.category.set('near');
+    component.subcategory.set(3);
+    expect(component.diagnosticLaunchEligible()).toBe(false);
+    fixture.destroy();
+  });
+
+  it('requires the Near / Stage 3 view for diagnostic campaign eligibility', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.selectedCampaign.set(diagnosticCampaign);
+    component.category.set('strong');
+    component.subcategory.set(3);
+    expect(component.diagnosticLaunchEligible()).toBe(false);
+    component.category.set('near');
+    component.subcategory.set(4);
+    expect(component.diagnosticLaunchEligible()).toBe(false);
+    component.subcategory.set(3);
+    expect(component.diagnosticLaunchEligible()).toBe(true);
+    fixture.destroy();
+  });
+
+  it.each([
+    [
+      'observations below',
+      { best_metrics: { ...nearFamily.best_metrics, observations: 99 } },
+      false,
+    ],
+    [
+      'observations boundary',
+      { best_metrics: { ...nearFamily.best_metrics, observations: 100 } },
+      true,
+    ],
+    [
+      'positive folds below',
+      { best_metrics: { ...nearFamily.best_metrics, positive_net_folds: 3 } },
+      false,
+    ],
+    [
+      'positive folds boundary',
+      { best_metrics: { ...nearFamily.best_metrics, positive_net_folds: 4 } },
+      true,
+    ],
+    [
+      'benchmark folds',
+      { best_metrics: { ...nearFamily.best_metrics, folds_beating_benchmark: 1 } },
+      false,
+    ],
+    [
+      'median zero',
+      { best_metrics: { ...nearFamily.best_metrics, median_net_return: '0E-18' } },
+      false,
+    ],
+    [
+      'median positive',
+      { best_metrics: { ...nearFamily.best_metrics, median_net_return: '1E-18' } },
+      true,
+    ],
+    [
+      'malformed median',
+      { best_metrics: { ...nearFamily.best_metrics, median_net_return: 'not-decimal' } },
+      false,
+    ],
+    [
+      'worst below',
+      { best_metrics: { ...nearFamily.best_metrics, worst_net_return: '-0.0500001' } },
+      false,
+    ],
+    [
+      'worst boundary',
+      { best_metrics: { ...nearFamily.best_metrics, worst_net_return: '-5E-2' } },
+      true,
+    ],
+    ['round trips below', { best_metrics: { ...nearFamily.best_metrics, round_trips: 9 } }, false],
+    [
+      'round trips boundary',
+      { best_metrics: { ...nearFamily.best_metrics, round_trips: 10 } },
+      true,
+    ],
+    [
+      'inactive boundary',
+      { best_metrics: { ...nearFamily.best_metrics, inactive_folds: 2 } },
+      true,
+    ],
+    ['inactive above', { best_metrics: { ...nearFamily.best_metrics, inactive_folds: 3 } }, false],
+    [
+      'complete flag',
+      { best_metrics: { ...nearFamily.best_metrics, complete_and_finite: false } },
+      false,
+    ],
+    ['preset', { preset: 'other' }, false],
+    ['state', { state: 'survived' }, false],
+    ['stage', { current_stage: 2 }, false],
+    ['best evaluation', { best_evaluation_id: null }, false],
+    ['selected policy', { selected_policy: null }, false],
+    ['policy fingerprint', { selected_policy_fingerprint: null }, false],
+  ])('evaluates the readable family boundary: %s', (_name, override, expected) => {
+    expect(familyDiagnosticEligible({ ...nearFamily, ...override })).toBe(expected);
+  });
+
+  it('does not render or accept selection controls for an ineligible family', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    const ineligible = {
+      ...nearFamily,
+      best_metrics: { ...nearFamily.best_metrics, observations: 99 },
+    };
+    api.getFamilies.mockImplementation(
+      (_id: string, _offset: number, _filters: object, limit = 50) =>
+        of(limit === 1 ? page([ineligible], 1, 1) : page([ineligible])),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(ineligible, true);
+    fixture.detectChanges();
+    expect(component.diagnosticSelection().size).toBe(0);
+    expect(fixture.nativeElement.textContent).toContain('Not eligible for 2024 diagnostic.');
+    expect(fixture.nativeElement.querySelector('input[type="checkbox"]')).toBeNull();
+    fixture.destroy();
+  });
+
+  it('removes a stale selected family and blocks POST after refreshed evidence becomes ineligible', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.diagnosticSelection.set(
+      new Map([
+        [
+          nearFamily.id,
+          { ...nearFamily, best_metrics: { ...nearFamily.best_metrics, observations: 99 } },
+        ],
+      ]),
+    );
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+    expect(api.enqueueDiagnosticQualifications).not.toHaveBeenCalled();
+    expect(component.diagnosticSelection().size).toBe(0);
+    expect(component.diagnosticSubmitError()).toContain('no longer eligible');
+    fixture.destroy();
+  });
+
   it('preserves stable unique selection and requires confirmation before one POST', () => {
     api.getCampaign.mockReturnValue(of(diagnosticCampaign));
     api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
@@ -652,7 +821,11 @@ describe('MlSearchCampaignPage', () => {
       id: qualification.id,
       status: 'queued',
       qualification: null,
+      created_at: null,
     });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Accepted');
+    expect(fixture.nativeElement.textContent).not.toContain('Created Aug');
     vi.advanceTimersByTime(5_000);
     expect(component.diagnosticPage()?.items[0]).toMatchObject({
       id: qualification.id,
@@ -661,6 +834,166 @@ describe('MlSearchCampaignPage', () => {
     expect(component.diagnosticPage()?.items[0].qualification).not.toBeNull();
     fixture.destroy();
     vi.useRealTimers();
+  });
+
+  it('hydrates a reused completed qualification missing from the complete list immediately', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getDiagnosticQualifications.mockReturnValue(of(page([], 0, 200)));
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({
+        campaign_id: diagnosticCampaign.id,
+        request_version: 1,
+        items: [
+          {
+            family_id: nearFamily.id,
+            qualification_id: qualification.id,
+            status: 'completed',
+            created: false,
+            reused: true,
+          },
+        ],
+      }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+    fixture.detectChanges();
+
+    expect(api.getDiagnosticQualification).toHaveBeenCalledTimes(1);
+    expect(api.getDiagnosticQualification).toHaveBeenCalledWith(
+      diagnosticCampaign.id,
+      qualification.id,
+    );
+    expect(component.diagnosticPage()?.items[0].qualification).toEqual(qualification);
+    expect(fixture.nativeElement.textContent).toContain('Created Dec 1, 2040');
+    expect(fixture.nativeElement.textContent).not.toContain('Accepted');
+    fixture.destroy();
+  });
+
+  it('hydrates several unresolved qualification IDs sequentially', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getDiagnosticQualifications.mockReturnValue(of(page([], 0, 200)));
+    const secondFamily = { ...nearFamily, id: 'family-2' };
+    const firstDetail = new Subject<DiagnosticQualification>();
+    const secondDetail = new Subject<DiagnosticQualification>();
+    api.getDiagnosticQualification
+      .mockReturnValueOnce(firstDetail.asObservable())
+      .mockReturnValueOnce(secondDetail.asObservable());
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({
+        campaign_id: diagnosticCampaign.id,
+        request_version: 1,
+        items: [nearFamily, secondFamily].map((item, index) => ({
+          family_id: item.id,
+          qualification_id: `qualification-${index + 1}`,
+          status: 'completed',
+          created: index === 0,
+          reused: index !== 0,
+        })),
+      }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.toggleDiagnosticFamily(secondFamily, true);
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+    expect(api.getDiagnosticQualification).toHaveBeenCalledTimes(1);
+    firstDetail.next(qualification);
+    firstDetail.complete();
+    expect(api.getDiagnosticQualification).toHaveBeenCalledTimes(2);
+    secondDetail.next({
+      ...qualification,
+      id: 'qualification-2',
+      family_id: secondFamily.id,
+    });
+    secondDetail.complete();
+    expect(component.diagnosticPage()?.items.every((item) => item.qualification !== null)).toBe(
+      true,
+    );
+    fixture.destroy();
+  });
+
+  it('preserves a terminal placeholder after detail failure and hydrates it on manual refresh', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getDiagnosticQualifications.mockReturnValue(of(page([], 0, 200)));
+    api.getDiagnosticQualification
+      .mockReturnValueOnce(
+        throwError(() => new HttpErrorResponse({ status: 404, statusText: 'Not Found' })),
+      )
+      .mockReturnValueOnce(of(qualification));
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({
+        campaign_id: diagnosticCampaign.id,
+        request_version: 1,
+        items: [
+          {
+            family_id: nearFamily.id,
+            qualification_id: qualification.id,
+            status: 'completed',
+            created: false,
+            reused: true,
+          },
+        ],
+      }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+    expect(component.diagnosticPage()?.items[0].qualification).toBeNull();
+    expect(component.diagnosticStale()).toBe(true);
+    expect(component.diagnosticError()).toContain('refresh failed');
+    component.loadDiagnostics();
+    expect(component.diagnosticPage()?.items[0].qualification).toEqual(qualification);
+    expect(component.diagnosticStale()).toBe(false);
+    fixture.destroy();
+  });
+
+  it('rejects a mismatched authoritative detail without replacing its placeholder', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    api.getDiagnosticQualifications.mockReturnValue(of(page([], 0, 200)));
+    api.getDiagnosticQualification.mockReturnValue(
+      of({ ...qualification, family_id: 'another-family' }),
+    );
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({
+        campaign_id: diagnosticCampaign.id,
+        request_version: 1,
+        items: [
+          {
+            family_id: nearFamily.id,
+            qualification_id: qualification.id,
+            status: 'completed',
+            created: false,
+            reused: true,
+          },
+        ],
+      }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    component.toggleDiagnosticFamily(nearFamily, true);
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+    expect(component.diagnosticPage()?.items[0].qualification).toBeNull();
+    expect(component.diagnosticStale()).toBe(true);
+    fixture.destroy();
   });
 
   it.each([
@@ -797,6 +1130,44 @@ describe('MlSearchCampaignPage', () => {
     component.toggleDiagnosticFamily(families[0], false);
     component.toggleDiagnosticFamily(families[10], true);
     expect(component.selectedDiagnosticFamilies().at(-1)?.id).toBe('family-11');
+    fixture.destroy();
+  });
+
+  it('submits the six intended eligible configurations once in stable selection order', () => {
+    api.getCampaign.mockReturnValue(of(diagnosticCampaign));
+    api.getCampaigns.mockReturnValue(of(page([diagnosticCampaign], 1, 25)));
+    const six = Array.from({ length: 6 }, (_, index) => ({
+      ...nearFamily,
+      id: `intended-family-${index + 1}`,
+      engine: ['ridge', 'lightgbm', 'catboost'][index % 3],
+      future_duration_seconds: [1800, 3600][index % 2],
+      feature_variant: ['all', 'top_k_32'][index % 2],
+    }));
+    api.enqueueDiagnosticQualifications.mockReturnValue(
+      of({
+        campaign_id: diagnosticCampaign.id,
+        request_version: 1,
+        items: six.map((familyItem, index) => ({
+          family_id: familyItem.id,
+          qualification_id: `intended-qualification-${index + 1}`,
+          status: 'queued',
+          created: index % 2 === 0,
+          reused: index % 2 !== 0,
+        })),
+      }),
+    );
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.setCategory('near');
+    component.setSubcategory('3');
+    six.forEach((familyItem) => component.toggleDiagnosticFamily(familyItem, true));
+    component.openDiagnosticConfirmation();
+    component.confirmDiagnostic();
+    expect(api.enqueueDiagnosticQualifications).toHaveBeenCalledTimes(1);
+    expect(api.enqueueDiagnosticQualifications).toHaveBeenCalledWith(diagnosticCampaign.id, {
+      family_ids: six.map((familyItem) => familyItem.id),
+    });
+    expect(component.diagnosticPage()?.items).toHaveLength(6);
     fixture.destroy();
   });
 

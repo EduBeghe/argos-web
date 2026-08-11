@@ -17,6 +17,7 @@ const family = (id = 'family-1'): SearchCampaignFamily => ({
   campaign_id: 'campaign-1',
   source_screening_run_id: 'screening-1',
   fingerprint: 'f'.repeat(64),
+  preset: 'economic_policy_search_v2',
   asset: 'GENERIC/USD',
   provider: 'venue',
   market_type: 'spot',
@@ -32,6 +33,8 @@ const family = (id = 'family-1'): SearchCampaignFamily => ({
   evaluations_reused: 0,
   best_evaluation_id: 'evaluation-1',
   best_metrics: null,
+  selected_policy: null,
+  selected_policy_fingerprint: null,
   decision_reason: 'strong_candidate',
   deterministic_ordinal: 1,
 });
