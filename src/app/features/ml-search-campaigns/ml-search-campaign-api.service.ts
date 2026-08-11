@@ -6,6 +6,10 @@ import { API_BASE_URL } from '../../core/config/api-config';
 import {
   CampaignContract,
   CampaignListFilters,
+  DiagnosticQualification,
+  DiagnosticQualificationEnqueueResponse,
+  DiagnosticQualificationRequest,
+  DIAGNOSTIC_QUALIFICATION_PROVENANCE,
   FamilyFilters,
   Page,
   SearchCampaign,
@@ -65,6 +69,41 @@ export class MlSearchCampaignApiService {
     return this.http.post<SearchCampaign>(
       `${this.base}/optimization/ml-search-campaigns/${encodeURIComponent(id)}/retry`,
       {},
+    );
+  }
+
+  enqueueDiagnosticQualifications(
+    campaignId: string,
+    body: DiagnosticQualificationRequest,
+  ): Observable<DiagnosticQualificationEnqueueResponse> {
+    return this.http.post<DiagnosticQualificationEnqueueResponse>(
+      `${this.base}/optimization/ml-search-campaigns/${encodeURIComponent(campaignId)}/diagnostic-qualifications`,
+      body,
+    );
+  }
+
+  getDiagnosticQualifications(
+    campaignId: string,
+    offset = 0,
+    limit = 200,
+  ): Observable<Page<DiagnosticQualification>> {
+    return this.http.get<Page<DiagnosticQualification>>(
+      `${this.base}/optimization/ml-search-campaigns/${encodeURIComponent(campaignId)}/qualifications`,
+      {
+        params: new HttpParams()
+          .set('provenance', DIAGNOSTIC_QUALIFICATION_PROVENANCE)
+          .set('offset', offset)
+          .set('limit', limit),
+      },
+    );
+  }
+
+  getDiagnosticQualification(
+    campaignId: string,
+    qualificationId: string,
+  ): Observable<DiagnosticQualification> {
+    return this.http.get<DiagnosticQualification>(
+      `${this.base}/optimization/ml-search-campaigns/${encodeURIComponent(campaignId)}/qualifications/${encodeURIComponent(qualificationId)}`,
     );
   }
 

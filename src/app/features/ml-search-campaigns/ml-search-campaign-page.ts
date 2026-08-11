@@ -11,7 +11,22 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of, Subscription, timer } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  EMPTY,
+  expand,
+  from,
+  forkJoin,
+  map,
+  Observable,
+  of,
+  reduce,
+  Subscription,
+  throwError,
+  timer,
+  toArray,
+} from 'rxjs';
 
 import { WorkspaceNavigation } from '../../shared/components/workspace-navigation/workspace-navigation';
 import { MlSearchCampaignApiService } from './ml-search-campaign-api.service';
@@ -35,6 +50,9 @@ import {
   CategoryCounts,
   FamilyCategory,
   FamilyFilters,
+  DiagnosticQualification,
+  DiagnosticQualificationEnqueueResponse,
+  DiagnosticQualificationView,
   Page,
   SearchCampaign,
   SearchCampaignFamily,
@@ -42,6 +60,9 @@ import {
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 const ACTIVE = new Set<string>(['queued', 'running']);
+const DIAGNOSTIC_PAGE_LIMIT = 200;
+const DIAGNOSTIC_REQUEST_VERSION = 1;
+const DIAGNOSTIC_PRESET = 'economic_policy_search_v2';
 const EMPTY_COUNTS: CategoryCounts = {
   strong: null,
   competing: null,
@@ -49,6 +70,49 @@ const EMPTY_COUNTS: CategoryCounts = {
   early: null,
   pending: null,
 };
+
+function decimalParts(value: string): { coefficient: bigint; exponent: number } | null {
+  const match = /^([+-]?)(\d+)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(value.trim());
+  if (!match) return null;
+  const exponent = Number(match[4] ?? 0) - (match[3]?.length ?? 0);
+  if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 1000) return null;
+  const coefficient = BigInt(`${match[1] === '-' ? '-' : ''}${match[2]}${match[3] ?? ''}`);
+  return { coefficient, exponent };
+}
+
+function compareDecimals(left: string, right: string): number | null {
+  const a = decimalParts(left);
+  const b = decimalParts(right);
+  if (!a || !b) return null;
+  const exponent = Math.min(a.exponent, b.exponent);
+  const leftValue = a.coefficient * 10n ** BigInt(a.exponent - exponent);
+  const rightValue = b.coefficient * 10n ** BigInt(b.exponent - exponent);
+  return leftValue < rightValue ? -1 : leftValue > rightValue ? 1 : 0;
+}
+
+export function familyDiagnosticEligible(family: SearchCampaignFamily): boolean {
+  const metrics = family.best_metrics;
+  const median = metrics?.median_net_return;
+  const worst = metrics?.worst_net_return;
+  return (
+    family.preset === DIAGNOSTIC_PRESET &&
+    family.state === 'discarded' &&
+    family.current_stage === 3 &&
+    family.best_evaluation_id !== null &&
+    family.selected_policy !== null &&
+    family.selected_policy_fingerprint !== null &&
+    metrics?.complete_and_finite === true &&
+    (metrics.observations ?? -1) >= 100 &&
+    (metrics.positive_net_folds ?? -1) >= 4 &&
+    metrics.folds_beating_benchmark === 2 &&
+    typeof median === 'string' &&
+    compareDecimals(median, '0') === 1 &&
+    typeof worst === 'string' &&
+    (compareDecimals(worst, '-0.05') ?? -1) >= 0 &&
+    (metrics.round_trips ?? -1) >= 10 &&
+    (metrics.inactive_folds ?? Number.POSITIVE_INFINITY) <= 2
+  );
+}
 
 @Component({
   selector: 'app-ml-search-campaign-page',
@@ -71,6 +135,10 @@ export class MlSearchCampaignPage implements OnInit {
   private contractRequest?: Subscription;
   private familyDetailRequest?: Subscription;
   private mutationRequest?: Subscription;
+  private diagnosticRequest?: Subscription;
+  private diagnosticSubmitRequest?: Subscription;
+  private diagnosticPoll?: Subscription;
+  private readonly diagnosticPlaceholders = new Map<string, DiagnosticQualificationView>();
   private listGeneration = 0;
   private selectionGeneration = 0;
   private familyGeneration = 0;
@@ -78,6 +146,7 @@ export class MlSearchCampaignPage implements OnInit {
   private contractGeneration = 0;
   private countGeneration = 0;
   private mutationGeneration = 0;
+  private diagnosticGeneration = 0;
   requestedRouteId: string | null = null;
 
   readonly categories = CATEGORIES;
@@ -115,6 +184,31 @@ export class MlSearchCampaignPage implements OnInit {
   readonly confirmCancel = signal(false);
   readonly mutationError = signal('');
   readonly liveMessage = signal('');
+  readonly diagnosticSelection = signal<ReadonlyMap<string, SearchCampaignFamily>>(new Map());
+  readonly diagnosticPage = signal<Page<DiagnosticQualificationView> | null>(null);
+  readonly diagnosticState = signal<LoadState>('idle');
+  readonly diagnosticError = signal('');
+  readonly diagnosticStale = signal(false);
+  readonly diagnosticConfirmation = signal(false);
+  readonly diagnosticSubmitting = signal(false);
+  readonly diagnosticSubmitError = signal('');
+  readonly diagnosticMessage = signal('');
+
+  readonly diagnosticLaunchEligible = computed(() => {
+    const campaign = this.selectedCampaign();
+    return (
+      campaign?.status === 'completed' &&
+      campaign.preset === DIAGNOSTIC_PRESET &&
+      campaign.outcome === 'no_strong_candidate' &&
+      campaign.families_uncovered === 0 &&
+      campaign.families_covered === campaign.families_total &&
+      campaign.cancellation_requested_at === null &&
+      this.category() === 'near' &&
+      this.subcategory() === 3
+    );
+  });
+  readonly selectedDiagnosticFamilies = computed(() => [...this.diagnosticSelection().values()]);
+  readonly familyDiagnosticEligible = familyDiagnosticEligible;
 
   readonly outcome = computed(() => outcomePresentation(this.selectedCampaign()?.outcome ?? null));
   readonly categoryDefinition = computed(
@@ -141,6 +235,7 @@ export class MlSearchCampaignPage implements OnInit {
       this.cancelSelectionRequests();
       this.selectionGeneration += 1;
       this.selectedCampaign.set(null);
+      this.resetDiagnosticContext();
       this.loadCampaigns(true);
       if (this.requestedRouteId) this.loadSelectedCampaign(this.requestedRouteId);
     });
@@ -228,6 +323,7 @@ export class MlSearchCampaignPage implements OnInit {
           if (generation !== this.selectionGeneration || id !== this.requestedRouteId) return;
           const wasActive = ACTIVE.has(this.selectedCampaign()?.status ?? '');
           this.selectedCampaign.set(campaign);
+          this.clearDiagnosticSelectionOutsideEligibleView();
           this.campaignState.set('ready');
           this.campaignError.set('');
           this.routeNotFound.set(false);
@@ -235,6 +331,7 @@ export class MlSearchCampaignPage implements OnInit {
             this.resetFamilyContext();
             this.loadCounts();
             this.loadFamilies();
+            if (campaign.status === 'completed') this.loadDiagnostics();
           } else if (wasActive && !ACTIVE.has(campaign.status)) {
             this.loadCounts();
             this.stopPolling();
@@ -277,6 +374,14 @@ export class MlSearchCampaignPage implements OnInit {
             }
           }
           this.familyPage.set(page);
+          if (this.diagnosticLaunchEligible() && this.diagnosticSelection().size) {
+            const refreshedById = new Map(page.items.map((item) => [item.id, item]));
+            const reconciled = new Map<string, SearchCampaignFamily>();
+            for (const [id, summary] of this.diagnosticSelection()) {
+              reconciled.set(id, refreshedById.get(id) ?? summary);
+            }
+            this.diagnosticSelection.set(reconciled);
+          }
           this.familyState.set('ready');
           this.familyError.set('');
         },
@@ -352,6 +457,7 @@ export class MlSearchCampaignPage implements OnInit {
     );
     this.familyOffset.set(0);
     this.loadFamilies();
+    this.clearDiagnosticSelectionOutsideEligibleView();
   }
 
   setSubcategory(value: string): void {
@@ -359,6 +465,7 @@ export class MlSearchCampaignPage implements OnInit {
     this.subcategory.set(value === 'pending' || value === 'scheduled' ? value : Number(value));
     this.familyOffset.set(0);
     this.loadFamilies();
+    this.clearDiagnosticSelectionOutsideEligibleView();
   }
 
   setFamilyFilter(
@@ -423,6 +530,7 @@ export class MlSearchCampaignPage implements OnInit {
       this.loadSelectedCampaign(campaign.id, true);
       this.loadFamilies();
       this.loadCounts();
+      if (campaign.status === 'completed') this.loadDiagnostics();
     }
   }
 
@@ -500,6 +608,172 @@ export class MlSearchCampaignPage implements OnInit {
     );
   }
 
+  diagnosticSelected(id: string): boolean {
+    return this.diagnosticSelection().has(id);
+  }
+
+  toggleDiagnosticFamily(family: SearchCampaignFamily, selected: boolean): void {
+    if (!this.diagnosticLaunchEligible() || (selected && !familyDiagnosticEligible(family))) return;
+    const next = new Map(this.diagnosticSelection());
+    if (selected) {
+      if (!next.has(family.id) && next.size >= 10) return;
+      next.set(family.id, family);
+    } else {
+      next.delete(family.id);
+    }
+    this.diagnosticSelection.set(next);
+    this.diagnosticConfirmation.set(false);
+    this.diagnosticSubmitError.set('');
+  }
+
+  diagnosticCheckboxChanged(family: SearchCampaignFamily, event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) this.toggleDiagnosticFamily(family, target.checked);
+  }
+
+  clearDiagnosticSelection(): void {
+    this.diagnosticSelection.set(new Map());
+    this.diagnosticConfirmation.set(false);
+    this.diagnosticSubmitError.set('');
+  }
+
+  openDiagnosticConfirmation(): void {
+    if (
+      !this.diagnosticLaunchEligible() ||
+      this.diagnosticSelection().size === 0 ||
+      !this.selectionRemainsDiagnosticEligible()
+    )
+      return;
+    this.diagnosticConfirmation.set(true);
+  }
+
+  confirmDiagnostic(): void {
+    const campaign = this.selectedCampaign();
+    const familyIds = [...new Set(this.diagnosticSelection().keys())];
+    if (
+      !campaign ||
+      !this.diagnosticLaunchEligible() ||
+      this.diagnosticSubmitting() ||
+      familyIds.length < 1 ||
+      familyIds.length > 10 ||
+      !this.selectionRemainsDiagnosticEligible()
+    )
+      return;
+    const generation = this.diagnosticGeneration;
+    this.diagnosticSubmitting.set(true);
+    this.diagnosticSubmitError.set('');
+    this.diagnosticSubmitRequest = this.api
+      .enqueueDiagnosticQualifications(campaign.id, { family_ids: familyIds })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (!this.diagnosticContextMatches(generation, campaign.id)) return;
+          if (!this.validDiagnosticResponse(response, campaign.id, familyIds)) {
+            this.diagnosticSubmitting.set(false);
+            this.diagnosticSubmitError.set('The diagnostic service returned an invalid response.');
+            return;
+          }
+          const created = response.items.filter((item) => item.created).length;
+          const reused = response.items.filter((item) => item.reused).length;
+          const acceptedAt = new Date().toISOString();
+          const selected = this.diagnosticSelection();
+          const placeholders = response.items.map((item): DiagnosticQualificationView => {
+            const family = selected.get(item.family_id)!;
+            return {
+              id: item.qualification_id,
+              campaign_id: campaign.id,
+              family_id: item.family_id,
+              provenance: 'diagnostic_stage3_near_miss',
+              status: item.status,
+              engine: family.engine,
+              objective: family.objective,
+              search_track: family.search_track || 'not_available',
+              future_duration_seconds: family.future_duration_seconds,
+              feature_variant: family.feature_variant,
+              accepted_at: acceptedAt,
+              created_at: null,
+              completed_at: null,
+              created: item.created,
+              reused: item.reused,
+              qualification: null,
+            };
+          });
+          for (const placeholder of placeholders) {
+            this.diagnosticPlaceholders.set(placeholder.id, placeholder);
+          }
+          this.publishDiagnosticViews([...(this.diagnosticPage()?.items ?? []), ...placeholders]);
+          this.diagnosticSubmitting.set(false);
+          this.diagnosticConfirmation.set(false);
+          this.diagnosticMessage.set(
+            `Diagnostic accepted: ${created} created and ${reused} reused.`,
+          );
+          this.loadDiagnostics();
+        },
+        error: (error: HttpErrorResponse) => {
+          if (!this.diagnosticContextMatches(generation, campaign.id)) return;
+          this.diagnosticSubmitting.set(false);
+          this.diagnosticSubmitError.set(this.diagnosticHttpError(error));
+          if (error.status === 409) {
+            this.loadSelectedCampaign(campaign.id, true);
+            this.loadFamilies();
+            this.loadDiagnostics();
+          }
+        },
+      });
+  }
+
+  loadDiagnostics(fromPoll = false): void {
+    const campaign = this.selectedCampaign();
+    if (!campaign || campaign.status !== 'completed') return;
+    if (fromPoll && this.diagnosticRequest && !this.diagnosticRequest.closed) return;
+    const generation = this.diagnosticGeneration;
+    if (!this.diagnosticPage()) this.diagnosticState.set('loading');
+    this.diagnosticRequest?.unsubscribe();
+    this.diagnosticRequest = this.loadDiagnosticEvidence(campaign.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          this.diagnosticRequest = undefined;
+          if (!this.diagnosticContextMatches(generation, campaign.id)) return;
+          const hydrated = items.map((item) => this.hydratedDiagnosticView(item));
+          for (const item of hydrated) this.diagnosticPlaceholders.delete(item.id);
+          this.publishDiagnosticViews([...hydrated, ...this.diagnosticPlaceholders.values()]);
+          this.diagnosticState.set('ready');
+          this.diagnosticError.set('');
+          this.diagnosticStale.set(false);
+          this.configureDiagnosticPolling();
+        },
+        error: () => {
+          this.diagnosticRequest = undefined;
+          if (!this.diagnosticContextMatches(generation, campaign.id)) return;
+          this.stopDiagnosticPolling();
+          this.diagnosticState.set(this.diagnosticPage() ? 'ready' : 'error');
+          this.diagnosticStale.set(Boolean(this.diagnosticPage()));
+          this.diagnosticError.set(
+            this.diagnosticPage()
+              ? 'Diagnostic refresh failed. Previously loaded evidence is preserved.'
+              : 'Diagnostic qualifications are unavailable.',
+          );
+        },
+      });
+  }
+
+  scenarioReturn(
+    item: DiagnosticQualificationView,
+    key: 'base' | 'stress_1_5x' | 'stress_2x',
+  ): string {
+    return this.formatReturn(item.qualification?.scenario_metrics?.[key]?.total_net_return);
+  }
+
+  diagnosticClassification(item: DiagnosticQualificationView): string {
+    if (!item.qualification) return 'Diagnostic accepted';
+    if (item.qualification.classification === 'qualified') return 'Diagnostic qualified';
+    if (item.qualification.classification === 'rejected') return 'Diagnostic rejected';
+    return item.qualification.classification
+      ? humanize(item.qualification.classification)
+      : 'Not available';
+  }
+
   private visibleFamilyFilters(): FamilyFilters {
     return {
       ...categoryFilters(this.category(), this.subcategory()),
@@ -516,6 +790,224 @@ export class MlSearchCampaignPage implements OnInit {
     this.familyOffset.set(0);
     this.familyPage.set(null);
     this.categoryCounts.set(EMPTY_COUNTS);
+  }
+
+  private clearDiagnosticSelectionOutsideEligibleView(): void {
+    if (!this.diagnosticLaunchEligible()) this.clearDiagnosticSelection();
+  }
+
+  private resetDiagnosticContext(): void {
+    this.diagnosticRequest?.unsubscribe();
+    this.diagnosticSubmitRequest?.unsubscribe();
+    this.stopDiagnosticPolling();
+    this.diagnosticGeneration += 1;
+    this.diagnosticSelection.set(new Map());
+    this.diagnosticPlaceholders.clear();
+    this.diagnosticPage.set(null);
+    this.diagnosticState.set('idle');
+    this.diagnosticError.set('');
+    this.diagnosticStale.set(false);
+    this.diagnosticConfirmation.set(false);
+    this.diagnosticSubmitting.set(false);
+    this.diagnosticSubmitError.set('');
+    this.diagnosticMessage.set('');
+  }
+
+  private diagnosticContextMatches(generation: number, campaignId: string): boolean {
+    return generation === this.diagnosticGeneration && this.selectedCampaign()?.id === campaignId;
+  }
+
+  private validDiagnosticResponse(
+    response: DiagnosticQualificationEnqueueResponse,
+    campaignId: string,
+    familyIds: string[],
+  ): boolean {
+    if (
+      response.campaign_id !== campaignId ||
+      response.request_version !== DIAGNOSTIC_REQUEST_VERSION ||
+      !response.items.length ||
+      response.items.length !== familyIds.length
+    )
+      return false;
+    const expected = new Set(familyIds);
+    const returnedFamilies = new Set<string>();
+    const returnedQualifications = new Set<string>();
+    for (const item of response.items) {
+      if (
+        !item.family_id ||
+        !item.qualification_id ||
+        !expected.has(item.family_id) ||
+        returnedFamilies.has(item.family_id) ||
+        returnedQualifications.has(item.qualification_id) ||
+        typeof item.created !== 'boolean' ||
+        typeof item.reused !== 'boolean' ||
+        item.created === item.reused
+      )
+        return false;
+      returnedFamilies.add(item.family_id);
+      returnedQualifications.add(item.qualification_id);
+    }
+    return returnedFamilies.size === expected.size;
+  }
+
+  private loadAllDiagnosticQualifications(
+    campaignId: string,
+  ): Observable<DiagnosticQualification[]> {
+    return this.api.getDiagnosticQualifications(campaignId, 0, DIAGNOSTIC_PAGE_LIMIT).pipe(
+      expand((page) => {
+        if (!page.has_more) return EMPTY;
+        const nextOffset = page.offset + page.items.length;
+        if (!page.items.length || nextOffset <= page.offset) {
+          return throwError(() => new Error('Diagnostic pagination did not advance.'));
+        }
+        return this.api.getDiagnosticQualifications(campaignId, nextOffset, DIAGNOSTIC_PAGE_LIMIT);
+      }),
+      reduce((items, page) => [...items, ...page.items], [] as DiagnosticQualification[]),
+    );
+  }
+
+  private loadDiagnosticEvidence(campaignId: string): Observable<DiagnosticQualification[]> {
+    return this.loadAllDiagnosticQualifications(campaignId).pipe(
+      concatMap((items) => {
+        const authoritative = new Map<string, DiagnosticQualification>();
+        for (const item of items) authoritative.set(item.id, item);
+        const unresolved = [...this.diagnosticPlaceholders.values()].filter(
+          (placeholder) => !authoritative.has(placeholder.id),
+        );
+        return from(unresolved).pipe(
+          concatMap((placeholder) =>
+            this.api.getDiagnosticQualification(campaignId, placeholder.id).pipe(
+              map((detail) => {
+                if (!this.validDiagnosticDetail(detail, placeholder, campaignId)) {
+                  throw new Error('Diagnostic detail identity does not match the accepted work.');
+                }
+                return detail;
+              }),
+            ),
+          ),
+          toArray(),
+          map((details) => [...authoritative.values(), ...details]),
+        );
+      }),
+    );
+  }
+
+  private validDiagnosticDetail(
+    detail: DiagnosticQualification,
+    placeholder: DiagnosticQualificationView,
+    campaignId: string,
+  ): boolean {
+    return (
+      detail.id === placeholder.id &&
+      detail.campaign_id === campaignId &&
+      detail.family_id === placeholder.family_id &&
+      detail.provenance === 'diagnostic_stage3_near_miss'
+    );
+  }
+
+  private hydratedDiagnosticView(item: DiagnosticQualification): DiagnosticQualificationView {
+    return {
+      id: item.id,
+      campaign_id: item.campaign_id,
+      family_id: item.family_id,
+      provenance: item.provenance,
+      status: item.status,
+      engine: item.engine,
+      objective: item.objective,
+      search_track: item.search_track,
+      future_duration_seconds: this.frozenNumber(item.frozen_inputs, 'future_duration_seconds'),
+      feature_variant: this.frozenString(item.frozen_inputs, 'feature_variant'),
+      accepted_at: null,
+      created_at: item.created_at,
+      completed_at: item.completed_at,
+      created: null,
+      reused: null,
+      qualification: item,
+    };
+  }
+
+  private publishDiagnosticViews(incoming: DiagnosticQualificationView[]): void {
+    const merged = new Map<string, DiagnosticQualificationView>();
+    for (const item of incoming) {
+      const existing = merged.get(item.id);
+      if (item.qualification || !existing?.qualification) merged.set(item.id, item);
+    }
+    const items = [...merged.values()].sort(
+      (left, right) =>
+        Date.parse(right.created_at ?? right.accepted_at ?? '') -
+          Date.parse(left.created_at ?? left.accepted_at ?? '') || right.id.localeCompare(left.id),
+    );
+    this.diagnosticPage.set({
+      items,
+      total: items.length,
+      offset: 0,
+      limit: DIAGNOSTIC_PAGE_LIMIT,
+      has_more: false,
+    });
+  }
+
+  private frozenNumber(inputs: Record<string, unknown>, key: string): number {
+    const value = inputs[key];
+    return typeof value === 'number' ? value : Number.NaN;
+  }
+
+  private frozenString(inputs: Record<string, unknown>, key: string): string {
+    const value = inputs[key];
+    return typeof value === 'string' && value ? value : 'not_available';
+  }
+
+  private selectionRemainsDiagnosticEligible(): boolean {
+    const stale = this.selectedDiagnosticFamilies().filter(
+      (family) => !familyDiagnosticEligible(family),
+    );
+    if (!stale.length) return true;
+    const next = new Map(this.diagnosticSelection());
+    for (const family of stale) next.delete(family.id);
+    this.diagnosticSelection.set(next);
+    this.diagnosticConfirmation.set(false);
+    this.diagnosticSubmitError.set(
+      `${stale.length} selected ${stale.length === 1 ? 'family is' : 'families are'} no longer eligible. Review the refreshed evidence and select again.`,
+    );
+    return false;
+  }
+
+  private diagnosticHttpError(error: HttpErrorResponse): string {
+    const detail = error.error?.detail;
+    const safeDetail =
+      typeof detail === 'string'
+        ? detail
+        : typeof detail?.message === 'string'
+          ? detail.message
+          : typeof detail?.reason_code === 'string'
+            ? detail.reason_code
+            : typeof detail?.code === 'string'
+              ? detail.code
+              : '';
+    if (error.status === 400 || error.status === 422)
+      return safeDetail || 'The diagnostic request is invalid.';
+    if (error.status === 404) return safeDetail || 'The campaign or family no longer exists.';
+    if (error.status === 409) return safeDetail || 'The campaign or family is no longer eligible.';
+    return 'The diagnostic request failed. Retry when ready.';
+  }
+
+  private configureDiagnosticPolling(): void {
+    this.stopDiagnosticPolling();
+    if (
+      document.hidden ||
+      this.diagnosticError() ||
+      !this.diagnosticPage()?.items.some((item) => ACTIVE.has(item.status))
+    )
+      return;
+    this.diagnosticPoll = timer(5_000, 5_000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (!document.hidden) this.loadDiagnostics(true);
+      });
+  }
+
+  private stopDiagnosticPolling(): void {
+    this.diagnosticPoll?.unsubscribe();
+    this.diagnosticPoll = undefined;
   }
 
   invalidateFamilyDetail(): void {
@@ -591,6 +1083,7 @@ export class MlSearchCampaignPage implements OnInit {
     this.countRequest?.unsubscribe();
     this.invalidateFamilyDetail();
     this.invalidateMutation();
+    this.resetDiagnosticContext();
   }
 
   private cancelRequests(): void {
@@ -602,6 +1095,7 @@ export class MlSearchCampaignPage implements OnInit {
   private readonly visibilityChanged = (): void => {
     if (document.hidden) {
       this.stopPolling();
+      this.stopDiagnosticPolling();
       return;
     }
     const campaign = this.selectedCampaign();
@@ -610,5 +1104,8 @@ export class MlSearchCampaignPage implements OnInit {
       this.loadFamilies();
     }
     this.configurePolling();
+    if (this.diagnosticPage()?.items.some((item) => ACTIVE.has(item.status))) {
+      this.loadDiagnostics();
+    }
   };
 }

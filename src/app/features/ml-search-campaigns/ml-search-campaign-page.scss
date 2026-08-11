@@ -204,6 +204,73 @@ code {
   border: 1px solid #704f4f;
   border-radius: 0.5rem;
 }
+.row-selection {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.row-selection input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #6f9eae;
+}
+.diagnostic-selection {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #36515d;
+  border-radius: 0.65rem;
+  background: #14242b;
+}
+.selected-families,
+.diagnostic-results {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0;
+  list-style: none;
+}
+.selected-families li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #2e4650;
+  border-radius: 0.5rem;
+}
+.selected-families li div,
+.selected-families li span {
+  display: grid;
+  gap: 0.3rem;
+}
+.primary-action {
+  margin-top: 0.5rem;
+  border-color: #5f8f7d;
+  background: #1c3b35;
+}
+.diagnostic-confirmation {
+  margin-top: 0.8rem;
+  border-color: #587786;
+}
+.confirmation-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.diagnostic-card {
+  padding: 1rem;
+  border: 1px solid #2e4650;
+  border-radius: 0.65rem;
+  background: #14242b;
+}
+.diagnostic-card[data-state='failed'],
+.diagnostic-card[data-state='cancelled'] {
+  border-left: 0.3rem solid #8f6262;
+}
+.quarter-list {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
 details {
   margin-top: 1rem;
 }
@@ -227,5 +294,10 @@ summary {
   .hero,
   .section-heading {
     align-items: stretch;
+  }
+  .selected-families li,
+  .confirmation-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
